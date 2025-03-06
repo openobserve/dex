@@ -7,5 +7,5 @@
 /vendor/
 /cmd/dex/dex.db
 /.vscode/launch.json
-/cmd/dex/__debug_bin1327354640
+/cmd/dex/__debug_bin*
 /examples/google/config-google.yaml
