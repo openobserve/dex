@@ -374,6 +374,8 @@ type Connector struct {
 	// However, fixing this requires migrating Kubernetes objects for all previously created connectors,
 	// or making Dex reading both tags and act accordingly.
 	Config []byte `json:"email"`
+
+	Hidden bool `json:"hidden,omitempty"`
 }
 
 // VerificationKey is a rotated signing key which can still be used to verify

@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -147,6 +148,12 @@ func (s *Server) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i, conn := range connectors {
+		if slices.Contains(s.hiddenConnectors, conn.ID) {
+			connectors[i].Hidden = true
+		}
+	}
+
 	// We don't need connector_id any more
 	r.Form.Del("connector_id")
 
@@ -171,16 +178,31 @@ func (s *Server) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 	if len(connectors) == 1 && !s.alwaysShowLogin {
 		connURL.Path = s.absPath("/auth", url.PathEscape(connectors[0].ID))
 		http.Redirect(w, r, connURL.String(), http.StatusFound)
+	} else {
+		// Get visible connectors (those with hidden=false)
+		visibleConnectors := make([]storage.Connector, 0)
+		for _, conn := range connectors {
+			if !conn.Hidden {
+				visibleConnectors = append(visibleConnectors, conn)
+			}
+		}
+
+		// If only one visible connector and not forcing login page
+		if len(visibleConnectors) == 1 && !s.alwaysShowLogin {
+			connURL.Path = s.absPath("/auth", url.PathEscape(visibleConnectors[0].ID))
+			http.Redirect(w, r, connURL.String(), http.StatusFound)
+		}
 	}
 
 	connectorInfos := make([]connectorInfo, len(connectors))
 	for index, conn := range connectors {
 		connURL.Path = s.absPath("/auth", url.PathEscape(conn.ID))
 		connectorInfos[index] = connectorInfo{
-			ID:   conn.ID,
-			Name: conn.Name,
-			Type: conn.Type,
-			URL:  template.URL(connURL.String()),
+			ID:     conn.ID,
+			Name:   conn.Name,
+			Type:   conn.Type,
+			URL:    template.URL(connURL.String()),
+			Hidden: conn.Hidden,
 		}
 	}
 

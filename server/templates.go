@@ -249,10 +249,11 @@ var scopeDescriptions = map[string]string{
 }
 
 type connectorInfo struct {
-	ID   string
-	Name string
-	URL  template.URL
-	Type string
+	ID     string
+	Name   string
+	URL    template.URL
+	Type   string
+	Hidden bool
 }
 
 type byName []connectorInfo

@@ -120,6 +120,8 @@ type Config struct {
 	PrometheusRegistry *prometheus.Registry
 
 	HealthChecker gosundheit.Health
+
+	HiddenConnectors []string
 }
 
 // WebConfig holds the server's frontend templates and asset configuration.
@@ -197,6 +199,8 @@ type Server struct {
 	refreshTokenPolicy *RefreshTokenPolicy
 
 	logger *slog.Logger
+
+	hiddenConnectors []string
 }
 
 // NewServer constructs a server from the provided config.
@@ -313,6 +317,7 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		templates:              tmpls,
 		passwordConnector:      c.PasswordConnector,
 		logger:                 c.Logger,
+		hiddenConnectors:       c.HiddenConnectors,
 	}
 
 	// Retrieves connector objects in backend storage. This list includes the static connectors

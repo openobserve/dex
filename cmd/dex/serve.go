@@ -302,6 +302,7 @@ func runServe(options serveOptions) error {
 		Now:                    now,
 		PrometheusRegistry:     prometheusRegistry,
 		HealthChecker:          healthChecker,
+		HiddenConnectors:       c.HiddenConnectors,
 	}
 	if c.Expiry.SigningKeys != "" {
 		signingKeys, err := time.ParseDuration(c.Expiry.SigningKeys)
