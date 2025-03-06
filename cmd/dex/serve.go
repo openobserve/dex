@@ -306,6 +306,7 @@ func runServe(options serveOptions) error {
 		Now:                        now,
 		PrometheusRegistry:         prometheusRegistry,
 		HealthChecker:              healthChecker,
+		HiddenConnectors:           c.HiddenConnectors,
 		ContinueOnConnectorFailure: featureflags.ContinueOnConnectorFailure.Enabled(),
 	}
 	if c.Expiry.SigningKeys != "" {

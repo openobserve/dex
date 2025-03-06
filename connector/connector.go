@@ -103,3 +103,8 @@ type RefreshConnector interface {
 type TokenIdentityConnector interface {
 	TokenIdentity(ctx context.Context, subjectTokenType, subjectToken string) (Identity, error)
 }
+
+// to support token introspection.
+type TokenIntrospectionConnector interface {
+	IntrospectToken(ctx context.Context, tokenType, token string) (Identity, error)
+}

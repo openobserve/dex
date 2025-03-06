@@ -20,6 +20,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/gorilla/mux"
+	"golang.org/x/exp/slices"
 
 	"github.com/dexidp/dex/connector"
 	"github.com/dexidp/dex/server/internal"
@@ -155,6 +156,12 @@ func (s *Server) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i, conn := range connectors {
+		if slices.Contains(s.hiddenConnectors, conn.ID) {
+			connectors[i].Hidden = true
+		}
+	}
+
 	// We don't need connector_id any more
 	r.Form.Del("connector_id")
 
@@ -179,16 +186,31 @@ func (s *Server) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 	if len(connectors) == 1 && !s.alwaysShowLogin {
 		connURL.Path = s.absPath("/auth", url.PathEscape(connectors[0].ID))
 		http.Redirect(w, r, connURL.String(), http.StatusFound)
+	} else {
+		// Get visible connectors (those with hidden=false)
+		visibleConnectors := make([]storage.Connector, 0)
+		for _, conn := range connectors {
+			if !conn.Hidden {
+				visibleConnectors = append(visibleConnectors, conn)
+			}
+		}
+
+		// If only one visible connector and not forcing login page
+		if len(visibleConnectors) == 1 && !s.alwaysShowLogin {
+			connURL.Path = s.absPath("/auth", url.PathEscape(visibleConnectors[0].ID))
+			http.Redirect(w, r, connURL.String(), http.StatusFound)
+		}
 	}
 
 	connectorInfos := make([]connectorInfo, len(connectors))
 	for index, conn := range connectors {
 		connURL.Path = s.absPath("/auth", url.PathEscape(conn.ID))
 		connectorInfos[index] = connectorInfo{
-			ID:   conn.ID,
-			Name: conn.Name,
-			Type: conn.Type,
-			URL:  template.URL(connURL.String()),
+			ID:     conn.ID,
+			Name:   conn.Name,
+			Type:   conn.Type,
+			URL:    template.URL(connURL.String()),
+			Hidden: conn.Hidden,
 		}
 	}
 
@@ -1392,7 +1414,32 @@ func (s *Server) handleTokenExchange(w http.ResponseWriter, r *http.Request, cli
 		s.tokenErrHelper(w, errInvalidRequest, "Requested connector does not exist.", http.StatusBadRequest)
 		return
 	}
-	identity, err := teConn.TokenIdentity(ctx, subjectTokenType, subjectToken)
+
+	// Check if connector also implements introspection capability
+	introspectionConn, supportsIntrospection := conn.Connector.(connector.TokenIntrospectionConnector)
+
+	headerFound := false
+	for name, values := range r.Header {
+		if strings.EqualFold(name, "X-Use-Introspection") {
+			headerFound = slices.Contains(values, "true")
+			break
+		}
+	}
+
+	// Condition for when to use introspection instead of standard verification
+	// Improved conditions for when to use introspection
+	useIntrospection := supportsIntrospection && headerFound
+
+	var identity connector.Identity
+
+	if useIntrospection {
+		// Use introspection connector
+		identity, err = introspectionConn.IntrospectToken(ctx, subjectTokenType, subjectToken)
+	} else {
+		// Use standard token verification
+		identity, err = teConn.TokenIdentity(ctx, subjectTokenType, subjectToken)
+	}
+
 	if err != nil {
 		s.logger.ErrorContext(r.Context(), "failed to verify subject token", "err", err)
 		s.tokenErrHelper(w, errAccessDenied, "", http.StatusUnauthorized)

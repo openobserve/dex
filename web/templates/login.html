@@ -4,6 +4,7 @@
   <h2 class="theme-heading">Log in to {{ issuer }} </h2>
   <div>
     {{ range $c := .Connectors }}
+      {{ if not $c.Hidden }}
       <div class="theme-form-row">
         <a href="{{ $c.URL }}" target="_self">
           <button class="dex-btn theme-btn-provider">
@@ -13,6 +14,7 @@
         </a>
       </div>
     {{ end }}
+  {{ end }}  
   </div>
 </div>
 
