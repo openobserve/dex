@@ -36,6 +36,7 @@ import (
 	"github.com/dexidp/dex/connector/github"
 	"github.com/dexidp/dex/connector/gitlab"
 	"github.com/dexidp/dex/connector/google"
+	"github.com/dexidp/dex/connector/introspection"
 	"github.com/dexidp/dex/connector/keystone"
 	"github.com/dexidp/dex/connector/ldap"
 	"github.com/dexidp/dex/connector/linkedin"
@@ -125,6 +126,8 @@ type Config struct {
 
 	HealthChecker gosundheit.Health
 
+	HiddenConnectors []string
+
 	// If enabled, the server will continue starting even if some connectors fail to initialize.
 	// This allows the server to operate with a subset of connectors if some are misconfigured.
 	ContinueOnConnectorFailure bool
@@ -208,6 +211,8 @@ type Server struct {
 	refreshTokenPolicy *RefreshTokenPolicy
 
 	logger *slog.Logger
+
+	hiddenConnectors []string
 }
 
 // NewServer constructs a server from the provided config.
@@ -325,6 +330,7 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		passwordConnector:      c.PasswordConnector,
 		registrationToken:      c.RegistrationToken,
 		logger:                 c.Logger,
+		hiddenConnectors:       c.HiddenConnectors,
 	}
 
 	// Retrieves connector objects in backend storage. This list includes the static connectors
@@ -689,6 +695,7 @@ var ConnectorsConfig = map[string]func() ConnectorConfig{
 	"atlassian-crowd": func() ConnectorConfig { return new(atlassiancrowd.Config) },
 	// Keep around for backwards compatibility.
 	"samlExperimental": func() ConnectorConfig { return new(saml.Config) },
+	"introspection":    func() ConnectorConfig { return new(introspection.Config) },
 }
 
 // openConnector will parse the connector config and open the connector.
