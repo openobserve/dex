@@ -24,6 +24,7 @@ import (
 	"github.com/dexidp/dex/connector"
 	"github.com/dexidp/dex/server/internal"
 	"github.com/dexidp/dex/storage"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -1385,7 +1386,32 @@ func (s *Server) handleTokenExchange(w http.ResponseWriter, r *http.Request, cli
 		s.tokenErrHelper(w, errInvalidRequest, "Requested connector does not exist.", http.StatusBadRequest)
 		return
 	}
-	identity, err := teConn.TokenIdentity(ctx, subjectTokenType, subjectToken)
+
+	// Check if connector also implements introspection capability
+	introspectionConn, supportsIntrospection := conn.Connector.(connector.TokenIntrospectionConnector)
+
+	headerFound := false
+	for name, values := range r.Header {
+		if strings.EqualFold(name, "X-Use-Introspection") {
+			headerFound = slices.Contains(values, "true")
+			break
+		}
+	}
+
+	// Condition for when to use introspection instead of standard verification
+	// Improved conditions for when to use introspection
+	useIntrospection := supportsIntrospection && headerFound
+
+	var identity connector.Identity
+
+	if useIntrospection {
+		// Use introspection connector
+		identity, err = introspectionConn.IntrospectToken(ctx, subjectTokenType, subjectToken)
+	} else {
+		// Use standard token verification
+		identity, err = teConn.TokenIdentity(ctx, subjectTokenType, subjectToken)
+	}
+
 	if err != nil {
 		s.logger.ErrorContext(r.Context(), "failed to verify subject token", "err", err)
 		s.tokenErrHelper(w, errAccessDenied, "", http.StatusUnauthorized)
