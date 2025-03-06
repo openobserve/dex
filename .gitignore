@@ -5,3 +5,7 @@
 /docker-compose.override.yaml
 /var/
 /vendor/
+/cmd/dex/dex.db
+/.vscode/launch.json
+/cmd/dex/__debug_bin*
+/examples/google/config-google.yaml
