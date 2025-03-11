@@ -6,11 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/dexidp/dex/connector"
 	groups_pkg "github.com/dexidp/dex/pkg/groups"
@@ -168,6 +170,9 @@ func (c *introspectionConnector) TokenIdentity(ctx context.Context, subjectToken
 	form := url.Values{}
 	form.Add("token", subjectToken)
 	form.Add("token_type_hint", subjectTokenType)
+	if c.clientID != "" {
+		form.Add("client_id", c.clientID)
+	}
 
 	// Create the request
 	req, err := http.NewRequestWithContext(ctx, "POST", c.introspectionURL,
@@ -213,28 +218,79 @@ func (c *introspectionConnector) TokenIdentity(ctx context.Context, subjectToken
 		return connector.Identity{}, errors.New("introspection: token is not active")
 	}
 
-	// Now extract the claims from the response
 	var claims map[string]interface{}
-	if err := json.NewDecoder(strings.NewReader(resp.Header.Get("X-Debug"))).Decode(&claims); err != nil {
-		// If we can't decode from header, try to use the response body directly
+
+	// Check if we have the X-Debug header
+	debugHeader := resp.Header.Get("X-Debug")
+	if debugHeader != "" {
+		// Try to decode from header if present
+		if err := json.NewDecoder(strings.NewReader(debugHeader)).Decode(&claims); err != nil {
+			log.Printf("failed to decode X-Debug header: %v", err)
+			claims = make(map[string]interface{})
+		}
+	} else {
+		// No X-Debug header, initialize empty map
 		claims = make(map[string]interface{})
-		for k, v := range introspectionResp.Extra {
-			claims[k] = v
+	}
+
+	// If the introspection response has data, use it
+	if len(claims) == 0 {
+		// Either use the Extra field if available
+		if introspectionResp.Extra != nil {
+			for k, v := range introspectionResp.Extra {
+				claims[k] = v
+			}
+		} else {
+			if claims == nil {
+				claims = make(map[string]interface{})
+			}
 		}
 	}
 
-	// Get user ID (subject)
+	// Check token expiration
+	if expValue, ok := claims["exp"]; ok {
+		var expTime int64
+		switch v := expValue.(type) {
+		case float64:
+			expTime = int64(v)
+		case float32:
+			expTime = int64(v)
+		case int64:
+			expTime = v
+		case int:
+			expTime = int64(v)
+		case json.Number:
+			expTime, _ = v.Int64()
+		default:
+			return connector.Identity{}, fmt.Errorf("introspection: invalid exp claim format")
+		}
+
+		if time.Now().Unix() > expTime {
+			return connector.Identity{}, fmt.Errorf("introspection: token expired")
+		}
+	}
+
+	// Get user ID (subject) - check both "sub" and "upn" fields
 	subject, found := claims[c.userIDKey].(string)
 	if !found {
-		return connector.Identity{}, fmt.Errorf("introspection: missing \"%s\" claim", c.userIDKey)
+		// Check if upn is available as fallback for subject
+		subject, found = claims["upn"].(string)
+		if !found {
+			return connector.Identity{}, fmt.Errorf("introspection: missing \"%s\" claim", c.userIDKey)
+		}
 	}
 
-	// Get username
+	// Get username - also check "upn" as fallback
 	name, found := claims[c.userNameKey].(string)
 	if !found {
-		return connector.Identity{}, fmt.Errorf("introspection: missing \"%s\" claim", c.userNameKey)
+		// Check if upn is available as fallback for username
+		name, found = claims["upn"].(string)
+		if !found {
+			return connector.Identity{}, fmt.Errorf("introspection: missing \"%s\" claim", c.userNameKey)
+		}
 	}
 
+	// Rest of the code remains the same
 	// Get preferred username
 	preferredUsername, found := claims["preferred_username"].(string)
 	if (!found || c.overrideClaimMapping) && c.preferredUsernameKey != "" {
