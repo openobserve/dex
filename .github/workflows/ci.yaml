@@ -76,9 +76,6 @@ jobs:
       - name: Download tool dependencies
         run: make deps
 
-      # Ensure that generated files were committed.
-      # It can help us determine, that the code is in the intermediate state, which should not be tested.
-      # Thus, heavy jobs like creating a kind cluster and testing / linting will be skipped.
       - name: Verify
         run: make verify
 
@@ -156,8 +153,8 @@ jobs:
     with:
       publish: ${{ github.event_name == 'push' }}
     secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
     permissions:
       attestations: write
       contents: read
