@@ -166,9 +166,9 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
 
-      - name: Upload Image as Artifact (Only for PRs)
+      - name: Upload Image as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: "OCI-Image-${{ matrix.variant }}-${{ env.PLATFORM_TAG }}"
           path: image.tar
-        if: github.event_name == 'pull_request'
+      
