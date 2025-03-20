@@ -3,11 +3,20 @@ name: Artifacts
 on:
   workflow_call:
     inputs:
+      branch:
+        description: "Branch to build image from"
+        required: false
+        type: string
       publish:
         description: Publish artifacts to the artifact store
         default: false
         required: false
         type: boolean
+      release_name:
+        description: "A overridden tag name for the release"
+        required: false
+        type: string
+
     secrets:
       AWS_ROLE_ARN:
         required: true
@@ -55,6 +64,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || 'master' }}  # Ensure input branch is properly referenced
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -82,18 +93,27 @@ jobs:
         id: platform-name
         run: echo "PLATFORM_TAG=${{ matrix.platform }}" | sed 's/\//-/g' >> $GITHUB_ENV
 
-      - name: Extract Short SHA for Unique Tagging
-        id: short-sha
-        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+      # - name: Extract Short SHA for Unique Tagging
+      #   id: short-sha
+      #   run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      - name: Determine Image Tag
+        id: image-tag
+        run: |
+          if [[ -n "${{ inputs.release_name }}" ]]; then
+            echo "IMAGE_TAG=${{ inputs.release_name }}" >> $GITHUB_ENV
+          else
+            echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          fi
+
 
       - name: Determine build output
         uses: haya14busa/action-cond@v1
         id: build-output
         with:
-          cond: ${{ github.event_name == 'push' }}
+          cond: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
           if_true: type=image,push=true
           if_false: type=oci,dest=image.tar
-
+    
       - name: Build Image
         id: build
         uses: docker/build-push-action@v6
@@ -101,10 +121,12 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           tags: |
-            ${{ steps.image-name.outputs.value }}:${{ matrix.variant }}-${{ env.PLATFORM_TAG }}-${{ env.SHORT_SHA }}
-            ${{ steps.image-name.outputs.value }}:${{ matrix.variant }}-${{ env.PLATFORM_TAG }}-latest
+            ${{ steps.image-name.outputs.value }}:${{ matrix.variant }}-${{ env.PLATFORM_TAG }}-${{ env.IMAGE_TAG }}
+         #  ${{ steps.image-name.outputs.value }}:${{ matrix.variant }}-${{ env.PLATFORM_TAG }}-${{ env.SHORT_SHA }}
+         #  ${{ steps.image-name.outputs.value }}:${{ matrix.variant }}-${{ env.PLATFORM_TAG }}-latest
           build-args: |
             BASE_IMAGE=${{ matrix.variant }}
+            GIT_COMMIT_SHA=${{ env.SHORT_SHA }}  # Explicitly pass SHA
           outputs: ${{ steps.build-output.outputs.value }}
           provenance: false  # Prevents unnecessary provenance attestations
 
@@ -166,9 +188,10 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
 
-      - name: Upload Image as Artifact
+      - name: Upload Image as Artifact (Only for PRs)
         uses: actions/upload-artifact@v4
         with:
           name: "OCI-Image-${{ matrix.variant }}-${{ env.PLATFORM_TAG }}"
           path: image.tar
-      
+        if: github.event_name == 'pull_request'
+        
