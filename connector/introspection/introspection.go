@@ -3,9 +3,11 @@ package introspection
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"net/http"
@@ -170,9 +172,17 @@ func (c *introspectionConnector) TokenIdentity(ctx context.Context, subjectToken
 	form := url.Values{}
 	form.Add("token", subjectToken)
 	form.Add("token_type_hint", subjectTokenType)
-	if c.clientID != "" {
-		form.Add("client_id", c.clientID)
+
+	parsedToken, err := parseJWT(subjectToken)
+	if err != nil {
+		return connector.Identity{}, fmt.Errorf("introspection: failed to parse token: %v", err)
 	}
+
+	if parsedToken.ClientID == "" {
+		return connector.Identity{}, fmt.Errorf("introspection: missing client_id in jwt")
+	}
+
+	form.Add("client_id", parsedToken.ClientID)
 
 	// Create the request
 	req, err := http.NewRequestWithContext(ctx, "POST", c.introspectionURL,
@@ -201,54 +211,29 @@ func (c *introspectionConnector) TokenIdentity(ctx context.Context, subjectToken
 		return connector.Identity{}, fmt.Errorf("introspection: endpoint returned status %d", resp.StatusCode)
 	}
 
-	// Parse the response
-	var introspectionResp struct {
-		Active bool                   `json:"active"`
-		Extra  map[string]interface{} `json:"-"`
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return connector.Identity{}, fmt.Errorf("introspection: failed to read response body: %v", err)
 	}
 
+	log.Printf("introspection: response body: %s", string(respBody))
+
+	respIntro := make(map[string]any)
+
 	// Use a decoder that captures unknown fields
-	decoder := json.NewDecoder(resp.Body)
-	if err := decoder.Decode(&introspectionResp); err != nil {
+	if err := json.Unmarshal(respBody, &respIntro); err != nil {
 		return connector.Identity{}, fmt.Errorf("introspection: failed to decode response: %v", err)
 	}
 
+	log.Printf("introspection: response body after decode: %v", respIntro)
+
 	// Check if token is active
-	if !introspectionResp.Active {
+	if active, found := respIntro["active"].(bool); !found || !active {
 		return connector.Identity{}, errors.New("introspection: token is not active")
 	}
 
-	var claims map[string]interface{}
-
-	// Check if we have the X-Debug header
-	debugHeader := resp.Header.Get("X-Debug")
-	if debugHeader != "" {
-		// Try to decode from header if present
-		if err := json.NewDecoder(strings.NewReader(debugHeader)).Decode(&claims); err != nil {
-			log.Printf("failed to decode X-Debug header: %v", err)
-			claims = make(map[string]interface{})
-		}
-	} else {
-		// No X-Debug header, initialize empty map
-		claims = make(map[string]interface{})
-	}
-
-	// If the introspection response has data, use it
-	if len(claims) == 0 {
-		// Either use the Extra field if available
-		if introspectionResp.Extra != nil {
-			for k, v := range introspectionResp.Extra {
-				claims[k] = v
-			}
-		} else {
-			if claims == nil {
-				claims = make(map[string]interface{})
-			}
-		}
-	}
-
 	// Check token expiration
-	if expValue, ok := claims["exp"]; ok {
+	if expValue, ok := respIntro["exp"]; ok {
 		var expTime int64
 		switch v := expValue.(type) {
 		case float64:
@@ -271,20 +256,20 @@ func (c *introspectionConnector) TokenIdentity(ctx context.Context, subjectToken
 	}
 
 	// Get user ID (subject) - check both "sub" and "upn" fields
-	subject, found := claims[c.userIDKey].(string)
+	subject, found := respIntro[c.userIDKey].(string)
 	if !found {
 		// Check if upn is available as fallback for subject
-		subject, found = claims["upn"].(string)
+		subject, found = respIntro["upn"].(string)
 		if !found {
 			return connector.Identity{}, fmt.Errorf("introspection: missing \"%s\" claim", c.userIDKey)
 		}
 	}
 
 	// Get username - also check "upn" as fallback
-	name, found := claims[c.userNameKey].(string)
+	name, found := respIntro[c.userNameKey].(string)
 	if !found {
 		// Check if upn is available as fallback for username
-		name, found = claims["upn"].(string)
+		name, found = respIntro["upn"].(string)
 		if !found {
 			return connector.Identity{}, fmt.Errorf("introspection: missing \"%s\" claim", c.userNameKey)
 		}
@@ -292,9 +277,9 @@ func (c *introspectionConnector) TokenIdentity(ctx context.Context, subjectToken
 
 	// Rest of the code remains the same
 	// Get preferred username
-	preferredUsername, found := claims["preferred_username"].(string)
+	preferredUsername, found := respIntro["preferred_username"].(string)
 	if (!found || c.overrideClaimMapping) && c.preferredUsernameKey != "" {
-		preferredUsername, _ = claims[c.preferredUsernameKey].(string)
+		preferredUsername, _ = respIntro[c.preferredUsernameKey].(string)
 	}
 
 	// Get email
@@ -302,14 +287,14 @@ func (c *introspectionConnector) TokenIdentity(ctx context.Context, subjectToken
 	if c.emailKey != "" {
 		emailKey = c.emailKey
 	}
-	email, found := claims[emailKey].(string)
+	email, found := respIntro[emailKey].(string)
 	if !found {
 		// Email is optional in introspection
 		email = ""
 	}
 
 	// Get email verification status
-	emailVerified, found := claims["email_verified"].(bool)
+	emailVerified, found := respIntro["email_verified"].(bool)
 	if !found {
 		if c.insecureSkipEmailVerified {
 			emailVerified = true
@@ -327,7 +312,7 @@ func (c *introspectionConnector) TokenIdentity(ctx context.Context, subjectToken
 		}
 
 		// Try to get groups as array
-		if vs, found := claims[groupsKey].([]interface{}); found {
+		if vs, found := respIntro[groupsKey].([]interface{}); found {
 			for _, v := range vs {
 				if s, ok := v.(string); ok {
 					if c.groupsFilter != nil && !c.groupsFilter.MatchString(s) {
@@ -346,7 +331,7 @@ func (c *introspectionConnector) TokenIdentity(ctx context.Context, subjectToken
 		}
 
 		// Try to get groups as a string (single group case)
-		if g, ok := claims[groupsKey].(string); ok {
+		if g, ok := respIntro[groupsKey].(string); ok {
 			groups = []string{g}
 		}
 
@@ -367,7 +352,7 @@ func (c *introspectionConnector) TokenIdentity(ctx context.Context, subjectToken
 			config.Prefix,
 		}
 		for _, claimName := range config.Claims {
-			claimValue, ok := claims[claimName].(string)
+			claimValue, ok := respIntro[claimName].(string)
 			if !ok {
 				continue
 			}
@@ -396,6 +381,35 @@ func (c *introspectionConnector) TokenIdentity(ctx context.Context, subjectToken
 	}
 
 	return identity, nil
+}
+
+func parseJWT(p string) (*jwtToken, error) {
+	parts := strings.Split(p, ".")
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("oidc: malformed jwt, expected 3 parts got %d", len(parts))
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, fmt.Errorf("oidc: malformed jwt payload: %v", err)
+	}
+
+	var token jwtToken
+	if err := json.Unmarshal(payload, &token); err != nil {
+		return nil, fmt.Errorf("oidc: failed to unmarshal jwt payload: %v", err)
+	}
+
+	return &token, nil
+}
+
+type jwtToken struct {
+	Scope                string `json:"scope"`
+	AuthorizationDetails []any  `json:"authorization_details"`
+	ClientID             string `json:"client_id"`
+	Iss                  string `json:"iss"`
+	Jti                  string `json:"jti"`
+	Aud                  string `json:"aud"`
+	Upn                  string `json:"upn"`
+	Exp                  int    `json:"exp"`
 }
 
 // TokenIntrospectionConnector represents a connector that can validate tokens using introspection
