@@ -23,7 +23,7 @@ ARG GOPROXY
 
 ENV CGO_ENABLED=1
 
-COPY go.mod go.sum o2_web ./
+COPY go.mod go.sum o2web ./
 COPY api/v2/go.mod api/v2/go.sum ./api/v2/
 RUN go mod download
 
