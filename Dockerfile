@@ -23,7 +23,7 @@ ARG GOPROXY
 
 ENV CGO_ENABLED=1
 
-COPY go.mod go.sum o2web ./
+COPY go.mod go.sum o2web customweb ./
 COPY api/v2/go.mod api/v2/go.sum ./api/v2/
 RUN go mod download
 
@@ -72,6 +72,8 @@ COPY --from=stager --chown=1001:1001 /etc/dex /etc/dex
 # Copy module files for CVE scanning / dependency analysis.
 COPY --from=builder /usr/local/src/dex/go.mod /usr/local/src/dex/go.sum /usr/local/src/dex/
 COPY --from=builder /usr/local/src/dex/api/v2/go.mod /usr/local/src/dex/api/v2/go.sum /usr/local/src/dex/api/v2/
+COPY --from=builder /usr/local/src/dex/o2web /dex/o2web
+COPY --from=builder /usr/local/src/dex/customweb /dex/customweb
 
 COPY --from=builder /go/bin/dex /usr/local/bin/dex
 COPY --from=builder /go/bin/docker-entrypoint /usr/local/bin/docker-entrypoint
