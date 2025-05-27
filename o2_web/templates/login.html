@@ -18,7 +18,7 @@
     <div class="openobserve-logo">
       <img src="{{ url .ReqPath "/theme/openobserve_logo.svg" }}" alt="OpenObserve Logo" />
     </div>
-    <div class="theme-heading">Login to OpenObserve to start your free trial </div>
+    <div class="theme-heading">Login to Open Observe </div>
     <div id="login-buttons">
       {{ range $c := .Connectors }}
         <div class="theme-form-row">
@@ -42,11 +42,8 @@
     <div style="display: flex; gap:12px; align-items: center; flex-direction: column;">
       <div style="display: flex; gap: 12px; align-items: center;">
         <a class="dex-link" href="" target="_blank" style="text-decoration: none; color: #606Bda; font-size: 16px; font-weight: 500;">Terms of Use 
-
-          <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" />
         </a>
         <a class="dex-link" href="" target="_blank" style="text-decoration: none; color: #606Bda; font-size: 16px; font-weight: 500;">Privacy Policy 
-          <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" />
         </a>
       </div>
     <div style="color: #767676; font-size: 14px; font-weight: 400;">
@@ -71,6 +68,8 @@
     height: calc(100vh);
     display: flex;
     flex-direction: row;
+    font-family: 'Nunito Sans', sans-serif;
+
   }
 
   .dex-login-banner{

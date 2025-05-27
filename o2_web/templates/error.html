@@ -1,8 +1,126 @@
-{{ template "header.html" . }}
 
-<div class="theme-panel">
-  <h2 class="theme-heading">{{ .ErrType }}</h2>
-  <p>{{ .ErrMsg }}</p>
+
+{{ template "header.html" . }}
+<div  class="dex-login-container">
+
+<div class="dex-login-banner" >
+  <div style="display: flex; justify-content: start; align-items: end; height: 100%;">
+    <div style="margin-bottom: 20px; margin-left: 20px;">
+     <span style=" margin-bottom: 12px;"> <img height="36px" src="{{ url .ReqPath "/theme/openobserve_logo_light.svg" }}" alt="OpenObserve Logo" />
+      </span>
+      <div style="font-size: 24px; color: white; font-weight: 600;">
+        Try OpenObserve today for more efficient and performant observability
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="login-form-section">
+  <div class="theme-panel">
+    <div class="openobserve-logo">
+      <img src="{{ url .ReqPath "/theme/openobserve_logo.svg" }}" alt="OpenObserve Logo" />
+    </div>
+    <div class="theme-heading">{{ .ErrType }}</div>
+    <p class="theme-error-msg">{{ .ErrMsg }}</p>
+  </div>
+  <div style="height: 100px;">
+    <div style="display: flex; gap:12px; align-items: center; flex-direction: column;">
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <a class="dex-link" href="" target="_blank" style="text-decoration: none; color: #606Bda; font-size: 16px; font-weight: 500;">Terms of Use 
+        </a>
+        <a class="dex-link" href="" target="_blank" style="text-decoration: none; color: #606Bda; font-size: 16px; font-weight: 500;">Privacy Policy 
+        </a>
+      </div>
+    <div style="color: #767676; font-size: 14px; font-weight: 400;">
+      &copy; OpenObserve <span id="year"></span>
+    </div>
+  </div>
+</div>
+
+</div>
 </div>
 
 {{ template "footer.html" . }}
+
+
+<script>
+  const year = new Date().getFullYear();
+  document.getElementById('year').innerHTML = year;
+</script>
+
+<style>
+  .dex-login-container{
+    height: calc(100vh);
+    display: flex;
+    flex-direction: row;
+    font-family: 'Nunito Sans', sans-serif;
+
+
+  }
+
+  .dex-login-banner{
+    display: flex;
+    height: calc(100vh);
+    width: 40%;
+  }
+
+  .login-form-section{
+    background-color: white;
+    height: 100%;
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .theme-panel{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    min-width: 400px;
+    max-width: calc(100% - 450px);
+  }
+  .theme-heading{
+    color: #525252;
+    font-weight: 500;
+    font-size: 32px;
+    line-height: 40px;
+    text-align: center;
+  }
+  .dex-btn-text{
+    color: #828282;
+  }
+  .dex-link{
+    display: flex;
+    align-items: center;
+  }
+  .theme-error-msg{
+    color: #344054;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .dex-login-container{
+      height: calc(100vh - 60px);
+    }
+    .login-form-section{
+      width: 100%;
+    }
+    .theme-panel{
+      max-width: 100%;
+    }
+    .dex-login-banner{
+      display: none;
+    }
+    .theme-btn-provider-link{
+      width: 100%;
+    }
+  }
+</style>
+
+
+
