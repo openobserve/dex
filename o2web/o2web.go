@@ -1,4 +1,4 @@
-package o2_web
+package o2web
 
 import (
 	"embed"
