@@ -2,23 +2,22 @@
 
 {{ template "header.html" . }}
 <div  class="dex-login-container">
-
-<div class="dex-login-banner" >
-  <div style="display: flex; justify-content: start; align-items: end; height: 100%;">
-    <div style="margin-bottom: 20px; margin-left: 20px;">
-     <span style=" margin-bottom: 12px;"> <img height="36px" src="{{ url .ReqPath "/theme/openobserve_logo_light.svg" }}" alt="OpenObserve Logo" />
-      </span>
-      <div style="font-size: 24px; color: white; font-weight: 600;">
-        Try OpenObserve today for more efficient and performant observability
+  <div class="dex-login-banner" >
+    <div style="display: flex; justify-content: start; align-items: end; height: 100%;">
+      <div style="margin-bottom: 34px; margin-left: 32px;">
+       <span style=" margin-bottom: 12px;"> <img height="40px" src="{{ url .ReqPath "/theme/openobserve_logo_light.svg" }}" alt="OpenObserve Logo" />
+        </span>
+        <div style="font-size: 24px; color: white; font-weight: 600;">
+          Try OpenObserve today for more efficient and performant observability.
+        </div>
       </div>
     </div>
   </div>
-</div>
 
 <div class="login-form-section">
   <div class="theme-panel">
     <div class="openobserve-logo">
-      <img src="{{ url .ReqPath "/theme/openobserve_logo.svg" }}" alt="OpenObserve Logo" />
+      <img height="64px"  src="{{ url .ReqPath "/theme/openobserve_logo.svg" }}" alt="OpenObserve Logo" />
     </div>
     <div class="theme-heading">{{ .ErrType }}</div>
     <p class="theme-error-msg">{{ .ErrMsg }}</p>
@@ -59,7 +58,6 @@
   }
 
   .dex-login-banner{
-    display: flex;
     height: calc(100vh);
     width: 40%;
   }
@@ -84,7 +82,7 @@
   .theme-heading{
     color: #525252;
     font-weight: 500;
-    font-size: 32px;
+    font-size: 28px;
     line-height: 40px;
     text-align: center;
   }
