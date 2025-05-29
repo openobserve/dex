@@ -3,27 +3,27 @@
 
 <div class="dex-login-banner" >
   <div style="display: flex; justify-content: start; align-items: end; height: 100%;">
-    <div style="margin-bottom: 20px; margin-left: 20px;">
-     <span style=" margin-bottom: 12px;"> <img height="36px" src="{{ url .ReqPath "/theme/openobserve_logo_light.svg" }}" alt="OpenObserve Logo" />
+    <div style="margin-bottom: 34px; margin-left: 32px;">
+     <span style=" margin-bottom: 12px;"> <img height="40px" src="{{ url .ReqPath "/theme/openobserve_logo_light.svg" }}" alt="OpenObserve Logo" />
       </span>
       <div style="font-size: 24px; color: white; font-weight: 600;">
-        Try OpenObserve today for more efficient and performant observability
+        Try OpenObserve today for more efficient and performant observability.
       </div>
     </div>
   </div>
 </div>
 
 <div class="login-form-section">
-  <div class="theme-panel" style="width: 100%;">
+  <div class="theme-panel" style="width: 350px;">
     <div class="openobserve-logo">
-      <img src="{{ url .ReqPath "/theme/openobserve_logo.svg" }}" alt="OpenObserve Logo" />
+      <img height="64px"  src="{{ url .ReqPath "/theme/openobserve_logo.svg" }}" alt="OpenObserve Logo" />
     </div>
-    <div class="theme-heading">Login to Open Observe </div>
+    <div class="theme-heading">Login to OpenObserve </div>
     <div id="login-buttons">
       {{ range $c := .Connectors }}
         <div class="theme-form-row">
 
-            <a class="theme-btn-provider-link" style="width: 400px; border: 1px solid #e8e8e8; display: flex; justify-content: center; align-items: center; gap: 10px; text-decoration: none;" href="{{ $c.URL }}" target="_self">
+            <a class="theme-btn-provider-link" style="width: 325px; border: 1px solid #e8e8e8; display: flex; justify-content: center; align-items: center; gap: 10px; text-decoration: none;" href="{{ $c.URL }}" target="_self">
             
               <button class="dex-btn theme-btn-provider login-btn">
                 <span class="dex-btn-icon dex-btn-icon--{{ $c.Type }}"></span>
@@ -98,7 +98,7 @@
   .theme-heading{
     color: #525252;
     font-weight: 500;
-    font-size: 32px;
+    font-size: 28px;
     line-height: 40px;
     text-align: center;
   }
