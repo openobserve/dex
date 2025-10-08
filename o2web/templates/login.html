@@ -64,10 +64,10 @@
     <!-- Footer at bottom of page -->
     <div class="page-footer">
       <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
-        <a class="dex-link" href="{{ "terms_of_use" | extra }}" target="_blank" style="text-decoration: none; color: #606Bda; font-size: 16px; font-weight: 500;">Terms of Use 
+        <a class="dex-link modern-link" href="{{ "terms_of_use" | extra }}" target="_blank">Terms of Use 
           <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" /> 
         </a>
-        <a class="dex-link" href="{{ "privacy_policy" | extra }}" target="_blank" style="text-decoration: none; color: #606Bda; font-size: 16px; font-weight: 500;">Privacy Policy 
+        <a class="dex-link modern-link" href="{{ "privacy_policy" | extra }}" target="_blank">Privacy Policy 
           <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" /> 
         </a>
       </div>
@@ -371,14 +371,28 @@
     filter: brightness(0) invert(1);
     opacity: 0.8;
   }
-  .dex-link{
+  .modern-link {
     display: flex;
     align-items: center;
-    color: #0BA5E9;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    background: linear-gradient(135deg, #0BA5E9 0%, #38BDF8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: all 0.3s ease;
   }
   
-  .dex-link:hover {
-    color: #38bdf8;
+  .modern-link:hover {
+    background: linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .modern-link img {
+    filter: brightness(0) saturate(100%) invert(64%) sepia(88%) saturate(3316%) hue-rotate(169deg) brightness(101%) contrast(101%);
   }
 
   .official-email-note{
@@ -398,7 +412,10 @@
   }
   
   .copyright-text {
-    color: #606Bda;
+    background: linear-gradient(135deg, #0BA5E9 0%, #38BDF8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-size: 14px;
     font-weight: 500;
   }
