@@ -14,26 +14,31 @@
 </div>
 
 <div class="login-form-section">
-  <div class="theme-panel" style="width: 350px;">
-    <div class="openobserve-logo">
+  <div class="login-content-container">
+    <!-- Title above the form -->
+    <div class="page-title">Login to OpenObserve</div>
+    
+    <div class="theme-panel modern-bordered-panel" style="width: 400px;">
+    <div class="openobserve-logo logo-border-cut">
       <img height="64px"  src="{{ url .ReqPath "/theme/openobserve_logo.svg" }}" alt="OpenObserve Logo" />
     </div>
-    <div class="theme-heading">Login to OpenObserve </div>
     <div id="login-buttons">
-      <div class="official-email-note">
+      <div class="official-email-note" >
         Please use your <strong>company email ID</strong> to log in. Personal emails are not supported.
       </div>
       {{ range $c := .Connectors }}
         <div class="theme-form-row">
 
-            <a class="theme-btn-provider-link" style="width: 325px; border: 1px solid #e8e8e8; display: flex; justify-content: center; align-items: center; gap: 10px; text-decoration: none;" href="{{ $c.URL }}" target="_self">
-            
-              <button class="dex-btn theme-btn-provider login-btn">
-                <span class="dex-btn-icon dex-btn-icon--{{ $c.Type }}"></span>
-                <span class="dex-btn-text">Continue with {{ $c.Name }}</span>
+            <a class="theme-btn-provider-link" style="width: 325px; border: 1px solid #e8e8e8; display: flex; justify-content: flex-start; align-items: center; gap: 4px; text-decoration: none; padding: 2px 16px; border-radius: 8px;" href="{{ $c.URL }}" target="_self">
+              <button class="dex-btn theme-btn-provider login-btn" style="background: none; border: none; display: flex; align-items: center; gap: 20px; width: 100%; text-align: left; padding: 0;">
+                <span class="dex-btn-icon dex-btn-icon--{{ $c.Type }}" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;margin-left: 16px;"></span>
+                {{- if eq $c.ID "casdoor" }}
+                <span class="dex-btn-text" style="flex: 1;">Sign In / Sign Up with Email</span>
+                {{- else }}
+                <span class="dex-btn-text" style="flex: 1;">Continue with {{ $c.Name }}</span>
+                {{- end }}
               </button>
-
-          </a>
+            </a>
         </div>
       {{ end }}
     </div>
@@ -41,9 +46,10 @@
   
   
   </div>
-  <div style="height: 100px;">
-    <div style="display: flex; gap:12px; align-items: center; flex-direction: column;">
-      <div style="display: flex; gap: 12px; align-items: center;">
+  
+    <!-- Footer at bottom of page -->
+    <div class="page-footer">
+      <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
         <a class="dex-link" href="{{ "terms_of_use" | extra }}" target="_blank" style="text-decoration: none; color: #606Bda; font-size: 16px; font-weight: 500;">Terms of Use 
           <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" /> 
         </a>
@@ -51,8 +57,9 @@
           <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" /> 
         </a>
       </div>
-    <div style="color: #767676; font-size: 14px; font-weight: 400;">
-      &copy; OpenObserve <span id="year"></span>
+      <div style="color: #767676; font-size: 14px; font-weight: 400;">
+        &copy; OpenObserve <span id="year"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -70,42 +77,102 @@
 
 <style>
   .dex-login-container{
-    height: calc(100vh);
+    min-height: 100vh;
     display: flex;
     flex-direction: row;
     font-family: 'Nunito Sans', sans-serif;
-
   }
 
   .dex-login-banner{
     display: flex;
-    height: calc(100vh);
+    min-height: 100vh;
     width: 40%;
+    flex-shrink: 0;
   }
 
   .login-form-section{
     background-color: white;
-    height: 100%;
+    min-height: 100vh;
     width: 60%;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    padding: 0;
   }
+  
+  .login-content-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    flex: 1;
+  }
+  
   .theme-panel{
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
-    min-width: 400px;
-    max-width: calc(100% - 450px);
+    width: 100%;
+    max-width: 500px;
   }
+  
+  /* Modern bordered panel with logo cut-through effect */
+  .modern-bordered-panel {
+    position: relative;
+    border: 2px solid #000000;
+    border-radius: 16px;
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+    margin-top: 2rem;
+    background: #ffffff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Logo that cuts through the border */
+  .logo-border-cut {
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    padding: 0 1rem;
+    z-index: 10;
+  }
+  
+  .logo-border-cut img {
+    height: clamp(48px, 8vw, 64px);
+    display: block;
+  }
+  
+  /* Page title above the form */
+  .page-title {
+    color: #525252;
+    font-weight: 600;
+    font-size: clamp(24px, 4vw, 32px);
+    line-height: 1.4;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    margin-top: 100px;
+  }
+  
+  /* Footer at bottom of page */
+  .page-footer {
+    text-align: center;
+    padding: 1rem;
+    margin-top: auto;
+    flex-shrink: 0;
+  }
+  
   .theme-heading{
     color: #525252;
     font-weight: 500;
     font-size: 28px;
     line-height: 40px;
     text-align: center;
+    margin-top: 24px;
+    margin-bottom: 32px;
   }
   .dex-btn-text{
     color: #828282;
@@ -118,12 +185,13 @@
   .official-email-note{
     background: #fff3cd; 
     color: #856404; 
-    padding: 10px; 
+    padding: 0.75rem; 
     border: 1px solid #ffeeba; 
     border-radius: 6px; 
-    margin-bottom: 20px; 
+    margin-bottom: 1rem;
+    margin-top: 0.5rem; 
     text-align: center; 
-    font-size: 14px;
+    font-size: clamp(12px, 2.5vw, 14px);
   }
 
   #login-buttons{
@@ -134,19 +202,53 @@
 
   @media (max-width: 768px) {
     .dex-login-container{
-      height: calc(100vh - 60px);
+      flex-direction: column;
+      min-height: 100vh;
     }
-    .login-form-section{
-      width: 100%;
-    }
-    .theme-panel{
-      max-width: 100%;
-    }
+    
     .dex-login-banner{
       display: none;
     }
-    .theme-btn-provider-link{
+    
+    .login-form-section{
       width: 100%;
+      min-height: 100vh;
+    }
+    
+    .login-content-container {
+      padding: 1rem 0.75rem;
+    }
+    
+    .theme-panel{
+      max-width: 100%;
+    }
+    
+    .modern-bordered-panel {
+      margin-top: 1rem;
+      padding: 1.5rem 1rem 1rem 1rem;
+      border-radius: 12px;
+    }
+    
+    .page-title {
+      margin-bottom: 1rem;
+    }
+    
+    .logo-border-cut {
+      top: -24px;
+    }
+    
+    .theme-btn-provider-link{
+      width: 100% !important;
+      max-width: 320px;
+    }
+    
+    .page-footer {
+      padding: 0.75rem;
+    }
+    
+    .page-footer div[style*="display: flex"] {
+      flex-direction: column;
+      gap: 8px !important;
     }
   }
 </style>
