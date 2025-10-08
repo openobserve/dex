@@ -1,17 +1,31 @@
 {{ template "header.html" . }}
-<div  class="dex-login-container">
+<div class="dex-login-container">
+    <div class="bg-container"></div>
+    
 
-<div class="dex-login-banner" >
-  <div style="display: flex; justify-content: start; align-items: end; height: 100%;">
-    <div style="margin-bottom: 34px; margin-left: 32px;">
-     <span style=" margin-bottom: 12px;"> <img height="40px" src="{{ url .ReqPath "/theme/openobserve_logo_light.svg" }}" alt="OpenObserve Logo" />
-      </span>
-      <div style="font-size: 24px; color: white; font-weight: 600;">
-        Try OpenObserve today for more efficient and performant observability.
-      </div>
+    <div class="monitoring-nodes">
+        <div class="node node-1"></div>
+        <div class="node node-2"></div>
+        <div class="node node-3"></div>
+        <div class="node node-4"></div>
+        <div class="node node-5"></div>
+        <div class="node node-6"></div>
     </div>
-  </div>
-</div>
+
+    <div class="metrics-overlay">
+        <div class="metric-line metric-line-1"></div>
+        <div class="metric-line metric-line-2"></div>
+        <div class="metric-line metric-line-3"></div>
+    </div>
+
+    <div class="grid-overlay"></div>
+
+    <div class="gradient-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
 
 <div class="login-form-section">
   <div class="login-content-container">
@@ -20,7 +34,7 @@
     
     <div class="theme-panel modern-bordered-panel" style="width: 400px;">
     <div class="openobserve-logo logo-border-cut">
-      <img height="64px"  src="{{ url .ReqPath "/theme/openobserve_logo.svg" }}" alt="OpenObserve Logo" />
+      <img height="64px"  src="{{ url .ReqPath "/theme/openobserve_logo_1.png" }}" alt="OpenObserve Logo" />
     </div>
     <div id="login-buttons">
       <div class="official-email-note" >
@@ -76,27 +90,188 @@
 </script>
 
 <style>
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
   .dex-login-container{
+    position: relative;
     min-height: 100vh;
+    max-height: 100vh;
     display: flex;
     flex-direction: row;
     font-family: 'Nunito Sans', sans-serif;
+    overflow: hidden;
   }
 
-  .dex-login-banner{
-    display: flex;
-    min-height: 100vh;
-    width: 40%;
-    flex-shrink: 0;
+  .bg-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0a0f1e 0%, #151b2e 25%, #1a2332 50%, #0f1624 75%, #0a0f1e 100%);
+    z-index: 1;
   }
+
+
+  /* Monitoring Nodes/Dots */
+  .monitoring-nodes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+  }
+
+  .node {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #0ea5e9;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.6);
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  .node::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(14, 165, 233, 0.3);
+    border-radius: 50%;
+    animation: ripple 3s ease-out infinite;
+  }
+
+  .node-1 { top: 20%; left: 15%; animation-delay: 0s; }
+  .node-2 { top: 40%; left: 80%; animation-delay: 0.5s; }
+  .node-3 { top: 70%; left: 25%; animation-delay: 1s; }
+  .node-4 { top: 60%; right: 15%; animation-delay: 1.5s; }
+  .node-5 { top: 30%; left: 70%; animation-delay: 2s; }
+  .node-6 { top: 75%; left: 60%; animation-delay: 2.5s; }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+  }
+
+  @keyframes ripple {
+    0% { width: 24px; height: 24px; opacity: 1; }
+    100% { width: 60px; height: 60px; opacity: 0; }
+  }
+
+  /* Metrics Graph Lines */
+  .metrics-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 4;
+    opacity: 0.08;
+  }
+
+  .metric-line {
+    position: absolute;
+    width: 100%;
+    height: 200px;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 40px,
+      rgba(14, 165, 233, 0.1) 40px,
+      rgba(14, 165, 233, 0.1) 41px
+    );
+  }
+
+  .metric-line-1 { top: 20%; }
+  .metric-line-2 { top: 50%; }
+  .metric-line-3 { top: 80%; }
+
+  /* Grid with coordinates feel */
+  .grid-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+    z-index: 5;
+  }
+
+  /* Glowing orbs for depth */
+  .gradient-orbs {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 6;
+    overflow: hidden;
+  }
+
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.3;
+    animation: drift 30s infinite ease-in-out;
+  }
+
+  .orb-1 {
+    width: 600px;
+    height: 600px;
+    top: -200px;
+    left: -200px;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.4) 0%, transparent 70%);
+    animation-delay: 0s;
+  }
+
+  .orb-2 {
+    width: 500px;
+    height: 500px;
+    top: 20%;
+    right: -150px;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%);
+    animation-delay: 10s;
+  }
+
+  .orb-3 {
+    width: 550px;
+    height: 550px;
+    bottom: -200px;
+    left: 30%;
+    background: radial-gradient(circle, rgba(34, 211, 238, 0.25) 0%, transparent 70%);
+    animation-delay: 20s;
+  }
+
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0); }
+    33% { transform: translate(60px, 60px); }
+    66% { transform: translate(-40px, 100px); }
+  }
+
 
   .login-form-section{
-    background-color: white;
-    min-height: 100vh;
-    width: 60%;
+    background-color: transparent;
+    height: 100vh;
+    width: 100%;
     display: flex;
     flex-direction: column;
     padding: 0;
+    position: relative;
+    z-index: 10;
+    overflow-y: auto;
   }
   
   .login-content-container {
@@ -120,14 +295,25 @@
   /* Modern bordered panel with logo cut-through effect */
   .modern-bordered-panel {
     position: relative;
-    border: 2px solid #000000;
+    border: 1px solid rgba(14, 165, 233, 0.2);
     border-radius: 16px;
     padding: 2rem 1.5rem 1.5rem 1.5rem;
     margin-top: 2rem;
-    background: #ffffff;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5), 0 0 1px rgba(14, 165, 233, 0.3);
     width: 100%;
     box-sizing: border-box;
+  }
+  
+  .modern-bordered-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.5), transparent);
   }
   
   /* Logo that cuts through the border */
@@ -136,7 +322,6 @@
     top: -32px;
     left: 50%;
     transform: translateX(-50%);
-    background: #ffffff;
     padding: 0 1rem;
     z-index: 10;
   }
@@ -148,7 +333,7 @@
   
   /* Page title above the form */
   .page-title {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0BA5E9 0%, #38BDF8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -158,6 +343,7 @@
     text-align: center;
     margin-bottom: 1.5rem;
     margin-top: 100px;
+    letter-spacing: -0.5px;
   }
   
   /* Footer at bottom of page */
@@ -178,18 +364,28 @@
     margin-bottom: 32px;
   }
   .dex-btn-text{
-    color: #828282;
+    color: #cbd5e1;
+  }
+  
+  .dex-btn-icon--github {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
   }
   .dex-link{
     display: flex;
     align-items: center;
+    color: #0BA5E9;
+  }
+  
+  .dex-link:hover {
+    color: #38bdf8;
   }
 
   .official-email-note{
-    background: #fff3cd; 
-    color: #856404; 
+    background: rgba(11, 165, 233, 0.1); 
+    color: #0BA5E9; 
     padding: 0.75rem; 
-    border: 1px solid #ffeeba; 
+    border: 1px solid rgba(11, 165, 233, 0.3); 
     border-radius: 6px; 
     margin-bottom: 1rem;
     margin-top: 0.5rem; 
@@ -202,10 +398,7 @@
   }
   
   .copyright-text {
-    background: #767676;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #606Bda;
     font-size: 14px;
     font-weight: 500;
   }
