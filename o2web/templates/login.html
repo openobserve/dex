@@ -57,7 +57,7 @@
           <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" /> 
         </a>
       </div>
-      <div style="color: #767676; font-size: 14px; font-weight: 400;">
+      <div class="copyright-text">
         &copy; OpenObserve <span id="year"></span>
       </div>
     </div>
@@ -148,8 +148,11 @@
   
   /* Page title above the form */
   .page-title {
-    color: #525252;
-    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
     font-size: clamp(24px, 4vw, 32px);
     line-height: 1.4;
     text-align: center;
@@ -198,6 +201,14 @@
     text-align: -webkit-center;
   }
   
+  .copyright-text {
+    background: #767676;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 14px;
+    font-weight: 500;
+  }
 
 
   @media (max-width: 768px) {
