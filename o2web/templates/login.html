@@ -3,14 +3,6 @@
     <div class="bg-container"></div>
     
 
-    <div class="monitoring-nodes">
-        <div class="node node-1"></div>
-        <div class="node node-2"></div>
-        <div class="node node-3"></div>
-        <div class="node node-4"></div>
-        <div class="node node-5"></div>
-        <div class="node node-6"></div>
-    </div>
 
     <div class="metrics-overlay">
         <div class="metric-line metric-line-1"></div>
@@ -18,7 +10,7 @@
         <div class="metric-line metric-line-3"></div>
     </div>
 
-    <div class="grid-overlay"></div>
+    <div class="grid-bg"></div>
 
     <div class="gradient-orbs">
         <div class="orb orb-1"></div>
@@ -27,15 +19,40 @@
     </div>
 
 
+<!-- Left side with logo and text -->
+<div class="login-brand-section">
+  <div class="brand-container">
+    <div class="brand-logo">
+      <img src="{{ url .ReqPath "/theme/openobserve_logo_light.svg" }}" alt="OpenObserve Logo" />
+    </div>
+    <div class="brand-content">
+      <p class="brand-subtitle">The complete observability platform for modern applications</p>
+      <div class="brand-features">
+        <div class="feature-item">
+          <span class="feature-icon">📊</span>
+          <span>Real-time monitoring and analytics</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🔍</span>
+          <span>Advanced search and visualization</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">⚡</span>
+          <span>High performance and scalability</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Right side with form -->
 <div class="login-form-section">
   <div class="login-content-container">
-    <!-- Title above the form -->
-    <div class="page-title">Login to OpenObserve</div>
-    
-    <div class="theme-panel modern-bordered-panel" style="width: 400px;">
-    <div class="openobserve-logo logo-border-cut">
-      <img height="64px"  src="{{ url .ReqPath "/theme/openobserve_logo_1.png" }}" alt="OpenObserve Logo" />
-    </div>
+    <div class="theme-panel modern-bordered-panel">
+      <div class="form-header">
+        <h2 class="form-title">Welcome Back</h2>
+        <p class="form-subtitle">Sign in to your OpenObserve account</p>
+      </div>
     <div id="login-buttons">
       <div class="official-email-note" >
         Please use your <strong>company email ID</strong> to log in. Personal emails are not supported.
@@ -106,6 +123,65 @@
     overflow: hidden;
   }
 
+  /* Left brand section */
+  .login-brand-section {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+    z-index: 10;
+  }
+
+  .brand-container {
+    max-width: 500px;
+    color: white;
+  }
+
+  .brand-logo {
+    margin-bottom: 2rem;
+  }
+
+  .brand-logo img {
+    height: 60px;
+    width: auto;
+  }
+
+  .brand-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #0BA5E9 0%, #38BDF8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .brand-subtitle {
+    font-size: 1.2rem;
+    color: #cbd5e1;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .brand-features {
+    margin-top: 1rem;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: #e2e8f0;
+  }
+
+  .feature-icon {
+    font-size: 1.5rem;
+  }
+
   .bg-container {
     position: fixed;
     top: 0;
@@ -116,56 +192,27 @@
     z-index: 1;
   }
 
-
-  /* Monitoring Nodes/Dots */
-  .monitoring-nodes {
+  /* Animated 3D grid */
+  .grid-bg {
     position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
-    z-index: 3;
+    background-image: 
+      linear-gradient(rgba(14, 165, 233, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(14, 165, 233, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: gridMove 20s linear infinite;
+    transform: perspective(500px) rotateX(60deg);
+    transform-origin: center;
+    z-index: 2;
+  }
+  
+  @keyframes gridMove {
+    0% {background-position: 0 0;}
+    100% {background-position: 50px 50px;}
   }
 
-  .node {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: #0ea5e9;
-    border-radius: 50%;
-    box-shadow: 0 0 20px rgba(14, 165, 233, 0.6);
-    animation: pulse 3s ease-in-out infinite;
-  }
 
-  .node::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 24px;
-    height: 24px;
-    border: 2px solid rgba(14, 165, 233, 0.3);
-    border-radius: 50%;
-    animation: ripple 3s ease-out infinite;
-  }
-
-  .node-1 { top: 20%; left: 15%; animation-delay: 0s; }
-  .node-2 { top: 40%; left: 80%; animation-delay: 0.5s; }
-  .node-3 { top: 70%; left: 25%; animation-delay: 1s; }
-  .node-4 { top: 60%; right: 15%; animation-delay: 1.5s; }
-  .node-5 { top: 30%; left: 70%; animation-delay: 2s; }
-  .node-6 { top: 75%; left: 60%; animation-delay: 2.5s; }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.2); opacity: 0.8; }
-  }
-
-  @keyframes ripple {
-    0% { width: 24px; height: 24px; opacity: 1; }
-    100% { width: 60px; height: 60px; opacity: 0; }
-  }
 
   /* Metrics Graph Lines */
   .metrics-overlay {
@@ -263,24 +310,23 @@
 
 
   .login-form-section{
+    flex: 1;
     background-color: transparent;
     height: 100vh;
-    width: 100%;
     display: flex;
     flex-direction: column;
-    padding: 0;
+    padding: 2rem;
     position: relative;
     z-index: 10;
-    overflow-y: auto;
+    overflow: hidden;
+    align-items: center;
+    justify-content: flex-start;
   }
   
   .login-content-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
-    flex: 1;
+    width: 100%;
+    max-width: 400px;
+    margin-top: 100px;
   }
   
   .theme-panel{
@@ -292,13 +338,33 @@
     max-width: 500px;
   }
   
-  /* Modern bordered panel with logo cut-through effect */
+  /* Form header */
+  .form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .form-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-subtitle {
+    color: #cbd5e1;
+    font-size: 1rem;
+    margin: 0;
+  }
+
+  /* Modern bordered panel */
   .modern-bordered-panel {
     position: relative;
     border: 1px solid rgba(14, 165, 233, 0.2);
     border-radius: 16px;
-    padding: 2rem 1.5rem 1.5rem 1.5rem;
-    margin-top: 2rem;
+    padding: 2rem 1.5rem;
     background: rgba(15, 23, 42, 0.9);
     backdrop-filter: blur(20px);
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5), 0 0 1px rgba(14, 165, 233, 0.3);
@@ -350,8 +416,18 @@
   .page-footer {
     text-align: center;
     padding: 1rem;
-    margin-top: auto;
+    margin-top: 2rem;
     flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .page-footer > div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
   }
   
   .theme-heading{
@@ -442,45 +518,52 @@
 
 
   @media (max-width: 768px) {
-    .dex-login-container{
+    .dex-login-container {
       flex-direction: column;
       min-height: 100vh;
     }
     
-    .dex-login-banner{
+    .login-brand-section {
+      flex: none;
+      padding: 1.5rem;
+      min-height: 40vh;
+    }
+    
+    .brand-title {
+      font-size: 2rem;
+    }
+    
+    .brand-subtitle {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .brand-features {
       display: none;
     }
     
-    .login-form-section{
-      width: 100%;
-      min-height: 100vh;
+    .login-form-section {
+      flex: none;
+      min-height: 60vh;
+      padding: 1rem;
     }
     
     .login-content-container {
-      padding: 1rem 0.75rem;
-    }
-    
-    .theme-panel{
       max-width: 100%;
     }
     
     .modern-bordered-panel {
-      margin-top: 1rem;
-      padding: 1.5rem 1rem 1rem 1rem;
+      padding: 1.5rem 1rem;
       border-radius: 12px;
     }
     
-    .page-title {
-      margin-bottom: 1rem;
+    .form-title {
+      font-size: 1.5rem;
     }
     
-    .logo-border-cut {
-      top: -24px;
-    }
-    
-    .theme-btn-provider-link{
+    .modern-btn {
       width: 100% !important;
-      max-width: 320px;
+      max-width: 300px;
     }
     
     .page-footer {
