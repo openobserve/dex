@@ -43,7 +43,7 @@
       {{ range $c := .Connectors }}
         <div class="theme-form-row">
 
-            <a class="theme-btn-provider-link" style="width: 325px; border: 1px solid #e8e8e8; display: flex; justify-content: flex-start; align-items: center; gap: 4px; text-decoration: none; padding: 2px 16px; border-radius: 8px;" href="{{ $c.URL }}" target="_self">
+            <a class="theme-btn-provider-link modern-btn" href="{{ $c.URL }}" target="_self">
               <button class="dex-btn theme-btn-provider login-btn" style="background: none; border: none; display: flex; align-items: center; gap: 20px; width: 100%; text-align: left; padding: 0;">
                 <span class="dex-btn-icon dex-btn-icon--{{ $c.Type }}" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;margin-left: 16px;"></span>
                 {{- if eq $c.ID "casdoor" }}
@@ -393,6 +393,26 @@
   
   .modern-link img {
     filter: brightness(0) saturate(100%) invert(64%) sepia(88%) saturate(3316%) hue-rotate(169deg) brightness(101%) contrast(101%);
+  }
+  
+  .modern-btn {
+    width: 325px; 
+    border: 1px solid rgba(232, 232, 232, 0.3);
+    display: flex; 
+    justify-content: flex-start; 
+    align-items: center; 
+    gap: 4px; 
+    text-decoration: none; 
+    padding: 2px 16px; 
+    border-radius: 8px;
+    background: transparent;
+    transition: all 0.3s ease;
+  }
+  
+  .modern-btn:hover {
+    border-color: rgba(14, 165, 233, 0.4);
+    background: rgba(15, 23, 42, 0.4);
+    box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.3), 0 0 20px rgba(14, 165, 233, 0.2);
   }
 
   .official-email-note{
