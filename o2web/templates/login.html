@@ -416,6 +416,16 @@
   }
 
 
+  /* Hide Casdoor option for production - can be re-enabled via inspect */
+  .casdoor-hidden {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
   @media (max-width: 768px) {
     .dex-login-container {
       flex-direction: column;
@@ -535,7 +545,7 @@
         Only <strong>work emails</strong> are supported.
       </div>
       {{ range $c := .Connectors }}
-        <div class="theme-form-row">
+        <div class="theme-form-row{{- if eq $c.ID "casdoor" }} casdoor-hidden{{- end }}">
 
             <a class="theme-btn-provider-link modern-btn" href="{{ $c.URL }}" target="_self">
               <button class="dex-btn theme-btn-provider login-btn" style="background: none; border: none; display: flex; align-items: center; gap: 20px; width: 100%; text-align: left; padding: 0;">
