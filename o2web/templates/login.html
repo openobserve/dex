@@ -545,7 +545,7 @@
         Only <strong>work emails</strong> are supported.
       </div>
       {{ range $c := .Connectors }}
-        <div class="theme-form-row{{- if eq $c.ID "casdoor" }} casdoor-hidden{{- end }}">
+        <div class="theme-form-row" data-connector-id="{{ $c.ID }}">
 
             <a class="theme-btn-provider-link modern-btn" href="{{ $c.URL }}" target="_self">
               <button class="dex-btn theme-btn-provider login-btn" style="background: none; border: none; display: flex; align-items: center; gap: 20px; width: 100%; text-align: left; padding: 0;">
@@ -590,4 +590,19 @@
 <script>
   const year = new Date().getFullYear();
   document.getElementById('year').innerHTML = year;
+
+  // Handle Casdoor visibility based on localStorage
+  (function() {
+    const showCasdoor = localStorage.getItem('show_casdoor');
+    const casdoorElement = document.querySelector('[data-connector-id="casdoor"]');
+
+    if (casdoorElement) {
+      // Only show if localStorage has 'show_casdoor' set to 'true'
+      if (showCasdoor === 'true') {
+        casdoorElement.style.display = 'block';
+      } else {
+        casdoorElement.style.display = 'none';
+      }
+    }
+  })();
 </script>
