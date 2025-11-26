@@ -14,8 +14,13 @@
         </a>
       </div>
     {{ end }}
-  {{ end }}  
+  {{ end }}
   </div>
+  {{ if .EnableSignup }}
+  <div class="theme-link-back">
+    <a class="dex-subtle-text" href="{{ url .ReqPath "/signup" }}">Don't have an account? Sign up.</a>
+  </div>
+  {{ end }}
 </div>
 
 {{ template "footer.html" . }}
