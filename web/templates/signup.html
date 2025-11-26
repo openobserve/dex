@@ -1,0 +1,47 @@
+{{ template "header.html" . }}
+
+<div class="theme-panel">
+  <h2 class="theme-heading">Create Your Account</h2>
+  <form method="post" action="{{ .PostURL }}">
+    <div class="theme-form-row">
+      <div class="theme-form-label">
+        <label for="email">Email</label>
+      </div>
+      <input tabindex="1" required id="email" name="email" type="email" class="theme-form-input" placeholder="email@example.com" {{ if .Email }} value="{{ .Email }}" {{ else }} autofocus {{ end }}/>
+    </div>
+    <div class="theme-form-row">
+      <div class="theme-form-label">
+        <label for="username">Username</label>
+      </div>
+      <input tabindex="2" required id="username" name="username" type="text" class="theme-form-input" placeholder="username" {{ if .Username }} value="{{ .Username }}" {{ end }}/>
+    </div>
+    <div class="theme-form-row">
+      <div class="theme-form-label">
+        <label for="password">Password</label>
+      </div>
+      <input tabindex="3" required id="password" name="password" type="password" class="theme-form-input" placeholder="password (min 8 characters)" minlength="8" {{ if .Invalid }} autofocus {{ end }}/>
+    </div>
+
+    {{ if .Invalid }}
+      <div id="signup-error" class="dex-error-box">
+        {{ .Error }}
+      </div>
+    {{ end }}
+
+    <button tabindex="4" id="submit-signup" type="submit" class="dex-btn theme-btn--primary">Sign Up</button>
+
+  </form>
+  <div class="theme-link-back">
+    <a class="dex-subtle-text" href="{{ .BackLink }}">Already have an account? Log in.</a>
+  </div>
+</div>
+
+
+<script type="text/javascript">
+  document.querySelector('form').onsubmit = function(e) {
+    var el = document.querySelector('#submit-signup');
+    el.setAttribute('disabled', 'disabled');
+  };
+</script>
+
+{{ template "footer.html" . }}

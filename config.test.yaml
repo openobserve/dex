@@ -30,7 +30,7 @@ enablePasswordDB: true
 
 # Enable user signup via REST API (POST /signup)
 # Requires enablePasswordDB to be true
-enableSignup: true
+enableSignup: false
 
 staticPasswords:
   - email: "admin@example.com"

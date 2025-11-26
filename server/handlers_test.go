@@ -1053,3 +1053,187 @@ func TestHandleClientRegistrationWithAuth(t *testing.T) {
 		})
 	}
 }
+
+func TestHandleSignup(t *testing.T) {
+	tests := []struct {
+		name               string
+		enableSignup       bool
+		requestBody        interface{}
+		expectedStatusCode int
+		expectedError      string
+	}{
+		{
+			name:         "successful signup",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"password": "password123",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusCreated,
+		},
+		{
+			name:         "signup disabled",
+			enableSignup: false,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"password": "password123",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusForbidden,
+			expectedError:      "access_denied",
+		},
+		{
+			name:         "missing email",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"password": "password123",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "invalid email format",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "invalid-email",
+				"password": "password123",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "missing password",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "password too short",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"password": "short",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "missing username",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"password": "password123",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "duplicate email",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "admin@example.com", // This email is already in the test storage
+				"password": "password123",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusConflict,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:               "invalid JSON",
+			enableSignup:       true,
+			requestBody:        "invalid json",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create test server with signup enabled or disabled
+			httpServer, server := newTestServer(t, func(c *Config) {
+				c.EnableSignup = tc.enableSignup
+			})
+			defer httpServer.Close()
+
+			// Add a test user to check duplicate email scenario
+			ctx := context.Background()
+			_ = server.storage.CreatePassword(ctx, storage.Password{
+				Email:    "admin@example.com",
+				Hash:     []byte("$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"),
+				Username: "admin",
+				UserID:   "admin-id",
+			})
+
+			// Prepare request body
+			var bodyBytes []byte
+			if strBody, ok := tc.requestBody.(string); ok {
+				bodyBytes = []byte(strBody)
+			} else {
+				bodyBytes, _ = json.Marshal(tc.requestBody)
+			}
+
+			// Make request
+			req := httptest.NewRequest("POST", "/signup", bytes.NewReader(bodyBytes))
+			req.Header.Set("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+
+			server.ServeHTTP(rr, req)
+
+			// Check status code
+			require.Equal(t, tc.expectedStatusCode, rr.Code)
+
+			// Check response for errors or success
+			if tc.expectedError != "" {
+				var errResp signupErrorResponse
+				err := json.NewDecoder(rr.Body).Decode(&errResp)
+				require.NoError(t, err)
+				require.Equal(t, tc.expectedError, errResp.Error)
+			} else if tc.expectedStatusCode == http.StatusCreated {
+				var resp signupResponse
+				err := json.NewDecoder(rr.Body).Decode(&resp)
+				require.NoError(t, err)
+				require.NotEmpty(t, resp.UserID)
+				require.Equal(t, "test@example.com", resp.Email)
+				require.Equal(t, "testuser", resp.Username)
+
+				// Verify the user was created in storage
+				password, err := server.storage.GetPassword(ctx, "test@example.com")
+				require.NoError(t, err)
+				require.Equal(t, "test@example.com", password.Email)
+				require.Equal(t, "testuser", password.Username)
+			}
+		})
+	}
+}
+
+func TestHandleSignupMethodNotAllowed(t *testing.T) {
+	httpServer, server := newTestServer(t, func(c *Config) {
+		c.EnableSignup = true
+	})
+	defer httpServer.Close()
+
+	// Test GET method (should return signup form with 200)
+	req := httptest.NewRequest("GET", "/signup", nil)
+	rr := httptest.NewRecorder()
+
+	server.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusOK, rr.Code)
+	require.Contains(t, rr.Body.String(), "Create Your Account")
+
+	// Test unsupported method like PUT (should fail)
+	req = httptest.NewRequest("PUT", "/signup", nil)
+	rr = httptest.NewRecorder()
+
+	server.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusMethodNotAllowed, rr.Code)
+}

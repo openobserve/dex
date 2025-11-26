@@ -108,6 +108,9 @@ type Config struct {
 	// If set, the server will use this connector to handle password grants
 	PasswordConnector string
 
+	// If enabled, allows users to sign up with email and password via REST API
+	EnableSignup bool
+
 	GCFrequency time.Duration // Defaults to 5 minutes
 
 	// RegistrationToken is an optional bearer token required for dynamic client registration.
@@ -194,6 +197,9 @@ type Server struct {
 
 	// Used for password grant
 	passwordConnector string
+
+	// If enabled, allows users to sign up with email and password
+	enableSignup bool
 
 	// Optional bearer token for client registration endpoint
 	registrationToken string
@@ -328,6 +334,7 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		now:                    now,
 		templates:              tmpls,
 		passwordConnector:      c.PasswordConnector,
+		enableSignup:           c.EnableSignup,
 		registrationToken:      c.RegistrationToken,
 		logger:                 c.Logger,
 		hiddenConnectors:       c.HiddenConnectors,
@@ -493,6 +500,7 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 	handleWithCORS("/userinfo", s.handleUserInfo)
 	handleWithCORS("/token/introspect", s.handleIntrospect)
 	handleWithCORS("/register", s.handleClientRegistration)
+	handleWithCORS("/signup", s.handleSignup)
 	handleFunc("/auth", s.handleAuthorization)
 	handleFunc("/auth/{connector}", s.handleConnectorLogin)
 	handleFunc("/auth/{connector}/login", s.handlePasswordLogin)
