@@ -15,6 +15,7 @@ import (
 	"github.com/dexidp/dex/storage/ent/db/offlinesession"
 	"github.com/dexidp/dex/storage/ent/db/password"
 	"github.com/dexidp/dex/storage/ent/db/refreshtoken"
+	"github.com/dexidp/dex/storage/ent/db/signuptoken"
 	"github.com/dexidp/dex/storage/ent/schema"
 )
 
@@ -266,4 +267,18 @@ func init() {
 	refreshtokenDescID := refreshtokenFields[0].Descriptor()
 	// refreshtoken.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	refreshtoken.IDValidator = refreshtokenDescID.Validators[0].(func(string) error)
+	signuptokenFields := schema.SignupToken{}.Fields()
+	_ = signuptokenFields
+	// signuptokenDescEmail is the schema descriptor for email field.
+	signuptokenDescEmail := signuptokenFields[0].Descriptor()
+	// signuptoken.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	signuptoken.EmailValidator = signuptokenDescEmail.Validators[0].(func(string) error)
+	// signuptokenDescCsrfToken is the schema descriptor for csrf_token field.
+	signuptokenDescCsrfToken := signuptokenFields[1].Descriptor()
+	// signuptoken.CsrfTokenValidator is a validator for the "csrf_token" field. It is called by the builders before save.
+	signuptoken.CsrfTokenValidator = signuptokenDescCsrfToken.Validators[0].(func(string) error)
+	// signuptokenDescValidationToken is the schema descriptor for validation_token field.
+	signuptokenDescValidationToken := signuptokenFields[2].Descriptor()
+	// signuptoken.ValidationTokenValidator is a validator for the "validation_token" field. It is called by the builders before save.
+	signuptoken.ValidationTokenValidator = signuptokenDescValidationToken.Validators[0].(func(string) error)
 }
