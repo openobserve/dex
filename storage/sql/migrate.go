@@ -298,4 +298,15 @@ var migrations = []migration{
 				add column hmac_key bytea;`,
 		},
 	},
+	{
+		stmts: []string{
+			`
+			create table signup_tokens (
+				email    			text not null primary key,
+				csrf_token	 		text not null,
+				validation_token	text not null,
+				expiry 				timestamptz not null
+			);`,
+		},
+	},
 }

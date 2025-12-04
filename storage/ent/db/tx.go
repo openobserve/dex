@@ -32,6 +32,8 @@ type Tx struct {
 	Password *PasswordClient
 	// RefreshToken is the client for interacting with the RefreshToken builders.
 	RefreshToken *RefreshTokenClient
+	// SignupToken is the client for interacting with the SignupToken builders.
+	SignupToken *SignupTokenClient
 
 	// lazily loaded.
 	client     *Client
@@ -173,6 +175,7 @@ func (tx *Tx) init() {
 	tx.OfflineSession = NewOfflineSessionClient(tx.config)
 	tx.Password = NewPasswordClient(tx.config)
 	tx.RefreshToken = NewRefreshTokenClient(tx.config)
+	tx.SignupToken = NewSignupTokenClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
