@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -185,7 +186,8 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 		// Redirect to login page with success message
 		backLink := r.URL.Query().Get("back")
 		if backLink == "" {
-			backLink = s.absPath("/auth/local")
+			backPath := fmt.Sprintf("/auth?%s", r.URL.RawQuery)
+			backLink = s.absPath(backPath)
 		}
 		http.Redirect(w, r, backLink, http.StatusSeeOther)
 	}
