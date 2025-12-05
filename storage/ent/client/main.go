@@ -13,6 +13,7 @@ import (
 	"github.com/dexidp/dex/storage/ent/db/devicerequest"
 	"github.com/dexidp/dex/storage/ent/db/devicetoken"
 	"github.com/dexidp/dex/storage/ent/db/migrate"
+	"github.com/dexidp/dex/storage/ent/db/signuptoken"
 )
 
 var _ storage.Storage = (*Database)(nil)
@@ -105,6 +106,14 @@ func (d *Database) GarbageCollect(ctx context.Context, now time.Time) (storage.G
 		return result, convertDBError("gc device token: %w", err)
 	}
 	result.DeviceTokens = int64(q)
+
+	q, err = d.client.SignupToken.Delete().
+		Where(signuptoken.ExpiryLT(utcNow)).
+		Exec(ctx)
+	if err != nil {
+		return result, convertDBError("gc signup token: %w", err)
+	}
+	result.SignupTokens = int64(q)
 
 	return result, err
 }
