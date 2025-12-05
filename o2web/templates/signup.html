@@ -1,5 +1,4 @@
 {{ template "header.html" . }}
-
 <style>
   * {
     box-sizing: border-box;
@@ -475,114 +474,77 @@
     }
   }
 </style>
-
-<div class="dex-login-container">
-    <div class="bg-container"></div>
-    
-
-
-    <div class="metrics-overlay">
-        <div class="metric-line metric-line-1"></div>
-        <div class="metric-line metric-line-2"></div>
-        <div class="metric-line metric-line-3"></div>
-    </div>
-
-    <div class="grid-bg"></div>
-
-    <div class="gradient-orbs">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-    </div>
-
-
-<!-- Left side with logo and text -->
-<div class="login-brand-section">
-  <div class="brand-container">
-    <div class="brand-logo">
-      <img src="{{ url .ReqPath "/theme/openobserve_logo_light.svg" }}" alt="OpenObserve Logo" />
-    </div>
-    <div class="brand-content">
-      <p class="brand-subtitle">The complete observability platform for modern applications</p>
-      <div class="brand-features">
-        <div class="feature-item">
-          <span class="feature-icon">📊</span>
-          <span>Real-time monitoring and analytics</span>
-        </div>
-        <div class="feature-item">
-          <span class="feature-icon">🔍</span>
-          <span>Advanced search and visualization</span>
-        </div>
-        <div class="feature-item">
-          <span class="feature-icon">⚡</span>
-          <span>High performance and scalability</span>
-        </div>
+<div class="theme-panel">
+  <h2 class="theme-heading">Create Your Account</h2>
+  <form method="post" action="{{ .PostURL }}">
+    <div class="theme-form-row">
+      <div class="theme-form-label">
+        <label for="email">Email</label>
       </div>
+      <input tabindex="1" required id="email" name="email" type="email" class="theme-form-input" placeholder="email@example.com" {{ if .Email }} value="{{ .Email }}" {{ else }} autofocus {{ end }}/>
     </div>
+    <div class="theme-form-row">
+      <div class="theme-form-label">
+        <label for="username">Username</label>
+      </div>
+      <input tabindex="2" required id="username" name="username" type="text" class="theme-form-input" placeholder="username" {{ if .Username }} value="{{ .Username }}" {{ end }}/>
+    </div>
+    <div class="theme-form-row">
+      <div class="theme-form-label">
+        <label for="password">Password</label>
+      </div>
+      <input tabindex="3" required id="password" name="password" type="password" class="theme-form-input" placeholder="password (min 8 characters)" minlength="8" {{ if .Invalid }} autofocus {{ end }}/>
+    </div>
+    <div class="theme-form-row">
+      <div class="theme-form-label">
+        <label for="token">Validation Token</label>
+      </div>
+      <input tabindex="4" readonly required id="token" name="token" type="text" class="theme-form-input" placeholder="validation token" {{ if .Invalid }} autofocus {{ end }}/>
+    </div>
+    <div class="theme-form-row">
+      <button id="token-btn">Generate Token</button>
+    </div>
+    <input tabindex="5" readonly hidden id="csrf" name="csrf" type="text" class="theme-form-input" placeholder="" style="display: none;"/>
+    {{ if .Invalid }}
+      <div id="signup-error" class="dex-error-box">
+        {{ .Error }}
+      </div>
+    {{ end }}
+
+    <button tabindex="6" id="submit-signup" type="submit" class="dex-btn theme-btn--primary">Sign Up</button>
+
+  </form>
+  <div class="theme-link-back">
+    <a class="dex-subtle-text" href="{{ .BackLink }}">Already have an account? Log in.</a>
   </div>
 </div>
 
-<!-- Right side with form -->
-<div class="login-form-section">
-  <div class="login-content-container">
-    <div class="theme-panel modern-bordered-panel">
-      <div class="form-header">
-        <h2 class="form-title">Welcome Back</h2>
-        <p class="form-subtitle">Sign in to your OpenObserve account</p>
-      </div>
-    <div id="login-buttons">
-      <div class="official-email-note" >
-        Only <strong>work emails</strong> are supported.
-      </div>
-      {{ range $c := .Connectors }}
-        <div class="theme-form-row">
 
-            <a class="theme-btn-provider-link modern-btn" href="{{ $c.URL }}" target="_self">
-              <button class="dex-btn theme-btn-provider login-btn" style="background: none; border: none; display: flex; align-items: center; gap: 20px; width: 100%; text-align: left; padding: 0;">
-                <span class="dex-btn-icon dex-btn-icon--{{ $c.Type }}" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;margin-left: 16px;"></span>
-                {{- if eq $c.ID "casdoor" }}
-                <span class="dex-btn-text" style="flex: 1;">Sign In / Sign Up with Email</span>
-                {{- else }}
-                <span class="dex-btn-text" style="flex: 1;">Continue with {{ $c.Name }}</span>
-                {{- end }}
-              </button>
-            </a>
-        </div>
-      {{ end }}
-      {{ if .EnableSignup }}
-        <div class="theme-link-back">
-          <a class="dex-subtle-text" href="{{ .SignupPath }}">Don't have an account? Sign up.</a>
-        </div>
-      {{ end }}
-    </div>
-  
-  
-  
-  </div>
-  
-    <!-- Footer at bottom of page -->
-    <div class="page-footer">
-      <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
-        <a class="dex-link modern-link" href="{{ "terms_of_use" | extra }}" target="_blank">Terms of Use 
-          <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" /> 
-        </a>
-        <a class="dex-link modern-link" href="{{ "privacy_policy" | extra }}" target="_blank">Privacy Policy 
-          <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" /> 
-        </a>
-      </div>
-      <div class="copyright-text">
-        &copy; OpenObserve <span id="year"></span>
-      </div>
-    </div>
-  </div>
-</div>
+<script type="text/javascript">
+  document.querySelector('form').onsubmit = function(e) {
+    var el = document.querySelector('#submit-signup');
+    el.setAttribute('disabled', 'disabled');
+  };
+  document.querySelector('#token-btn').onclick = (e)=>{
+    e.preventDefault();
+    document.querySelector("#token").readonly = false;
+    // for firefox
+    document.querySelector("#token").readOnly = false;
+    let email = document.querySelector("#email").value;
+    fetch("signup-token",{
+      method:"POST",
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({email})
+    }).then((r)=>{
+      return r.json();
+    }).then((v)=>{
+      document.querySelector("#csrf").value = v.csrfToken
+    })
+  }
 
-</div>
-</div>
+</script>
 
 {{ template "footer.html" . }}
-
-<script>
-  const year = new Date().getFullYear();
-  document.getElementById('year').innerHTML = year;
-</script>
