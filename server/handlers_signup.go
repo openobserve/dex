@@ -355,6 +355,10 @@ func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
 			s.logger.ErrorContext(ctx, "failed to create signup token", "err", err)
 			return
 		}
+
+		body := fmt.Sprintf("Hello,<br/>The email validation code for signup to openobserve cloud is<br/><h2>%s</h2><br/>Please enter it in the signup form before submitting.<br/>This code is valid for 5 minutes.<br/>Regards,<br/>Openobserve Team.", token)
+		sendEmail(s, req.Email, "Email validation Token for Openobserve Cloud", body)
+
 		resp := signupTokenResponse{
 			Email:     req.Email,
 			CsrfToken: signupToken.CsrfToken,

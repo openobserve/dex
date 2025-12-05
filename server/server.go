@@ -111,6 +111,12 @@ type Config struct {
 	// If enabled, allows users to sign up with email and password via REST API
 	EnableSignup bool
 
+	// smtp config for sending emails
+	SmtpHost     string
+	SmtpSender   string
+	SmtpUser     string
+	SmtpPassword string
+
 	GCFrequency time.Duration // Defaults to 5 minutes
 
 	// RegistrationToken is an optional bearer token required for dynamic client registration.
@@ -200,6 +206,11 @@ type Server struct {
 
 	// If enabled, allows users to sign up with email and password
 	enableSignup bool
+
+	SmtpHost     string
+	SmtpSender   string
+	SmtpUser     string
+	SmtpPassword string
 
 	// Optional bearer token for client registration endpoint
 	registrationToken string
@@ -335,6 +346,10 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		templates:              tmpls,
 		passwordConnector:      c.PasswordConnector,
 		enableSignup:           c.EnableSignup,
+		SmtpHost:               c.SmtpHost,
+		SmtpSender:             c.SmtpSender,
+		SmtpUser:               c.SmtpUser,
+		SmtpPassword:           c.SmtpPassword,
 		registrationToken:      c.RegistrationToken,
 		logger:                 c.Logger,
 		hiddenConnectors:       c.HiddenConnectors,

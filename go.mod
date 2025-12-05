@@ -87,6 +87,7 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
+	github.com/wneessen/go-mail v0.7.2 // indirect
 	github.com/zclconf/go-cty v1.14.4 // indirect
 	github.com/zclconf/go-cty-yaml v1.1.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.5 // indirect
