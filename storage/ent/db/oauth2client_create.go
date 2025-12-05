@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/dexidp/dex/storage/ent/db/oauth2client"
@@ -17,6 +19,7 @@ type OAuth2ClientCreate struct {
 	config
 	mutation *OAuth2ClientMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetSecret sets the "secret" field.
@@ -158,6 +161,7 @@ func (_c *OAuth2ClientCreate) createSpec() (*OAuth2Client, *sqlgraph.CreateSpec)
 		_node = &OAuth2Client{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(oauth2client.Table, sqlgraph.NewFieldSpec(oauth2client.FieldID, field.TypeString))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -189,11 +193,329 @@ func (_c *OAuth2ClientCreate) createSpec() (*OAuth2Client, *sqlgraph.CreateSpec)
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.OAuth2Client.Create().
+//		SetSecret(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.OAuth2ClientUpsert) {
+//			SetSecret(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *OAuth2ClientCreate) OnConflict(opts ...sql.ConflictOption) *OAuth2ClientUpsertOne {
+	_c.conflict = opts
+	return &OAuth2ClientUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.OAuth2Client.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *OAuth2ClientCreate) OnConflictColumns(columns ...string) *OAuth2ClientUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &OAuth2ClientUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// OAuth2ClientUpsertOne is the builder for "upsert"-ing
+	//  one OAuth2Client node.
+	OAuth2ClientUpsertOne struct {
+		create *OAuth2ClientCreate
+	}
+
+	// OAuth2ClientUpsert is the "OnConflict" setter.
+	OAuth2ClientUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetSecret sets the "secret" field.
+func (u *OAuth2ClientUpsert) SetSecret(v string) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldSecret, v)
+	return u
+}
+
+// UpdateSecret sets the "secret" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdateSecret() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldSecret)
+	return u
+}
+
+// SetRedirectUris sets the "redirect_uris" field.
+func (u *OAuth2ClientUpsert) SetRedirectUris(v []string) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldRedirectUris, v)
+	return u
+}
+
+// UpdateRedirectUris sets the "redirect_uris" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdateRedirectUris() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldRedirectUris)
+	return u
+}
+
+// ClearRedirectUris clears the value of the "redirect_uris" field.
+func (u *OAuth2ClientUpsert) ClearRedirectUris() *OAuth2ClientUpsert {
+	u.SetNull(oauth2client.FieldRedirectUris)
+	return u
+}
+
+// SetTrustedPeers sets the "trusted_peers" field.
+func (u *OAuth2ClientUpsert) SetTrustedPeers(v []string) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldTrustedPeers, v)
+	return u
+}
+
+// UpdateTrustedPeers sets the "trusted_peers" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdateTrustedPeers() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldTrustedPeers)
+	return u
+}
+
+// ClearTrustedPeers clears the value of the "trusted_peers" field.
+func (u *OAuth2ClientUpsert) ClearTrustedPeers() *OAuth2ClientUpsert {
+	u.SetNull(oauth2client.FieldTrustedPeers)
+	return u
+}
+
+// SetPublic sets the "public" field.
+func (u *OAuth2ClientUpsert) SetPublic(v bool) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldPublic, v)
+	return u
+}
+
+// UpdatePublic sets the "public" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdatePublic() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldPublic)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *OAuth2ClientUpsert) SetName(v string) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdateName() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldName)
+	return u
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (u *OAuth2ClientUpsert) SetLogoURL(v string) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldLogoURL, v)
+	return u
+}
+
+// UpdateLogoURL sets the "logo_url" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdateLogoURL() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldLogoURL)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.OAuth2Client.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(oauth2client.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *OAuth2ClientUpsertOne) UpdateNewValues() *OAuth2ClientUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(oauth2client.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.OAuth2Client.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *OAuth2ClientUpsertOne) Ignore() *OAuth2ClientUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *OAuth2ClientUpsertOne) DoNothing() *OAuth2ClientUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the OAuth2ClientCreate.OnConflict
+// documentation for more info.
+func (u *OAuth2ClientUpsertOne) Update(set func(*OAuth2ClientUpsert)) *OAuth2ClientUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&OAuth2ClientUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetSecret sets the "secret" field.
+func (u *OAuth2ClientUpsertOne) SetSecret(v string) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetSecret(v)
+	})
+}
+
+// UpdateSecret sets the "secret" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdateSecret() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateSecret()
+	})
+}
+
+// SetRedirectUris sets the "redirect_uris" field.
+func (u *OAuth2ClientUpsertOne) SetRedirectUris(v []string) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetRedirectUris(v)
+	})
+}
+
+// UpdateRedirectUris sets the "redirect_uris" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdateRedirectUris() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateRedirectUris()
+	})
+}
+
+// ClearRedirectUris clears the value of the "redirect_uris" field.
+func (u *OAuth2ClientUpsertOne) ClearRedirectUris() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearRedirectUris()
+	})
+}
+
+// SetTrustedPeers sets the "trusted_peers" field.
+func (u *OAuth2ClientUpsertOne) SetTrustedPeers(v []string) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetTrustedPeers(v)
+	})
+}
+
+// UpdateTrustedPeers sets the "trusted_peers" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdateTrustedPeers() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateTrustedPeers()
+	})
+}
+
+// ClearTrustedPeers clears the value of the "trusted_peers" field.
+func (u *OAuth2ClientUpsertOne) ClearTrustedPeers() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearTrustedPeers()
+	})
+}
+
+// SetPublic sets the "public" field.
+func (u *OAuth2ClientUpsertOne) SetPublic(v bool) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetPublic(v)
+	})
+}
+
+// UpdatePublic sets the "public" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdatePublic() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdatePublic()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *OAuth2ClientUpsertOne) SetName(v string) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdateName() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (u *OAuth2ClientUpsertOne) SetLogoURL(v string) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetLogoURL(v)
+	})
+}
+
+// UpdateLogoURL sets the "logo_url" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdateLogoURL() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateLogoURL()
+	})
+}
+
+// Exec executes the query.
+func (u *OAuth2ClientUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for OAuth2ClientCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *OAuth2ClientUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *OAuth2ClientUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("db: OAuth2ClientUpsertOne.ID is not supported by MySQL driver. Use OAuth2ClientUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *OAuth2ClientUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // OAuth2ClientCreateBulk is the builder for creating many OAuth2Client entities in bulk.
 type OAuth2ClientCreateBulk struct {
 	config
 	err      error
 	builders []*OAuth2ClientCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the OAuth2Client entities in the database.
@@ -222,6 +544,7 @@ func (_c *OAuth2ClientCreateBulk) Save(ctx context.Context) ([]*OAuth2Client, er
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -268,6 +591,218 @@ func (_c *OAuth2ClientCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *OAuth2ClientCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.OAuth2Client.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.OAuth2ClientUpsert) {
+//			SetSecret(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *OAuth2ClientCreateBulk) OnConflict(opts ...sql.ConflictOption) *OAuth2ClientUpsertBulk {
+	_c.conflict = opts
+	return &OAuth2ClientUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.OAuth2Client.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *OAuth2ClientCreateBulk) OnConflictColumns(columns ...string) *OAuth2ClientUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &OAuth2ClientUpsertBulk{
+		create: _c,
+	}
+}
+
+// OAuth2ClientUpsertBulk is the builder for "upsert"-ing
+// a bulk of OAuth2Client nodes.
+type OAuth2ClientUpsertBulk struct {
+	create *OAuth2ClientCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.OAuth2Client.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(oauth2client.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *OAuth2ClientUpsertBulk) UpdateNewValues() *OAuth2ClientUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(oauth2client.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.OAuth2Client.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *OAuth2ClientUpsertBulk) Ignore() *OAuth2ClientUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *OAuth2ClientUpsertBulk) DoNothing() *OAuth2ClientUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the OAuth2ClientCreateBulk.OnConflict
+// documentation for more info.
+func (u *OAuth2ClientUpsertBulk) Update(set func(*OAuth2ClientUpsert)) *OAuth2ClientUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&OAuth2ClientUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetSecret sets the "secret" field.
+func (u *OAuth2ClientUpsertBulk) SetSecret(v string) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetSecret(v)
+	})
+}
+
+// UpdateSecret sets the "secret" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdateSecret() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateSecret()
+	})
+}
+
+// SetRedirectUris sets the "redirect_uris" field.
+func (u *OAuth2ClientUpsertBulk) SetRedirectUris(v []string) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetRedirectUris(v)
+	})
+}
+
+// UpdateRedirectUris sets the "redirect_uris" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdateRedirectUris() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateRedirectUris()
+	})
+}
+
+// ClearRedirectUris clears the value of the "redirect_uris" field.
+func (u *OAuth2ClientUpsertBulk) ClearRedirectUris() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearRedirectUris()
+	})
+}
+
+// SetTrustedPeers sets the "trusted_peers" field.
+func (u *OAuth2ClientUpsertBulk) SetTrustedPeers(v []string) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetTrustedPeers(v)
+	})
+}
+
+// UpdateTrustedPeers sets the "trusted_peers" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdateTrustedPeers() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateTrustedPeers()
+	})
+}
+
+// ClearTrustedPeers clears the value of the "trusted_peers" field.
+func (u *OAuth2ClientUpsertBulk) ClearTrustedPeers() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearTrustedPeers()
+	})
+}
+
+// SetPublic sets the "public" field.
+func (u *OAuth2ClientUpsertBulk) SetPublic(v bool) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetPublic(v)
+	})
+}
+
+// UpdatePublic sets the "public" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdatePublic() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdatePublic()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *OAuth2ClientUpsertBulk) SetName(v string) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdateName() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (u *OAuth2ClientUpsertBulk) SetLogoURL(v string) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetLogoURL(v)
+	})
+}
+
+// UpdateLogoURL sets the "logo_url" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdateLogoURL() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateLogoURL()
+	})
+}
+
+// Exec executes the query.
+func (u *OAuth2ClientUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("db: OnConflict was set for builder %d. Set it on the OAuth2ClientCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for OAuth2ClientCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *OAuth2ClientUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

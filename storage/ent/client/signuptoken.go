@@ -10,12 +10,14 @@ import (
 
 // CreateSignupToken saves provided token into the database.
 func (d *Database) CreateSignupToken(ctx context.Context, token storage.SignupToken) error {
-	_, err := d.client.SignupToken.Create().
+	err := d.client.SignupToken.Create().
 		SetEmail(token.Email).
 		SetCsrfToken(token.CsrfToken).
 		SetValidationToken(token.ValidationToken).
 		SetExpiry(token.Expiry).
-		Save(ctx)
+		OnConflictColumns(token.Email).
+		UpdateNewValues().
+		Exec(ctx)
 	if err != nil {
 		return convertDBError("create signup token: %w", err)
 	}

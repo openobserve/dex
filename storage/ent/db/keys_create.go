@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/dexidp/dex/storage"
@@ -20,6 +22,7 @@ type KeysCreate struct {
 	config
 	mutation *KeysMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetVerificationKeys sets the "verification_keys" field.
@@ -134,6 +137,7 @@ func (_c *KeysCreate) createSpec() (*Keys, *sqlgraph.CreateSpec) {
 		_node = &Keys{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(keys.Table, sqlgraph.NewFieldSpec(keys.FieldID, field.TypeString))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -157,11 +161,251 @@ func (_c *KeysCreate) createSpec() (*Keys, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Keys.Create().
+//		SetVerificationKeys(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.KeysUpsert) {
+//			SetVerificationKeys(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *KeysCreate) OnConflict(opts ...sql.ConflictOption) *KeysUpsertOne {
+	_c.conflict = opts
+	return &KeysUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *KeysCreate) OnConflictColumns(columns ...string) *KeysUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &KeysUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// KeysUpsertOne is the builder for "upsert"-ing
+	//  one Keys node.
+	KeysUpsertOne struct {
+		create *KeysCreate
+	}
+
+	// KeysUpsert is the "OnConflict" setter.
+	KeysUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetVerificationKeys sets the "verification_keys" field.
+func (u *KeysUpsert) SetVerificationKeys(v []storage.VerificationKey) *KeysUpsert {
+	u.Set(keys.FieldVerificationKeys, v)
+	return u
+}
+
+// UpdateVerificationKeys sets the "verification_keys" field to the value that was provided on create.
+func (u *KeysUpsert) UpdateVerificationKeys() *KeysUpsert {
+	u.SetExcluded(keys.FieldVerificationKeys)
+	return u
+}
+
+// SetSigningKey sets the "signing_key" field.
+func (u *KeysUpsert) SetSigningKey(v jose.JSONWebKey) *KeysUpsert {
+	u.Set(keys.FieldSigningKey, v)
+	return u
+}
+
+// UpdateSigningKey sets the "signing_key" field to the value that was provided on create.
+func (u *KeysUpsert) UpdateSigningKey() *KeysUpsert {
+	u.SetExcluded(keys.FieldSigningKey)
+	return u
+}
+
+// SetSigningKeyPub sets the "signing_key_pub" field.
+func (u *KeysUpsert) SetSigningKeyPub(v jose.JSONWebKey) *KeysUpsert {
+	u.Set(keys.FieldSigningKeyPub, v)
+	return u
+}
+
+// UpdateSigningKeyPub sets the "signing_key_pub" field to the value that was provided on create.
+func (u *KeysUpsert) UpdateSigningKeyPub() *KeysUpsert {
+	u.SetExcluded(keys.FieldSigningKeyPub)
+	return u
+}
+
+// SetNextRotation sets the "next_rotation" field.
+func (u *KeysUpsert) SetNextRotation(v time.Time) *KeysUpsert {
+	u.Set(keys.FieldNextRotation, v)
+	return u
+}
+
+// UpdateNextRotation sets the "next_rotation" field to the value that was provided on create.
+func (u *KeysUpsert) UpdateNextRotation() *KeysUpsert {
+	u.SetExcluded(keys.FieldNextRotation)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(keys.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *KeysUpsertOne) UpdateNewValues() *KeysUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(keys.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *KeysUpsertOne) Ignore() *KeysUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *KeysUpsertOne) DoNothing() *KeysUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the KeysCreate.OnConflict
+// documentation for more info.
+func (u *KeysUpsertOne) Update(set func(*KeysUpsert)) *KeysUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&KeysUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetVerificationKeys sets the "verification_keys" field.
+func (u *KeysUpsertOne) SetVerificationKeys(v []storage.VerificationKey) *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetVerificationKeys(v)
+	})
+}
+
+// UpdateVerificationKeys sets the "verification_keys" field to the value that was provided on create.
+func (u *KeysUpsertOne) UpdateVerificationKeys() *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateVerificationKeys()
+	})
+}
+
+// SetSigningKey sets the "signing_key" field.
+func (u *KeysUpsertOne) SetSigningKey(v jose.JSONWebKey) *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetSigningKey(v)
+	})
+}
+
+// UpdateSigningKey sets the "signing_key" field to the value that was provided on create.
+func (u *KeysUpsertOne) UpdateSigningKey() *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateSigningKey()
+	})
+}
+
+// SetSigningKeyPub sets the "signing_key_pub" field.
+func (u *KeysUpsertOne) SetSigningKeyPub(v jose.JSONWebKey) *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetSigningKeyPub(v)
+	})
+}
+
+// UpdateSigningKeyPub sets the "signing_key_pub" field to the value that was provided on create.
+func (u *KeysUpsertOne) UpdateSigningKeyPub() *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateSigningKeyPub()
+	})
+}
+
+// SetNextRotation sets the "next_rotation" field.
+func (u *KeysUpsertOne) SetNextRotation(v time.Time) *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetNextRotation(v)
+	})
+}
+
+// UpdateNextRotation sets the "next_rotation" field to the value that was provided on create.
+func (u *KeysUpsertOne) UpdateNextRotation() *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateNextRotation()
+	})
+}
+
+// Exec executes the query.
+func (u *KeysUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for KeysCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *KeysUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *KeysUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("db: KeysUpsertOne.ID is not supported by MySQL driver. Use KeysUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *KeysUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // KeysCreateBulk is the builder for creating many Keys entities in bulk.
 type KeysCreateBulk struct {
 	config
 	err      error
 	builders []*KeysCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Keys entities in the database.
@@ -190,6 +434,7 @@ func (_c *KeysCreateBulk) Save(ctx context.Context) ([]*Keys, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -236,6 +481,176 @@ func (_c *KeysCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *KeysCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Keys.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.KeysUpsert) {
+//			SetVerificationKeys(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *KeysCreateBulk) OnConflict(opts ...sql.ConflictOption) *KeysUpsertBulk {
+	_c.conflict = opts
+	return &KeysUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *KeysCreateBulk) OnConflictColumns(columns ...string) *KeysUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &KeysUpsertBulk{
+		create: _c,
+	}
+}
+
+// KeysUpsertBulk is the builder for "upsert"-ing
+// a bulk of Keys nodes.
+type KeysUpsertBulk struct {
+	create *KeysCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(keys.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *KeysUpsertBulk) UpdateNewValues() *KeysUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(keys.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *KeysUpsertBulk) Ignore() *KeysUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *KeysUpsertBulk) DoNothing() *KeysUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the KeysCreateBulk.OnConflict
+// documentation for more info.
+func (u *KeysUpsertBulk) Update(set func(*KeysUpsert)) *KeysUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&KeysUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetVerificationKeys sets the "verification_keys" field.
+func (u *KeysUpsertBulk) SetVerificationKeys(v []storage.VerificationKey) *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetVerificationKeys(v)
+	})
+}
+
+// UpdateVerificationKeys sets the "verification_keys" field to the value that was provided on create.
+func (u *KeysUpsertBulk) UpdateVerificationKeys() *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateVerificationKeys()
+	})
+}
+
+// SetSigningKey sets the "signing_key" field.
+func (u *KeysUpsertBulk) SetSigningKey(v jose.JSONWebKey) *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetSigningKey(v)
+	})
+}
+
+// UpdateSigningKey sets the "signing_key" field to the value that was provided on create.
+func (u *KeysUpsertBulk) UpdateSigningKey() *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateSigningKey()
+	})
+}
+
+// SetSigningKeyPub sets the "signing_key_pub" field.
+func (u *KeysUpsertBulk) SetSigningKeyPub(v jose.JSONWebKey) *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetSigningKeyPub(v)
+	})
+}
+
+// UpdateSigningKeyPub sets the "signing_key_pub" field to the value that was provided on create.
+func (u *KeysUpsertBulk) UpdateSigningKeyPub() *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateSigningKeyPub()
+	})
+}
+
+// SetNextRotation sets the "next_rotation" field.
+func (u *KeysUpsertBulk) SetNextRotation(v time.Time) *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetNextRotation(v)
+	})
+}
+
+// UpdateNextRotation sets the "next_rotation" field to the value that was provided on create.
+func (u *KeysUpsertBulk) UpdateNextRotation() *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateNextRotation()
+	})
+}
+
+// Exec executes the query.
+func (u *KeysUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("db: OnConflict was set for builder %d. Set it on the KeysCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for KeysCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *KeysUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
