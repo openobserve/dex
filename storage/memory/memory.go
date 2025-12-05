@@ -168,11 +168,7 @@ func (s *memStorage) CreatePassword(ctx context.Context, p storage.Password) (er
 func (s *memStorage) CreateSignupToken(ctx context.Context, t storage.SignupToken) (err error) {
 	lowerEmail := strings.ToLower(t.Email)
 	s.tx(func() {
-		if _, ok := s.signupTokens[lowerEmail]; ok {
-			err = storage.ErrAlreadyExists
-		} else {
-			s.signupTokens[lowerEmail] = t
-		}
+		s.signupTokens[lowerEmail] = t
 	})
 	return
 }

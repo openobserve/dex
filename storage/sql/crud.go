@@ -707,7 +707,10 @@ func (c *conn) CreateSignupToken(ctx context.Context, t storage.SignupToken) err
 		)
 		values (
 			$1, $2, $3, $4
-		);
+		)
+		on conflict (email) do update
+		set csrf_token = EXCLUDED.csrf_token, validation_token= EXCLUDED.validation_token, expiry = EXCLUDED.expiry
+		;
 	`,
 		t.Email, t.CsrfToken, t.ValidationToken, t.Expiry,
 	)

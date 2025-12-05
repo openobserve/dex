@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/dexidp/dex/storage/ent/db/connector"
@@ -17,6 +19,7 @@ type ConnectorCreate struct {
 	config
 	mutation *ConnectorMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetType sets the "type" field.
@@ -141,6 +144,7 @@ func (_c *ConnectorCreate) createSpec() (*Connector, *sqlgraph.CreateSpec) {
 		_node = &Connector{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(connector.Table, sqlgraph.NewFieldSpec(connector.FieldID, field.TypeString))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -164,11 +168,251 @@ func (_c *ConnectorCreate) createSpec() (*Connector, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Connector.Create().
+//		SetType(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ConnectorUpsert) {
+//			SetType(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ConnectorCreate) OnConflict(opts ...sql.ConflictOption) *ConnectorUpsertOne {
+	_c.conflict = opts
+	return &ConnectorUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Connector.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ConnectorCreate) OnConflictColumns(columns ...string) *ConnectorUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ConnectorUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ConnectorUpsertOne is the builder for "upsert"-ing
+	//  one Connector node.
+	ConnectorUpsertOne struct {
+		create *ConnectorCreate
+	}
+
+	// ConnectorUpsert is the "OnConflict" setter.
+	ConnectorUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetType sets the "type" field.
+func (u *ConnectorUpsert) SetType(v string) *ConnectorUpsert {
+	u.Set(connector.FieldType, v)
+	return u
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *ConnectorUpsert) UpdateType() *ConnectorUpsert {
+	u.SetExcluded(connector.FieldType)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *ConnectorUpsert) SetName(v string) *ConnectorUpsert {
+	u.Set(connector.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ConnectorUpsert) UpdateName() *ConnectorUpsert {
+	u.SetExcluded(connector.FieldName)
+	return u
+}
+
+// SetResourceVersion sets the "resource_version" field.
+func (u *ConnectorUpsert) SetResourceVersion(v string) *ConnectorUpsert {
+	u.Set(connector.FieldResourceVersion, v)
+	return u
+}
+
+// UpdateResourceVersion sets the "resource_version" field to the value that was provided on create.
+func (u *ConnectorUpsert) UpdateResourceVersion() *ConnectorUpsert {
+	u.SetExcluded(connector.FieldResourceVersion)
+	return u
+}
+
+// SetConfig sets the "config" field.
+func (u *ConnectorUpsert) SetConfig(v []byte) *ConnectorUpsert {
+	u.Set(connector.FieldConfig, v)
+	return u
+}
+
+// UpdateConfig sets the "config" field to the value that was provided on create.
+func (u *ConnectorUpsert) UpdateConfig() *ConnectorUpsert {
+	u.SetExcluded(connector.FieldConfig)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Connector.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(connector.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ConnectorUpsertOne) UpdateNewValues() *ConnectorUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(connector.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Connector.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ConnectorUpsertOne) Ignore() *ConnectorUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ConnectorUpsertOne) DoNothing() *ConnectorUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ConnectorCreate.OnConflict
+// documentation for more info.
+func (u *ConnectorUpsertOne) Update(set func(*ConnectorUpsert)) *ConnectorUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ConnectorUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetType sets the "type" field.
+func (u *ConnectorUpsertOne) SetType(v string) *ConnectorUpsertOne {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.SetType(v)
+	})
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *ConnectorUpsertOne) UpdateType() *ConnectorUpsertOne {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.UpdateType()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *ConnectorUpsertOne) SetName(v string) *ConnectorUpsertOne {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ConnectorUpsertOne) UpdateName() *ConnectorUpsertOne {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetResourceVersion sets the "resource_version" field.
+func (u *ConnectorUpsertOne) SetResourceVersion(v string) *ConnectorUpsertOne {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.SetResourceVersion(v)
+	})
+}
+
+// UpdateResourceVersion sets the "resource_version" field to the value that was provided on create.
+func (u *ConnectorUpsertOne) UpdateResourceVersion() *ConnectorUpsertOne {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.UpdateResourceVersion()
+	})
+}
+
+// SetConfig sets the "config" field.
+func (u *ConnectorUpsertOne) SetConfig(v []byte) *ConnectorUpsertOne {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.SetConfig(v)
+	})
+}
+
+// UpdateConfig sets the "config" field to the value that was provided on create.
+func (u *ConnectorUpsertOne) UpdateConfig() *ConnectorUpsertOne {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.UpdateConfig()
+	})
+}
+
+// Exec executes the query.
+func (u *ConnectorUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for ConnectorCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ConnectorUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ConnectorUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("db: ConnectorUpsertOne.ID is not supported by MySQL driver. Use ConnectorUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ConnectorUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ConnectorCreateBulk is the builder for creating many Connector entities in bulk.
 type ConnectorCreateBulk struct {
 	config
 	err      error
 	builders []*ConnectorCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Connector entities in the database.
@@ -197,6 +441,7 @@ func (_c *ConnectorCreateBulk) Save(ctx context.Context) ([]*Connector, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -243,6 +488,176 @@ func (_c *ConnectorCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ConnectorCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Connector.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ConnectorUpsert) {
+//			SetType(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ConnectorCreateBulk) OnConflict(opts ...sql.ConflictOption) *ConnectorUpsertBulk {
+	_c.conflict = opts
+	return &ConnectorUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Connector.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ConnectorCreateBulk) OnConflictColumns(columns ...string) *ConnectorUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ConnectorUpsertBulk{
+		create: _c,
+	}
+}
+
+// ConnectorUpsertBulk is the builder for "upsert"-ing
+// a bulk of Connector nodes.
+type ConnectorUpsertBulk struct {
+	create *ConnectorCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Connector.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(connector.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ConnectorUpsertBulk) UpdateNewValues() *ConnectorUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(connector.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Connector.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ConnectorUpsertBulk) Ignore() *ConnectorUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ConnectorUpsertBulk) DoNothing() *ConnectorUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ConnectorCreateBulk.OnConflict
+// documentation for more info.
+func (u *ConnectorUpsertBulk) Update(set func(*ConnectorUpsert)) *ConnectorUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ConnectorUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetType sets the "type" field.
+func (u *ConnectorUpsertBulk) SetType(v string) *ConnectorUpsertBulk {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.SetType(v)
+	})
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *ConnectorUpsertBulk) UpdateType() *ConnectorUpsertBulk {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.UpdateType()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *ConnectorUpsertBulk) SetName(v string) *ConnectorUpsertBulk {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ConnectorUpsertBulk) UpdateName() *ConnectorUpsertBulk {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetResourceVersion sets the "resource_version" field.
+func (u *ConnectorUpsertBulk) SetResourceVersion(v string) *ConnectorUpsertBulk {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.SetResourceVersion(v)
+	})
+}
+
+// UpdateResourceVersion sets the "resource_version" field to the value that was provided on create.
+func (u *ConnectorUpsertBulk) UpdateResourceVersion() *ConnectorUpsertBulk {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.UpdateResourceVersion()
+	})
+}
+
+// SetConfig sets the "config" field.
+func (u *ConnectorUpsertBulk) SetConfig(v []byte) *ConnectorUpsertBulk {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.SetConfig(v)
+	})
+}
+
+// UpdateConfig sets the "config" field to the value that was provided on create.
+func (u *ConnectorUpsertBulk) UpdateConfig() *ConnectorUpsertBulk {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.UpdateConfig()
+	})
+}
+
+// Exec executes the query.
+func (u *ConnectorUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("db: OnConflict was set for builder %d. Set it on the ConnectorCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for ConnectorCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ConnectorUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
