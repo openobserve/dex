@@ -25,6 +25,7 @@ const (
 	kindConnector       = "Connector"
 	kindDeviceRequest   = "DeviceRequest"
 	kindDeviceToken     = "DeviceToken"
+	kindSignupToken     = "SignupToken"
 )
 
 const (
@@ -38,6 +39,7 @@ const (
 	resourceConnector       = "connectors"
 	resourceDeviceRequest   = "devicerequests"
 	resourceDeviceToken     = "devicetokens"
+	resourceSignupToken     = "signuptokens"
 )
 
 var _ storage.Storage = (*client)(nil)
@@ -262,6 +264,10 @@ func (cli *client) CreateConnector(ctx context.Context, c storage.Connector) err
 	return cli.post(resourceConnector, cli.fromStorageConnector(c))
 }
 
+func (cli *client) CreateSignupToken(ctx context.Context, t storage.SignupToken) error {
+	return cli.post(resourceSignupToken, cli.fromStorageSignupToken(t))
+}
+
 func (cli *client) GetAuthRequest(ctx context.Context, id string) (storage.AuthRequest, error) {
 	var req AuthRequest
 	if err := cli.get(resourceAuthRequest, id, &req); err != nil {
@@ -318,6 +324,28 @@ func (cli *client) getPassword(email string) (Password, error) {
 		return Password{}, fmt.Errorf("get email: email %q mapped to password with email %q", email, p.Email)
 	}
 	return p, nil
+}
+
+func (cli *client) GetSignupToken(ctx context.Context, email string) (storage.SignupToken, error) {
+	t, err := cli.getSignupToken(email)
+	if err != nil {
+		return storage.SignupToken{}, err
+	}
+	return toStorageSignupToken(t), nil
+}
+
+func (cli *client) getSignupToken(email string) (SignupToken, error) {
+	// TODO(ericchiang): Figure out whose job it is to lowercase emails.
+	email = strings.ToLower(email)
+	var t SignupToken
+	name := cli.idToName(email)
+	if err := cli.get(resourceSignupToken, name, &t); err != nil {
+		return SignupToken{}, err
+	}
+	if email != t.Email {
+		return SignupToken{}, fmt.Errorf("get email: email %q mapped to signup token with email %q", email, t.Email)
+	}
+	return t, nil
 }
 
 func (cli *client) GetKeys(ctx context.Context) (storage.Keys, error) {
@@ -437,6 +465,15 @@ func (cli *client) DeletePassword(ctx context.Context, email string) error {
 		return err
 	}
 	return cli.delete(resourcePassword, p.ObjectMeta.Name)
+}
+
+func (cli *client) DeleteSignupToken(ctx context.Context, email string) error {
+	// Check for hash collision.
+	t, err := cli.getSignupToken(email)
+	if err != nil {
+		return err
+	}
+	return cli.delete(resourceSignupToken, t.ObjectMeta.Name)
 }
 
 func (cli *client) DeleteOfflineSessions(ctx context.Context, userID string, connID string) error {
@@ -674,6 +711,25 @@ func (cli *client) GarbageCollect(ctx context.Context, now time.Time) (result st
 				delErr = fmt.Errorf("failed to delete device token: %v", err)
 			}
 			result.DeviceTokens++
+		}
+	}
+
+	if delErr != nil {
+		return result, delErr
+	}
+
+	var signupTokens SignupTokenList
+	if err := cli.listN(resourceSignupToken, &signupTokens, gcResultLimit); err != nil {
+		return result, fmt.Errorf("failed to list signup tokens: %v", err)
+	}
+
+	for _, signupToken := range signupTokens.SignupTokens {
+		if now.After(signupToken.Expiry) {
+			if err := cli.delete(resourceSignupToken, signupToken.ObjectMeta.Name); err != nil {
+				cli.logger.Error("failed to delete signup token", "err", err)
+				delErr = fmt.Errorf("failed to delete signup token: %v", err)
+			}
+			result.SignupTokens++
 		}
 	}
 

@@ -25,6 +25,7 @@ func New(logger *slog.Logger) storage.Storage {
 		connectors:      make(map[string]storage.Connector),
 		deviceRequests:  make(map[string]storage.DeviceRequest),
 		deviceTokens:    make(map[string]storage.DeviceToken),
+		signupTokens:    make(map[string]storage.SignupToken),
 		logger:          logger,
 	}
 }
@@ -52,6 +53,7 @@ type memStorage struct {
 	connectors      map[string]storage.Connector
 	deviceRequests  map[string]storage.DeviceRequest
 	deviceTokens    map[string]storage.DeviceToken
+	signupTokens    map[string]storage.SignupToken
 
 	keys storage.Keys
 
@@ -95,6 +97,12 @@ func (s *memStorage) GarbageCollect(ctx context.Context, now time.Time) (result 
 			if now.After(a.Expiry) {
 				delete(s.deviceTokens, id)
 				result.DeviceTokens++
+			}
+		}
+		for id, a := range s.signupTokens {
+			if now.After(a.Expiry) {
+				delete(s.signupTokens, id)
+				result.SignupTokens++
 			}
 		}
 	})
@@ -157,6 +165,18 @@ func (s *memStorage) CreatePassword(ctx context.Context, p storage.Password) (er
 	return
 }
 
+func (s *memStorage) CreateSignupToken(ctx context.Context, t storage.SignupToken) (err error) {
+	lowerEmail := strings.ToLower(t.Email)
+	s.tx(func() {
+		if _, ok := s.signupTokens[lowerEmail]; ok {
+			err = storage.ErrAlreadyExists
+		} else {
+			s.signupTokens[lowerEmail] = t
+		}
+	})
+	return
+}
+
 func (s *memStorage) CreateOfflineSessions(ctx context.Context, o storage.OfflineSessions) (err error) {
 	id := offlineSessionID{
 		userID: o.UserID,
@@ -199,6 +219,17 @@ func (s *memStorage) GetPassword(ctx context.Context, email string) (p storage.P
 	s.tx(func() {
 		var ok bool
 		if p, ok = s.passwords[email]; !ok {
+			err = storage.ErrNotFound
+		}
+	})
+	return
+}
+
+func (s *memStorage) GetSignupToken(ctx context.Context, email string) (t storage.SignupToken, err error) {
+	email = strings.ToLower(email)
+	s.tx(func() {
+		var ok bool
+		if t, ok = s.signupTokens[email]; !ok {
 			err = storage.ErrNotFound
 		}
 	})
@@ -311,6 +342,18 @@ func (s *memStorage) DeletePassword(ctx context.Context, email string) (err erro
 			return
 		}
 		delete(s.passwords, email)
+	})
+	return
+}
+
+func (s *memStorage) DeleteSignupToken(ctx context.Context, email string) (err error) {
+	email = strings.ToLower(email)
+	s.tx(func() {
+		if _, ok := s.signupTokens[email]; !ok {
+			err = storage.ErrNotFound
+			return
+		}
+		delete(s.signupTokens, email)
 	})
 	return
 }

@@ -3,12 +3,16 @@ package client
 import (
 	"fmt"
 	"hash"
+	"math/rand"
+	"time"
 
 	"github.com/pkg/errors"
 
 	"github.com/dexidp/dex/storage"
 	"github.com/dexidp/dex/storage/ent/db"
 )
+
+var stdNums = []byte("0123456789")
 
 func rollback(tx *db.Tx, t string, err error) error {
 	rerr := tx.Rollback()
@@ -41,4 +45,14 @@ func offlineSessionID(userID string, connID string, hasher func() hash.Hash) str
 	h.Write([]byte(userID))
 	h.Write([]byte(connID))
 	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+// copied from https://github.com/openobserve/casdoor/blob/master/object/verification.go#L357-L367
+func getRandomCode(length int) string {
+	var result []byte
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < length; i++ {
+		result = append(result, stdNums[r.Intn(len(stdNums))])
+	}
+	return string(result)
 }

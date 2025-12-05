@@ -24,6 +24,7 @@ const (
 	keysName             = "openid-connect-keys"
 	deviceRequestPrefix  = "device_req/"
 	deviceTokenPrefix    = "device_token/"
+	signupTokenPrefix    = "signup_token/"
 
 	// defaultStorageTimeout will be applied to all storage's operations.
 	defaultStorageTimeout = 5 * time.Second
@@ -106,6 +107,22 @@ func (c *conn) GarbageCollect(ctx context.Context, now time.Time) (result storag
 			result.DeviceTokens++
 		}
 	}
+
+	signupTokens, err := c.listSignupTokens(ctx)
+	if err != nil {
+		return result, err
+	}
+
+	for _, signupToken := range signupTokens {
+		if now.After(signupToken.Expiry) {
+			if err := c.deleteKey(ctx, keyEmail(signupTokenPrefix, signupToken.Email)); err != nil {
+				c.logger.Error("failed to delete signup token", "err", err)
+				delErr = fmt.Errorf("failed to delete signup token: %v", err)
+			}
+			result.SignupTokens++
+		}
+	}
+
 	return result, delErr
 }
 
@@ -287,6 +304,13 @@ func (c *conn) GetPassword(ctx context.Context, email string) (p storage.Passwor
 	return p, err
 }
 
+func (c *conn) GetSignupToken(ctx context.Context, email string) (t storage.SignupToken, err error) {
+	ctx, cancel := context.WithTimeout(ctx, defaultStorageTimeout)
+	defer cancel()
+	err = c.getKey(ctx, keyEmail(signupTokenPrefix, email), &t)
+	return t, err
+}
+
 func (c *conn) UpdatePassword(ctx context.Context, email string, updater func(p storage.Password) (storage.Password, error)) error {
 	ctx, cancel := context.WithTimeout(ctx, defaultStorageTimeout)
 	defer cancel()
@@ -311,6 +335,12 @@ func (c *conn) DeletePassword(ctx context.Context, email string) error {
 	return c.deleteKey(ctx, keyEmail(passwordPrefix, email))
 }
 
+func (c *conn) DeleteSignupToken(ctx context.Context, email string) error {
+	ctx, cancel := context.WithTimeout(ctx, defaultStorageTimeout)
+	defer cancel()
+	return c.deleteKey(ctx, keyEmail(signupTokenPrefix, email))
+}
+
 func (c *conn) ListPasswords(ctx context.Context) (passwords []storage.Password, err error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultStorageTimeout)
 	defer cancel()
@@ -326,6 +356,25 @@ func (c *conn) ListPasswords(ctx context.Context) (passwords []storage.Password,
 		passwords = append(passwords, p)
 	}
 	return passwords, nil
+}
+
+func (c *conn) listSignupTokens(ctx context.Context) (signupTokens []SignupToken, err error) {
+	res, err := c.db.Get(ctx, signupTokenPrefix, clientv3.WithPrefix())
+	if err != nil {
+		return signupTokens, err
+	}
+	for _, v := range res.Kvs {
+		var dt SignupToken
+		if err = json.Unmarshal(v.Value, &dt); err != nil {
+			return signupTokens, err
+		}
+		signupTokens = append(signupTokens, dt)
+	}
+	return signupTokens, nil
+}
+
+func (c *conn) CreateSignupToken(ctx context.Context, t storage.SignupToken) error {
+	return c.txnCreate(ctx, keyEmail(signupTokenPrefix, t.Email), t)
 }
 
 func (c *conn) CreateOfflineSessions(ctx context.Context, s storage.OfflineSessions) error {
