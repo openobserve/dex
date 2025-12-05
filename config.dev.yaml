@@ -28,6 +28,10 @@ connectors:
 
 enablePasswordDB: true
 
+# Enable user signup via REST API (POST /signup)
+# Requires enablePasswordDB to be true
+enableSignup: true
+
 staticPasswords:
   - email: "admin@example.com"
     hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"

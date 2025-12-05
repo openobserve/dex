@@ -20,6 +20,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/gorilla/mux"
+	"golang.org/x/exp/slices"
 
 	"github.com/dexidp/dex/connector"
 	"github.com/dexidp/dex/server/internal"
@@ -80,6 +81,7 @@ type discovery struct {
 	UserInfo          string   `json:"userinfo_endpoint"`
 	DeviceEndpoint    string   `json:"device_authorization_endpoint"`
 	Introspect        string   `json:"introspection_endpoint"`
+	Registration      string   `json:"registration_endpoint"`
 	GrantTypes        []string `json:"grant_types_supported"`
 	ResponseTypes     []string `json:"response_types_supported"`
 	Subjects          []string `json:"subject_types_supported"`
@@ -114,6 +116,7 @@ func (s *Server) constructDiscovery() discovery {
 		UserInfo:          s.absURL("/userinfo"),
 		DeviceEndpoint:    s.absURL("/device/code"),
 		Introspect:        s.absURL("/token/introspect"),
+		Registration:      s.absURL("/register"),
 		Subjects:          []string{"public"},
 		IDTokenAlgs:       []string{string(jose.RS256)},
 		CodeChallengeAlgs: []string{codeChallengeMethodS256, codeChallengeMethodPlain},
@@ -153,6 +156,12 @@ func (s *Server) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i, conn := range connectors {
+		if slices.Contains(s.hiddenConnectors, conn.ID) {
+			connectors[i].Hidden = true
+		}
+	}
+
 	// We don't need connector_id any more
 	r.Form.Del("connector_id")
 
@@ -177,20 +186,35 @@ func (s *Server) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 	if len(connectors) == 1 && !s.alwaysShowLogin {
 		connURL.Path = s.absPath("/auth", url.PathEscape(connectors[0].ID))
 		http.Redirect(w, r, connURL.String(), http.StatusFound)
+	} else {
+		// Get visible connectors (those with hidden=false)
+		visibleConnectors := make([]storage.Connector, 0)
+		for _, conn := range connectors {
+			if !conn.Hidden {
+				visibleConnectors = append(visibleConnectors, conn)
+			}
+		}
+
+		// If only one visible connector and not forcing login page
+		if len(visibleConnectors) == 1 && !s.alwaysShowLogin {
+			connURL.Path = s.absPath("/auth", url.PathEscape(visibleConnectors[0].ID))
+			http.Redirect(w, r, connURL.String(), http.StatusFound)
+		}
 	}
 
 	connectorInfos := make([]connectorInfo, len(connectors))
 	for index, conn := range connectors {
 		connURL.Path = s.absPath("/auth", url.PathEscape(conn.ID))
 		connectorInfos[index] = connectorInfo{
-			ID:   conn.ID,
-			Name: conn.Name,
-			Type: conn.Type,
-			URL:  template.URL(connURL.String()),
+			ID:     conn.ID,
+			Name:   conn.Name,
+			Type:   conn.Type,
+			URL:    template.URL(connURL.String()),
+			Hidden: conn.Hidden,
 		}
 	}
 
-	if err := s.templates.login(r, w, connectorInfos); err != nil {
+	if err := s.templates.login(r, w, connectorInfos, s.enableSignup); err != nil {
 		s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 	}
 }
@@ -223,7 +247,7 @@ func (s *Server) handleConnectorLogin(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.getConnector(ctx, connID)
 	if err != nil {
 		s.logger.ErrorContext(r.Context(), "Failed to get connector", "err", err)
-		s.renderError(r, w, http.StatusBadRequest, "Requested resource does not exist")
+		s.renderError(r, w, http.StatusBadRequest, "Connector failed to initialize")
 		return
 	}
 
@@ -350,7 +374,7 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.getConnector(ctx, authReq.ConnectorID)
 	if err != nil {
 		s.logger.ErrorContext(r.Context(), "failed to get connector", "connector_id", authReq.ConnectorID, "err", err)
-		s.renderError(r, w, http.StatusInternalServerError, "Requested resource does not exist.")
+		s.renderError(r, w, http.StatusInternalServerError, "Connector failed to initialize.")
 		return
 	}
 
@@ -363,7 +387,7 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		if err := s.templates.password(r, w, r.URL.String(), "", usernamePrompt(pwConn), false, backLink); err != nil {
+		if err := s.templates.password(r, w, r.URL.String(), "", usernamePrompt(pwConn), false, backLink, s.enableSignup); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 	case http.MethodPost:
@@ -378,7 +402,7 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !ok {
-			if err := s.templates.password(r, w, r.URL.String(), username, usernamePrompt(pwConn), true, backLink); err != nil {
+			if err := s.templates.password(r, w, r.URL.String(), username, usernamePrompt(pwConn), true, backLink, s.enableSignup); err != nil {
 				s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 			}
 			s.logger.ErrorContext(r.Context(), "failed login attempt: Invalid credentials.", "user", username)
@@ -720,8 +744,6 @@ func (s *Server) sendCodeResponse(w http.ResponseWriter, r *http.Request, authRe
 			}
 		case responseTypeToken:
 			implicitOrHybrid = true
-		case responseTypeIDToken:
-			implicitOrHybrid = true
 			var err error
 
 			accessToken, _, err = s.newAccessToken(r.Context(), authReq.ClientID, authReq.Claims, authReq.Scopes, authReq.Nonce, authReq.ConnectorID)
@@ -730,6 +752,9 @@ func (s *Server) sendCodeResponse(w http.ResponseWriter, r *http.Request, authRe
 				s.tokenErrHelper(w, errServerError, "", http.StatusInternalServerError)
 				return
 			}
+		case responseTypeIDToken:
+			implicitOrHybrid = true
+			var err error
 
 			idToken, idTokenExpiry, err = s.newIDToken(r.Context(), authReq.ClientID, authReq.Claims, authReq.Scopes, authReq.Nonce, accessToken, code.ID, authReq.ConnectorID)
 			if err != nil {
@@ -742,12 +767,10 @@ func (s *Server) sendCodeResponse(w http.ResponseWriter, r *http.Request, authRe
 
 	if implicitOrHybrid {
 		v := url.Values{}
-		v.Set("access_token", accessToken)
-		v.Set("token_type", "bearer")
-		v.Set("state", authReq.State)
-		if idToken != "" {
-			v.Set("id_token", idToken)
-			// The hybrid flow with only "code token" or "code id_token" doesn't return an
+		if accessToken != "" {
+			v.Set("access_token", accessToken)
+			v.Set("token_type", "bearer")
+			// The hybrid flow with "code token" or "code id_token token" doesn't return an
 			// "expires_in" value. If "code" wasn't provided, indicating the implicit flow,
 			// don't add it.
 			//
@@ -755,6 +778,10 @@ func (s *Server) sendCodeResponse(w http.ResponseWriter, r *http.Request, authRe
 			if code.ID == "" {
 				v.Set("expires_in", strconv.Itoa(int(idTokenExpiry.Sub(s.now()).Seconds())))
 			}
+		}
+		v.Set("state", authReq.State)
+		if idToken != "" {
+			v.Set("id_token", idToken)
 		}
 		if code.ID != "" {
 			v.Set("code", code.ID)
@@ -1387,7 +1414,32 @@ func (s *Server) handleTokenExchange(w http.ResponseWriter, r *http.Request, cli
 		s.tokenErrHelper(w, errInvalidRequest, "Requested connector does not exist.", http.StatusBadRequest)
 		return
 	}
-	identity, err := teConn.TokenIdentity(ctx, subjectTokenType, subjectToken)
+
+	// Check if connector also implements introspection capability
+	introspectionConn, supportsIntrospection := conn.Connector.(connector.TokenIntrospectionConnector)
+
+	headerFound := false
+	for name, values := range r.Header {
+		if strings.EqualFold(name, "X-Use-Introspection") {
+			headerFound = slices.Contains(values, "true")
+			break
+		}
+	}
+
+	// Condition for when to use introspection instead of standard verification
+	// Improved conditions for when to use introspection
+	useIntrospection := supportsIntrospection && headerFound
+
+	var identity connector.Identity
+
+	if useIntrospection {
+		// Use introspection connector
+		identity, err = introspectionConn.IntrospectToken(ctx, subjectTokenType, subjectToken)
+	} else {
+		// Use standard token verification
+		identity, err = teConn.TokenIdentity(ctx, subjectTokenType, subjectToken)
+	}
+
 	if err != nil {
 		s.logger.ErrorContext(r.Context(), "failed to verify subject token", "err", err)
 		s.tokenErrHelper(w, errAccessDenied, "", http.StatusUnauthorized)
