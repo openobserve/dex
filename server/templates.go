@@ -292,8 +292,9 @@ func (t *templates) login(r *http.Request, w http.ResponseWriter, connectors []c
 	data := struct {
 		Connectors   []connectorInfo
 		ReqPath      string
+		SignupPath   string
 		EnableSignup bool
-	}{connectors, r.URL.Path, enableSignup}
+	}{connectors, r.URL.Path, fmt.Sprintf("signup?%s", r.URL.RawQuery), enableSignup}
 	return renderTemplate(w, t.loginTmpl, data)
 }
 

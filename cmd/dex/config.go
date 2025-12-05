@@ -54,7 +54,11 @@ type Config struct {
 
 	// If enabled, allows users to sign up with email and password via REST API.
 	// Requires EnablePasswordDB to be true.
-	EnableSignup bool `json:"enableSignup"`
+	EnableSignup bool   `json:"enableSignup"`
+	SmtpHost     string `json:"smtpHost"`
+	SmtpSender   string `json:"smtpSender"`
+	SmtpUser     string `json:"smtpUser"`
+	SmtpPassword string `json:"smtpPassword"`
 
 	HiddenConnectors []string `json:"hiddenConnectors"`
 }
@@ -69,6 +73,7 @@ func (c Config) Validate() error {
 		{c.Issuer == "", "no issuer specified in config file"},
 		{!c.EnablePasswordDB && len(c.StaticPasswords) != 0, "cannot specify static passwords without enabling password db"},
 		{c.EnableSignup && !c.EnablePasswordDB, "cannot enable signup without enabling password db"},
+		{c.EnableSignup && (c.SmtpHost == "" || c.SmtpUser == "" || c.SmtpPassword == "" || c.SmtpSender == ""), "cannot enable signup with empty smtp credentials"},
 		{c.Storage.Config == nil, "no storage supplied in config file"},
 		{c.Web.HTTP == "" && c.Web.HTTPS == "", "must supply a HTTP/HTTPS  address to listen on"},
 		{c.Web.HTTPS != "" && c.Web.TLSCert == "", "no cert specified for HTTPS"},

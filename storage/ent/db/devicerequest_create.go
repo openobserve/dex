@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/dexidp/dex/storage/ent/db/devicerequest"
@@ -18,6 +19,7 @@ type DeviceRequestCreate struct {
 	config
 	mutation *DeviceRequestMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetUserCode sets the "user_code" field.
@@ -151,6 +153,7 @@ func (_c *DeviceRequestCreate) createSpec() (*DeviceRequest, *sqlgraph.CreateSpe
 		_node = &DeviceRequest{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(devicerequest.Table, sqlgraph.NewFieldSpec(devicerequest.FieldID, field.TypeInt))
 	)
+	_spec.OnConflict = _c.conflict
 	if value, ok := _c.mutation.UserCode(); ok {
 		_spec.SetField(devicerequest.FieldUserCode, field.TypeString, value)
 		_node.UserCode = value
@@ -178,11 +181,303 @@ func (_c *DeviceRequestCreate) createSpec() (*DeviceRequest, *sqlgraph.CreateSpe
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.DeviceRequest.Create().
+//		SetUserCode(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DeviceRequestUpsert) {
+//			SetUserCode(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *DeviceRequestCreate) OnConflict(opts ...sql.ConflictOption) *DeviceRequestUpsertOne {
+	_c.conflict = opts
+	return &DeviceRequestUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.DeviceRequest.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *DeviceRequestCreate) OnConflictColumns(columns ...string) *DeviceRequestUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &DeviceRequestUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// DeviceRequestUpsertOne is the builder for "upsert"-ing
+	//  one DeviceRequest node.
+	DeviceRequestUpsertOne struct {
+		create *DeviceRequestCreate
+	}
+
+	// DeviceRequestUpsert is the "OnConflict" setter.
+	DeviceRequestUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetUserCode sets the "user_code" field.
+func (u *DeviceRequestUpsert) SetUserCode(v string) *DeviceRequestUpsert {
+	u.Set(devicerequest.FieldUserCode, v)
+	return u
+}
+
+// UpdateUserCode sets the "user_code" field to the value that was provided on create.
+func (u *DeviceRequestUpsert) UpdateUserCode() *DeviceRequestUpsert {
+	u.SetExcluded(devicerequest.FieldUserCode)
+	return u
+}
+
+// SetDeviceCode sets the "device_code" field.
+func (u *DeviceRequestUpsert) SetDeviceCode(v string) *DeviceRequestUpsert {
+	u.Set(devicerequest.FieldDeviceCode, v)
+	return u
+}
+
+// UpdateDeviceCode sets the "device_code" field to the value that was provided on create.
+func (u *DeviceRequestUpsert) UpdateDeviceCode() *DeviceRequestUpsert {
+	u.SetExcluded(devicerequest.FieldDeviceCode)
+	return u
+}
+
+// SetClientID sets the "client_id" field.
+func (u *DeviceRequestUpsert) SetClientID(v string) *DeviceRequestUpsert {
+	u.Set(devicerequest.FieldClientID, v)
+	return u
+}
+
+// UpdateClientID sets the "client_id" field to the value that was provided on create.
+func (u *DeviceRequestUpsert) UpdateClientID() *DeviceRequestUpsert {
+	u.SetExcluded(devicerequest.FieldClientID)
+	return u
+}
+
+// SetClientSecret sets the "client_secret" field.
+func (u *DeviceRequestUpsert) SetClientSecret(v string) *DeviceRequestUpsert {
+	u.Set(devicerequest.FieldClientSecret, v)
+	return u
+}
+
+// UpdateClientSecret sets the "client_secret" field to the value that was provided on create.
+func (u *DeviceRequestUpsert) UpdateClientSecret() *DeviceRequestUpsert {
+	u.SetExcluded(devicerequest.FieldClientSecret)
+	return u
+}
+
+// SetScopes sets the "scopes" field.
+func (u *DeviceRequestUpsert) SetScopes(v []string) *DeviceRequestUpsert {
+	u.Set(devicerequest.FieldScopes, v)
+	return u
+}
+
+// UpdateScopes sets the "scopes" field to the value that was provided on create.
+func (u *DeviceRequestUpsert) UpdateScopes() *DeviceRequestUpsert {
+	u.SetExcluded(devicerequest.FieldScopes)
+	return u
+}
+
+// ClearScopes clears the value of the "scopes" field.
+func (u *DeviceRequestUpsert) ClearScopes() *DeviceRequestUpsert {
+	u.SetNull(devicerequest.FieldScopes)
+	return u
+}
+
+// SetExpiry sets the "expiry" field.
+func (u *DeviceRequestUpsert) SetExpiry(v time.Time) *DeviceRequestUpsert {
+	u.Set(devicerequest.FieldExpiry, v)
+	return u
+}
+
+// UpdateExpiry sets the "expiry" field to the value that was provided on create.
+func (u *DeviceRequestUpsert) UpdateExpiry() *DeviceRequestUpsert {
+	u.SetExcluded(devicerequest.FieldExpiry)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create.
+// Using this option is equivalent to using:
+//
+//	client.DeviceRequest.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//		).
+//		Exec(ctx)
+func (u *DeviceRequestUpsertOne) UpdateNewValues() *DeviceRequestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.DeviceRequest.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *DeviceRequestUpsertOne) Ignore() *DeviceRequestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DeviceRequestUpsertOne) DoNothing() *DeviceRequestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DeviceRequestCreate.OnConflict
+// documentation for more info.
+func (u *DeviceRequestUpsertOne) Update(set func(*DeviceRequestUpsert)) *DeviceRequestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DeviceRequestUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUserCode sets the "user_code" field.
+func (u *DeviceRequestUpsertOne) SetUserCode(v string) *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetUserCode(v)
+	})
+}
+
+// UpdateUserCode sets the "user_code" field to the value that was provided on create.
+func (u *DeviceRequestUpsertOne) UpdateUserCode() *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateUserCode()
+	})
+}
+
+// SetDeviceCode sets the "device_code" field.
+func (u *DeviceRequestUpsertOne) SetDeviceCode(v string) *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetDeviceCode(v)
+	})
+}
+
+// UpdateDeviceCode sets the "device_code" field to the value that was provided on create.
+func (u *DeviceRequestUpsertOne) UpdateDeviceCode() *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateDeviceCode()
+	})
+}
+
+// SetClientID sets the "client_id" field.
+func (u *DeviceRequestUpsertOne) SetClientID(v string) *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetClientID(v)
+	})
+}
+
+// UpdateClientID sets the "client_id" field to the value that was provided on create.
+func (u *DeviceRequestUpsertOne) UpdateClientID() *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateClientID()
+	})
+}
+
+// SetClientSecret sets the "client_secret" field.
+func (u *DeviceRequestUpsertOne) SetClientSecret(v string) *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetClientSecret(v)
+	})
+}
+
+// UpdateClientSecret sets the "client_secret" field to the value that was provided on create.
+func (u *DeviceRequestUpsertOne) UpdateClientSecret() *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateClientSecret()
+	})
+}
+
+// SetScopes sets the "scopes" field.
+func (u *DeviceRequestUpsertOne) SetScopes(v []string) *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetScopes(v)
+	})
+}
+
+// UpdateScopes sets the "scopes" field to the value that was provided on create.
+func (u *DeviceRequestUpsertOne) UpdateScopes() *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateScopes()
+	})
+}
+
+// ClearScopes clears the value of the "scopes" field.
+func (u *DeviceRequestUpsertOne) ClearScopes() *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.ClearScopes()
+	})
+}
+
+// SetExpiry sets the "expiry" field.
+func (u *DeviceRequestUpsertOne) SetExpiry(v time.Time) *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetExpiry(v)
+	})
+}
+
+// UpdateExpiry sets the "expiry" field to the value that was provided on create.
+func (u *DeviceRequestUpsertOne) UpdateExpiry() *DeviceRequestUpsertOne {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateExpiry()
+	})
+}
+
+// Exec executes the query.
+func (u *DeviceRequestUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for DeviceRequestCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DeviceRequestUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *DeviceRequestUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *DeviceRequestUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // DeviceRequestCreateBulk is the builder for creating many DeviceRequest entities in bulk.
 type DeviceRequestCreateBulk struct {
 	config
 	err      error
 	builders []*DeviceRequestCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the DeviceRequest entities in the database.
@@ -211,6 +506,7 @@ func (_c *DeviceRequestCreateBulk) Save(ctx context.Context) ([]*DeviceRequest, 
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -261,6 +557,201 @@ func (_c *DeviceRequestCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *DeviceRequestCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.DeviceRequest.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DeviceRequestUpsert) {
+//			SetUserCode(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *DeviceRequestCreateBulk) OnConflict(opts ...sql.ConflictOption) *DeviceRequestUpsertBulk {
+	_c.conflict = opts
+	return &DeviceRequestUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.DeviceRequest.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *DeviceRequestCreateBulk) OnConflictColumns(columns ...string) *DeviceRequestUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &DeviceRequestUpsertBulk{
+		create: _c,
+	}
+}
+
+// DeviceRequestUpsertBulk is the builder for "upsert"-ing
+// a bulk of DeviceRequest nodes.
+type DeviceRequestUpsertBulk struct {
+	create *DeviceRequestCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.DeviceRequest.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//		).
+//		Exec(ctx)
+func (u *DeviceRequestUpsertBulk) UpdateNewValues() *DeviceRequestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.DeviceRequest.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *DeviceRequestUpsertBulk) Ignore() *DeviceRequestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DeviceRequestUpsertBulk) DoNothing() *DeviceRequestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DeviceRequestCreateBulk.OnConflict
+// documentation for more info.
+func (u *DeviceRequestUpsertBulk) Update(set func(*DeviceRequestUpsert)) *DeviceRequestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DeviceRequestUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUserCode sets the "user_code" field.
+func (u *DeviceRequestUpsertBulk) SetUserCode(v string) *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetUserCode(v)
+	})
+}
+
+// UpdateUserCode sets the "user_code" field to the value that was provided on create.
+func (u *DeviceRequestUpsertBulk) UpdateUserCode() *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateUserCode()
+	})
+}
+
+// SetDeviceCode sets the "device_code" field.
+func (u *DeviceRequestUpsertBulk) SetDeviceCode(v string) *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetDeviceCode(v)
+	})
+}
+
+// UpdateDeviceCode sets the "device_code" field to the value that was provided on create.
+func (u *DeviceRequestUpsertBulk) UpdateDeviceCode() *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateDeviceCode()
+	})
+}
+
+// SetClientID sets the "client_id" field.
+func (u *DeviceRequestUpsertBulk) SetClientID(v string) *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetClientID(v)
+	})
+}
+
+// UpdateClientID sets the "client_id" field to the value that was provided on create.
+func (u *DeviceRequestUpsertBulk) UpdateClientID() *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateClientID()
+	})
+}
+
+// SetClientSecret sets the "client_secret" field.
+func (u *DeviceRequestUpsertBulk) SetClientSecret(v string) *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetClientSecret(v)
+	})
+}
+
+// UpdateClientSecret sets the "client_secret" field to the value that was provided on create.
+func (u *DeviceRequestUpsertBulk) UpdateClientSecret() *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateClientSecret()
+	})
+}
+
+// SetScopes sets the "scopes" field.
+func (u *DeviceRequestUpsertBulk) SetScopes(v []string) *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetScopes(v)
+	})
+}
+
+// UpdateScopes sets the "scopes" field to the value that was provided on create.
+func (u *DeviceRequestUpsertBulk) UpdateScopes() *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateScopes()
+	})
+}
+
+// ClearScopes clears the value of the "scopes" field.
+func (u *DeviceRequestUpsertBulk) ClearScopes() *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.ClearScopes()
+	})
+}
+
+// SetExpiry sets the "expiry" field.
+func (u *DeviceRequestUpsertBulk) SetExpiry(v time.Time) *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.SetExpiry(v)
+	})
+}
+
+// UpdateExpiry sets the "expiry" field to the value that was provided on create.
+func (u *DeviceRequestUpsertBulk) UpdateExpiry() *DeviceRequestUpsertBulk {
+	return u.Update(func(s *DeviceRequestUpsert) {
+		s.UpdateExpiry()
+	})
+}
+
+// Exec executes the query.
+func (u *DeviceRequestUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("db: OnConflict was set for builder %d. Set it on the DeviceRequestCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for DeviceRequestCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DeviceRequestUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

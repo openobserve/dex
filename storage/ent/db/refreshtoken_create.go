@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/dexidp/dex/storage/ent/db/refreshtoken"
@@ -18,6 +20,7 @@ type RefreshTokenCreate struct {
 	config
 	mutation *RefreshTokenMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetClientID sets the "client_id" field.
@@ -317,6 +320,7 @@ func (_c *RefreshTokenCreate) createSpec() (*RefreshToken, *sqlgraph.CreateSpec)
 		_node = &RefreshToken{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(refreshtoken.Table, sqlgraph.NewFieldSpec(refreshtoken.FieldID, field.TypeString))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -384,11 +388,576 @@ func (_c *RefreshTokenCreate) createSpec() (*RefreshToken, *sqlgraph.CreateSpec)
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.RefreshToken.Create().
+//		SetClientID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.RefreshTokenUpsert) {
+//			SetClientID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *RefreshTokenCreate) OnConflict(opts ...sql.ConflictOption) *RefreshTokenUpsertOne {
+	_c.conflict = opts
+	return &RefreshTokenUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.RefreshToken.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *RefreshTokenCreate) OnConflictColumns(columns ...string) *RefreshTokenUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &RefreshTokenUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// RefreshTokenUpsertOne is the builder for "upsert"-ing
+	//  one RefreshToken node.
+	RefreshTokenUpsertOne struct {
+		create *RefreshTokenCreate
+	}
+
+	// RefreshTokenUpsert is the "OnConflict" setter.
+	RefreshTokenUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetClientID sets the "client_id" field.
+func (u *RefreshTokenUpsert) SetClientID(v string) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldClientID, v)
+	return u
+}
+
+// UpdateClientID sets the "client_id" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateClientID() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldClientID)
+	return u
+}
+
+// SetScopes sets the "scopes" field.
+func (u *RefreshTokenUpsert) SetScopes(v []string) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldScopes, v)
+	return u
+}
+
+// UpdateScopes sets the "scopes" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateScopes() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldScopes)
+	return u
+}
+
+// ClearScopes clears the value of the "scopes" field.
+func (u *RefreshTokenUpsert) ClearScopes() *RefreshTokenUpsert {
+	u.SetNull(refreshtoken.FieldScopes)
+	return u
+}
+
+// SetNonce sets the "nonce" field.
+func (u *RefreshTokenUpsert) SetNonce(v string) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldNonce, v)
+	return u
+}
+
+// UpdateNonce sets the "nonce" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateNonce() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldNonce)
+	return u
+}
+
+// SetClaimsUserID sets the "claims_user_id" field.
+func (u *RefreshTokenUpsert) SetClaimsUserID(v string) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldClaimsUserID, v)
+	return u
+}
+
+// UpdateClaimsUserID sets the "claims_user_id" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateClaimsUserID() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldClaimsUserID)
+	return u
+}
+
+// SetClaimsUsername sets the "claims_username" field.
+func (u *RefreshTokenUpsert) SetClaimsUsername(v string) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldClaimsUsername, v)
+	return u
+}
+
+// UpdateClaimsUsername sets the "claims_username" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateClaimsUsername() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldClaimsUsername)
+	return u
+}
+
+// SetClaimsEmail sets the "claims_email" field.
+func (u *RefreshTokenUpsert) SetClaimsEmail(v string) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldClaimsEmail, v)
+	return u
+}
+
+// UpdateClaimsEmail sets the "claims_email" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateClaimsEmail() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldClaimsEmail)
+	return u
+}
+
+// SetClaimsEmailVerified sets the "claims_email_verified" field.
+func (u *RefreshTokenUpsert) SetClaimsEmailVerified(v bool) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldClaimsEmailVerified, v)
+	return u
+}
+
+// UpdateClaimsEmailVerified sets the "claims_email_verified" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateClaimsEmailVerified() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldClaimsEmailVerified)
+	return u
+}
+
+// SetClaimsGroups sets the "claims_groups" field.
+func (u *RefreshTokenUpsert) SetClaimsGroups(v []string) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldClaimsGroups, v)
+	return u
+}
+
+// UpdateClaimsGroups sets the "claims_groups" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateClaimsGroups() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldClaimsGroups)
+	return u
+}
+
+// ClearClaimsGroups clears the value of the "claims_groups" field.
+func (u *RefreshTokenUpsert) ClearClaimsGroups() *RefreshTokenUpsert {
+	u.SetNull(refreshtoken.FieldClaimsGroups)
+	return u
+}
+
+// SetClaimsPreferredUsername sets the "claims_preferred_username" field.
+func (u *RefreshTokenUpsert) SetClaimsPreferredUsername(v string) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldClaimsPreferredUsername, v)
+	return u
+}
+
+// UpdateClaimsPreferredUsername sets the "claims_preferred_username" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateClaimsPreferredUsername() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldClaimsPreferredUsername)
+	return u
+}
+
+// SetConnectorID sets the "connector_id" field.
+func (u *RefreshTokenUpsert) SetConnectorID(v string) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldConnectorID, v)
+	return u
+}
+
+// UpdateConnectorID sets the "connector_id" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateConnectorID() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldConnectorID)
+	return u
+}
+
+// SetConnectorData sets the "connector_data" field.
+func (u *RefreshTokenUpsert) SetConnectorData(v []byte) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldConnectorData, v)
+	return u
+}
+
+// UpdateConnectorData sets the "connector_data" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateConnectorData() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldConnectorData)
+	return u
+}
+
+// ClearConnectorData clears the value of the "connector_data" field.
+func (u *RefreshTokenUpsert) ClearConnectorData() *RefreshTokenUpsert {
+	u.SetNull(refreshtoken.FieldConnectorData)
+	return u
+}
+
+// SetToken sets the "token" field.
+func (u *RefreshTokenUpsert) SetToken(v string) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldToken, v)
+	return u
+}
+
+// UpdateToken sets the "token" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateToken() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldToken)
+	return u
+}
+
+// SetObsoleteToken sets the "obsolete_token" field.
+func (u *RefreshTokenUpsert) SetObsoleteToken(v string) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldObsoleteToken, v)
+	return u
+}
+
+// UpdateObsoleteToken sets the "obsolete_token" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateObsoleteToken() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldObsoleteToken)
+	return u
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (u *RefreshTokenUpsert) SetCreatedAt(v time.Time) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldCreatedAt, v)
+	return u
+}
+
+// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateCreatedAt() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldCreatedAt)
+	return u
+}
+
+// SetLastUsed sets the "last_used" field.
+func (u *RefreshTokenUpsert) SetLastUsed(v time.Time) *RefreshTokenUpsert {
+	u.Set(refreshtoken.FieldLastUsed, v)
+	return u
+}
+
+// UpdateLastUsed sets the "last_used" field to the value that was provided on create.
+func (u *RefreshTokenUpsert) UpdateLastUsed() *RefreshTokenUpsert {
+	u.SetExcluded(refreshtoken.FieldLastUsed)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.RefreshToken.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(refreshtoken.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *RefreshTokenUpsertOne) UpdateNewValues() *RefreshTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(refreshtoken.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.RefreshToken.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *RefreshTokenUpsertOne) Ignore() *RefreshTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *RefreshTokenUpsertOne) DoNothing() *RefreshTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the RefreshTokenCreate.OnConflict
+// documentation for more info.
+func (u *RefreshTokenUpsertOne) Update(set func(*RefreshTokenUpsert)) *RefreshTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&RefreshTokenUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetClientID sets the "client_id" field.
+func (u *RefreshTokenUpsertOne) SetClientID(v string) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClientID(v)
+	})
+}
+
+// UpdateClientID sets the "client_id" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateClientID() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClientID()
+	})
+}
+
+// SetScopes sets the "scopes" field.
+func (u *RefreshTokenUpsertOne) SetScopes(v []string) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetScopes(v)
+	})
+}
+
+// UpdateScopes sets the "scopes" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateScopes() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateScopes()
+	})
+}
+
+// ClearScopes clears the value of the "scopes" field.
+func (u *RefreshTokenUpsertOne) ClearScopes() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.ClearScopes()
+	})
+}
+
+// SetNonce sets the "nonce" field.
+func (u *RefreshTokenUpsertOne) SetNonce(v string) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetNonce(v)
+	})
+}
+
+// UpdateNonce sets the "nonce" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateNonce() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateNonce()
+	})
+}
+
+// SetClaimsUserID sets the "claims_user_id" field.
+func (u *RefreshTokenUpsertOne) SetClaimsUserID(v string) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsUserID(v)
+	})
+}
+
+// UpdateClaimsUserID sets the "claims_user_id" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateClaimsUserID() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsUserID()
+	})
+}
+
+// SetClaimsUsername sets the "claims_username" field.
+func (u *RefreshTokenUpsertOne) SetClaimsUsername(v string) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsUsername(v)
+	})
+}
+
+// UpdateClaimsUsername sets the "claims_username" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateClaimsUsername() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsUsername()
+	})
+}
+
+// SetClaimsEmail sets the "claims_email" field.
+func (u *RefreshTokenUpsertOne) SetClaimsEmail(v string) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsEmail(v)
+	})
+}
+
+// UpdateClaimsEmail sets the "claims_email" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateClaimsEmail() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsEmail()
+	})
+}
+
+// SetClaimsEmailVerified sets the "claims_email_verified" field.
+func (u *RefreshTokenUpsertOne) SetClaimsEmailVerified(v bool) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsEmailVerified(v)
+	})
+}
+
+// UpdateClaimsEmailVerified sets the "claims_email_verified" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateClaimsEmailVerified() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsEmailVerified()
+	})
+}
+
+// SetClaimsGroups sets the "claims_groups" field.
+func (u *RefreshTokenUpsertOne) SetClaimsGroups(v []string) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsGroups(v)
+	})
+}
+
+// UpdateClaimsGroups sets the "claims_groups" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateClaimsGroups() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsGroups()
+	})
+}
+
+// ClearClaimsGroups clears the value of the "claims_groups" field.
+func (u *RefreshTokenUpsertOne) ClearClaimsGroups() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.ClearClaimsGroups()
+	})
+}
+
+// SetClaimsPreferredUsername sets the "claims_preferred_username" field.
+func (u *RefreshTokenUpsertOne) SetClaimsPreferredUsername(v string) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsPreferredUsername(v)
+	})
+}
+
+// UpdateClaimsPreferredUsername sets the "claims_preferred_username" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateClaimsPreferredUsername() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsPreferredUsername()
+	})
+}
+
+// SetConnectorID sets the "connector_id" field.
+func (u *RefreshTokenUpsertOne) SetConnectorID(v string) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetConnectorID(v)
+	})
+}
+
+// UpdateConnectorID sets the "connector_id" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateConnectorID() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateConnectorID()
+	})
+}
+
+// SetConnectorData sets the "connector_data" field.
+func (u *RefreshTokenUpsertOne) SetConnectorData(v []byte) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetConnectorData(v)
+	})
+}
+
+// UpdateConnectorData sets the "connector_data" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateConnectorData() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateConnectorData()
+	})
+}
+
+// ClearConnectorData clears the value of the "connector_data" field.
+func (u *RefreshTokenUpsertOne) ClearConnectorData() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.ClearConnectorData()
+	})
+}
+
+// SetToken sets the "token" field.
+func (u *RefreshTokenUpsertOne) SetToken(v string) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetToken(v)
+	})
+}
+
+// UpdateToken sets the "token" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateToken() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateToken()
+	})
+}
+
+// SetObsoleteToken sets the "obsolete_token" field.
+func (u *RefreshTokenUpsertOne) SetObsoleteToken(v string) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetObsoleteToken(v)
+	})
+}
+
+// UpdateObsoleteToken sets the "obsolete_token" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateObsoleteToken() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateObsoleteToken()
+	})
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (u *RefreshTokenUpsertOne) SetCreatedAt(v time.Time) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetCreatedAt(v)
+	})
+}
+
+// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateCreatedAt() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateCreatedAt()
+	})
+}
+
+// SetLastUsed sets the "last_used" field.
+func (u *RefreshTokenUpsertOne) SetLastUsed(v time.Time) *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetLastUsed(v)
+	})
+}
+
+// UpdateLastUsed sets the "last_used" field to the value that was provided on create.
+func (u *RefreshTokenUpsertOne) UpdateLastUsed() *RefreshTokenUpsertOne {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateLastUsed()
+	})
+}
+
+// Exec executes the query.
+func (u *RefreshTokenUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for RefreshTokenCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *RefreshTokenUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *RefreshTokenUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("db: RefreshTokenUpsertOne.ID is not supported by MySQL driver. Use RefreshTokenUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *RefreshTokenUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // RefreshTokenCreateBulk is the builder for creating many RefreshToken entities in bulk.
 type RefreshTokenCreateBulk struct {
 	config
 	err      error
 	builders []*RefreshTokenCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the RefreshToken entities in the database.
@@ -418,6 +987,7 @@ func (_c *RefreshTokenCreateBulk) Save(ctx context.Context) ([]*RefreshToken, er
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -464,6 +1034,351 @@ func (_c *RefreshTokenCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *RefreshTokenCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.RefreshToken.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.RefreshTokenUpsert) {
+//			SetClientID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *RefreshTokenCreateBulk) OnConflict(opts ...sql.ConflictOption) *RefreshTokenUpsertBulk {
+	_c.conflict = opts
+	return &RefreshTokenUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.RefreshToken.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *RefreshTokenCreateBulk) OnConflictColumns(columns ...string) *RefreshTokenUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &RefreshTokenUpsertBulk{
+		create: _c,
+	}
+}
+
+// RefreshTokenUpsertBulk is the builder for "upsert"-ing
+// a bulk of RefreshToken nodes.
+type RefreshTokenUpsertBulk struct {
+	create *RefreshTokenCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.RefreshToken.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(refreshtoken.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *RefreshTokenUpsertBulk) UpdateNewValues() *RefreshTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(refreshtoken.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.RefreshToken.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *RefreshTokenUpsertBulk) Ignore() *RefreshTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *RefreshTokenUpsertBulk) DoNothing() *RefreshTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the RefreshTokenCreateBulk.OnConflict
+// documentation for more info.
+func (u *RefreshTokenUpsertBulk) Update(set func(*RefreshTokenUpsert)) *RefreshTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&RefreshTokenUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetClientID sets the "client_id" field.
+func (u *RefreshTokenUpsertBulk) SetClientID(v string) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClientID(v)
+	})
+}
+
+// UpdateClientID sets the "client_id" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateClientID() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClientID()
+	})
+}
+
+// SetScopes sets the "scopes" field.
+func (u *RefreshTokenUpsertBulk) SetScopes(v []string) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetScopes(v)
+	})
+}
+
+// UpdateScopes sets the "scopes" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateScopes() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateScopes()
+	})
+}
+
+// ClearScopes clears the value of the "scopes" field.
+func (u *RefreshTokenUpsertBulk) ClearScopes() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.ClearScopes()
+	})
+}
+
+// SetNonce sets the "nonce" field.
+func (u *RefreshTokenUpsertBulk) SetNonce(v string) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetNonce(v)
+	})
+}
+
+// UpdateNonce sets the "nonce" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateNonce() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateNonce()
+	})
+}
+
+// SetClaimsUserID sets the "claims_user_id" field.
+func (u *RefreshTokenUpsertBulk) SetClaimsUserID(v string) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsUserID(v)
+	})
+}
+
+// UpdateClaimsUserID sets the "claims_user_id" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateClaimsUserID() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsUserID()
+	})
+}
+
+// SetClaimsUsername sets the "claims_username" field.
+func (u *RefreshTokenUpsertBulk) SetClaimsUsername(v string) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsUsername(v)
+	})
+}
+
+// UpdateClaimsUsername sets the "claims_username" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateClaimsUsername() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsUsername()
+	})
+}
+
+// SetClaimsEmail sets the "claims_email" field.
+func (u *RefreshTokenUpsertBulk) SetClaimsEmail(v string) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsEmail(v)
+	})
+}
+
+// UpdateClaimsEmail sets the "claims_email" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateClaimsEmail() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsEmail()
+	})
+}
+
+// SetClaimsEmailVerified sets the "claims_email_verified" field.
+func (u *RefreshTokenUpsertBulk) SetClaimsEmailVerified(v bool) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsEmailVerified(v)
+	})
+}
+
+// UpdateClaimsEmailVerified sets the "claims_email_verified" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateClaimsEmailVerified() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsEmailVerified()
+	})
+}
+
+// SetClaimsGroups sets the "claims_groups" field.
+func (u *RefreshTokenUpsertBulk) SetClaimsGroups(v []string) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsGroups(v)
+	})
+}
+
+// UpdateClaimsGroups sets the "claims_groups" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateClaimsGroups() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsGroups()
+	})
+}
+
+// ClearClaimsGroups clears the value of the "claims_groups" field.
+func (u *RefreshTokenUpsertBulk) ClearClaimsGroups() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.ClearClaimsGroups()
+	})
+}
+
+// SetClaimsPreferredUsername sets the "claims_preferred_username" field.
+func (u *RefreshTokenUpsertBulk) SetClaimsPreferredUsername(v string) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetClaimsPreferredUsername(v)
+	})
+}
+
+// UpdateClaimsPreferredUsername sets the "claims_preferred_username" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateClaimsPreferredUsername() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateClaimsPreferredUsername()
+	})
+}
+
+// SetConnectorID sets the "connector_id" field.
+func (u *RefreshTokenUpsertBulk) SetConnectorID(v string) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetConnectorID(v)
+	})
+}
+
+// UpdateConnectorID sets the "connector_id" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateConnectorID() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateConnectorID()
+	})
+}
+
+// SetConnectorData sets the "connector_data" field.
+func (u *RefreshTokenUpsertBulk) SetConnectorData(v []byte) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetConnectorData(v)
+	})
+}
+
+// UpdateConnectorData sets the "connector_data" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateConnectorData() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateConnectorData()
+	})
+}
+
+// ClearConnectorData clears the value of the "connector_data" field.
+func (u *RefreshTokenUpsertBulk) ClearConnectorData() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.ClearConnectorData()
+	})
+}
+
+// SetToken sets the "token" field.
+func (u *RefreshTokenUpsertBulk) SetToken(v string) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetToken(v)
+	})
+}
+
+// UpdateToken sets the "token" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateToken() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateToken()
+	})
+}
+
+// SetObsoleteToken sets the "obsolete_token" field.
+func (u *RefreshTokenUpsertBulk) SetObsoleteToken(v string) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetObsoleteToken(v)
+	})
+}
+
+// UpdateObsoleteToken sets the "obsolete_token" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateObsoleteToken() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateObsoleteToken()
+	})
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (u *RefreshTokenUpsertBulk) SetCreatedAt(v time.Time) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetCreatedAt(v)
+	})
+}
+
+// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateCreatedAt() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateCreatedAt()
+	})
+}
+
+// SetLastUsed sets the "last_used" field.
+func (u *RefreshTokenUpsertBulk) SetLastUsed(v time.Time) *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.SetLastUsed(v)
+	})
+}
+
+// UpdateLastUsed sets the "last_used" field to the value that was provided on create.
+func (u *RefreshTokenUpsertBulk) UpdateLastUsed() *RefreshTokenUpsertBulk {
+	return u.Update(func(s *RefreshTokenUpsert) {
+		s.UpdateLastUsed()
+	})
+}
+
+// Exec executes the query.
+func (u *RefreshTokenUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("db: OnConflict was set for builder %d. Set it on the RefreshTokenCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for RefreshTokenCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *RefreshTokenUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

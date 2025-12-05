@@ -327,3 +327,28 @@ func toStorageDeviceToken(t DeviceToken) storage.DeviceToken {
 		},
 	}
 }
+
+type SignupToken struct {
+	Email           string    `json:"email"`
+	CsrfToken       string    `json:"csrfToken"`
+	ValidationToken string    `json:"validationToken"`
+	Expiry          time.Time `json:"expiry"`
+}
+
+func fromStorageSignupToken(t storage.SignupToken) SignupToken {
+	return SignupToken{
+		Email:           t.Email,
+		CsrfToken:       t.CsrfToken,
+		ValidationToken: t.ValidationToken,
+		Expiry:          t.Expiry,
+	}
+}
+
+func toStorageSignupToken(t SignupToken) storage.SignupToken {
+	return storage.SignupToken{
+		Email:           t.Email,
+		CsrfToken:       t.CsrfToken,
+		ValidationToken: t.ValidationToken,
+		Expiry:          t.Expiry,
+	}
+}

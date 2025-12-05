@@ -21,14 +21,23 @@
       </div>
       <input tabindex="3" required id="password" name="password" type="password" class="theme-form-input" placeholder="password (min 8 characters)" minlength="8" {{ if .Invalid }} autofocus {{ end }}/>
     </div>
-
+    <div class="theme-form-row">
+      <div class="theme-form-label">
+        <label for="token">Validation Token</label>
+      </div>
+      <input tabindex="4" readonly required id="token" name="token" type="text" class="theme-form-input" placeholder="validation token" {{ if .Invalid }} autofocus {{ end }}/>
+    </div>
+    <div class="theme-form-row">
+      <button id="token-btn">Generate Token</button>
+    </div>
+    <input tabindex="5" readonly hidden id="csrf" name="csrf" type="text" class="theme-form-input" placeholder="" style="display: none;"/>
     {{ if .Invalid }}
       <div id="signup-error" class="dex-error-box">
         {{ .Error }}
       </div>
     {{ end }}
 
-    <button tabindex="4" id="submit-signup" type="submit" class="dex-btn theme-btn--primary">Sign Up</button>
+    <button tabindex="6" id="submit-signup" type="submit" class="dex-btn theme-btn--primary">Sign Up</button>
 
   </form>
   <div class="theme-link-back">
@@ -42,6 +51,26 @@
     var el = document.querySelector('#submit-signup');
     el.setAttribute('disabled', 'disabled');
   };
+  document.querySelector('#token-btn').onclick = (e)=>{
+    e.preventDefault();
+    document.querySelector("#token").readonly = false;
+    // for firefox
+    document.querySelector("#token").readOnly = false;
+    let email = document.querySelector("#email").value;
+    fetch("signup-token",{
+      method:"POST",
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({email})
+    }).then((r)=>{
+      return r.json();
+    }).then((v)=>{
+      document.querySelector("#csrf").value = v.csrfToken
+    })
+  }
+
 </script>
 
 {{ template "footer.html" . }}
