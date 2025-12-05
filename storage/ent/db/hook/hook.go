@@ -129,6 +129,18 @@ func (f RefreshTokenFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.RefreshTokenMutation", m)
 }
 
+// The SignupTokenFunc type is an adapter to allow the use of ordinary
+// function as SignupToken mutator.
+type SignupTokenFunc func(context.Context, *db.SignupTokenMutation) (db.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SignupTokenFunc) Mutate(ctx context.Context, m db.Mutation) (db.Value, error) {
+	if mv, ok := m.(*db.SignupTokenMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *db.SignupTokenMutation", m)
+}
+
 // Condition is a hook condition function.
 type Condition func(context.Context, db.Mutation) bool
 

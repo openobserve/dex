@@ -23,6 +23,7 @@ import (
 	"github.com/dexidp/dex/storage/ent/db/password"
 	"github.com/dexidp/dex/storage/ent/db/predicate"
 	"github.com/dexidp/dex/storage/ent/db/refreshtoken"
+	"github.com/dexidp/dex/storage/ent/db/signuptoken"
 	jose "github.com/go-jose/go-jose/v4"
 )
 
@@ -45,6 +46,7 @@ const (
 	TypeOfflineSession = "OfflineSession"
 	TypePassword       = "Password"
 	TypeRefreshToken   = "RefreshToken"
+	TypeSignupToken    = "SignupToken"
 )
 
 // AuthCodeMutation represents an operation that mutates the AuthCode nodes in the graph.
@@ -7979,4 +7981,492 @@ func (m *RefreshTokenMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *RefreshTokenMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown RefreshToken edge %s", name)
+}
+
+// SignupTokenMutation represents an operation that mutates the SignupToken nodes in the graph.
+type SignupTokenMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	email            *string
+	csrf_token       *string
+	validation_token *string
+	expiry           *time.Time
+	clearedFields    map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*SignupToken, error)
+	predicates       []predicate.SignupToken
+}
+
+var _ ent.Mutation = (*SignupTokenMutation)(nil)
+
+// signuptokenOption allows management of the mutation configuration using functional options.
+type signuptokenOption func(*SignupTokenMutation)
+
+// newSignupTokenMutation creates new mutation for the SignupToken entity.
+func newSignupTokenMutation(c config, op Op, opts ...signuptokenOption) *SignupTokenMutation {
+	m := &SignupTokenMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSignupToken,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSignupTokenID sets the ID field of the mutation.
+func withSignupTokenID(id int) signuptokenOption {
+	return func(m *SignupTokenMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SignupToken
+		)
+		m.oldValue = func(ctx context.Context) (*SignupToken, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SignupToken.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSignupToken sets the old SignupToken of the mutation.
+func withSignupToken(node *SignupToken) signuptokenOption {
+	return func(m *SignupTokenMutation) {
+		m.oldValue = func(context.Context) (*SignupToken, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SignupTokenMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SignupTokenMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("db: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SignupTokenMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SignupTokenMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SignupToken.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetEmail sets the "email" field.
+func (m *SignupTokenMutation) SetEmail(s string) {
+	m.email = &s
+}
+
+// Email returns the value of the "email" field in the mutation.
+func (m *SignupTokenMutation) Email() (r string, exists bool) {
+	v := m.email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmail returns the old "email" field's value of the SignupToken entity.
+// If the SignupToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupTokenMutation) OldEmail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmail: %w", err)
+	}
+	return oldValue.Email, nil
+}
+
+// ResetEmail resets all changes to the "email" field.
+func (m *SignupTokenMutation) ResetEmail() {
+	m.email = nil
+}
+
+// SetCsrfToken sets the "csrf_token" field.
+func (m *SignupTokenMutation) SetCsrfToken(s string) {
+	m.csrf_token = &s
+}
+
+// CsrfToken returns the value of the "csrf_token" field in the mutation.
+func (m *SignupTokenMutation) CsrfToken() (r string, exists bool) {
+	v := m.csrf_token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCsrfToken returns the old "csrf_token" field's value of the SignupToken entity.
+// If the SignupToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupTokenMutation) OldCsrfToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCsrfToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCsrfToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCsrfToken: %w", err)
+	}
+	return oldValue.CsrfToken, nil
+}
+
+// ResetCsrfToken resets all changes to the "csrf_token" field.
+func (m *SignupTokenMutation) ResetCsrfToken() {
+	m.csrf_token = nil
+}
+
+// SetValidationToken sets the "validation_token" field.
+func (m *SignupTokenMutation) SetValidationToken(s string) {
+	m.validation_token = &s
+}
+
+// ValidationToken returns the value of the "validation_token" field in the mutation.
+func (m *SignupTokenMutation) ValidationToken() (r string, exists bool) {
+	v := m.validation_token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValidationToken returns the old "validation_token" field's value of the SignupToken entity.
+// If the SignupToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupTokenMutation) OldValidationToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValidationToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValidationToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValidationToken: %w", err)
+	}
+	return oldValue.ValidationToken, nil
+}
+
+// ResetValidationToken resets all changes to the "validation_token" field.
+func (m *SignupTokenMutation) ResetValidationToken() {
+	m.validation_token = nil
+}
+
+// SetExpiry sets the "expiry" field.
+func (m *SignupTokenMutation) SetExpiry(t time.Time) {
+	m.expiry = &t
+}
+
+// Expiry returns the value of the "expiry" field in the mutation.
+func (m *SignupTokenMutation) Expiry() (r time.Time, exists bool) {
+	v := m.expiry
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiry returns the old "expiry" field's value of the SignupToken entity.
+// If the SignupToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupTokenMutation) OldExpiry(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiry is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiry requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiry: %w", err)
+	}
+	return oldValue.Expiry, nil
+}
+
+// ResetExpiry resets all changes to the "expiry" field.
+func (m *SignupTokenMutation) ResetExpiry() {
+	m.expiry = nil
+}
+
+// Where appends a list predicates to the SignupTokenMutation builder.
+func (m *SignupTokenMutation) Where(ps ...predicate.SignupToken) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SignupTokenMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SignupTokenMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SignupToken, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SignupTokenMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SignupTokenMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SignupToken).
+func (m *SignupTokenMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SignupTokenMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.email != nil {
+		fields = append(fields, signuptoken.FieldEmail)
+	}
+	if m.csrf_token != nil {
+		fields = append(fields, signuptoken.FieldCsrfToken)
+	}
+	if m.validation_token != nil {
+		fields = append(fields, signuptoken.FieldValidationToken)
+	}
+	if m.expiry != nil {
+		fields = append(fields, signuptoken.FieldExpiry)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SignupTokenMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case signuptoken.FieldEmail:
+		return m.Email()
+	case signuptoken.FieldCsrfToken:
+		return m.CsrfToken()
+	case signuptoken.FieldValidationToken:
+		return m.ValidationToken()
+	case signuptoken.FieldExpiry:
+		return m.Expiry()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SignupTokenMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case signuptoken.FieldEmail:
+		return m.OldEmail(ctx)
+	case signuptoken.FieldCsrfToken:
+		return m.OldCsrfToken(ctx)
+	case signuptoken.FieldValidationToken:
+		return m.OldValidationToken(ctx)
+	case signuptoken.FieldExpiry:
+		return m.OldExpiry(ctx)
+	}
+	return nil, fmt.Errorf("unknown SignupToken field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SignupTokenMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case signuptoken.FieldEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmail(v)
+		return nil
+	case signuptoken.FieldCsrfToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCsrfToken(v)
+		return nil
+	case signuptoken.FieldValidationToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValidationToken(v)
+		return nil
+	case signuptoken.FieldExpiry:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiry(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SignupToken field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SignupTokenMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SignupTokenMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SignupTokenMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown SignupToken numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SignupTokenMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SignupTokenMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SignupTokenMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown SignupToken nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SignupTokenMutation) ResetField(name string) error {
+	switch name {
+	case signuptoken.FieldEmail:
+		m.ResetEmail()
+		return nil
+	case signuptoken.FieldCsrfToken:
+		m.ResetCsrfToken()
+		return nil
+	case signuptoken.FieldValidationToken:
+		m.ResetValidationToken()
+		return nil
+	case signuptoken.FieldExpiry:
+		m.ResetExpiry()
+		return nil
+	}
+	return fmt.Errorf("unknown SignupToken field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SignupTokenMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SignupTokenMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SignupTokenMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SignupTokenMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SignupTokenMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SignupTokenMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SignupTokenMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown SignupToken unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SignupTokenMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown SignupToken edge %s", name)
 }
