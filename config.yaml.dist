@@ -131,6 +131,11 @@ web:
 # login credentials in Dex's store.
 enablePasswordDB: true
 
+# Enable user signup via REST API endpoint (POST /signup).
+# This allows users to register with email and password.
+# Requires enablePasswordDB to be true.
+# enableSignup: false
+
 # If this option isn't chosen users may be added through the gRPC API.
 # A static list of passwords for the password connector.
 #

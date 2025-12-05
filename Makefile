@@ -1,5 +1,4 @@
 export PATH := $(abspath bin/protoc/bin/):$(abspath bin/):${PATH}
-export SHELL := env PATH=$(PATH) /bin/sh
 
 OS = $(shell uname | tr A-Z a-z)
 
@@ -18,7 +17,7 @@ export GOBIN=$(PWD)/bin
 LD_FLAGS="-w -X main.version=$(VERSION)"
 
 # Dependency versions
-GOLANGCI_VERSION   = 1.64.5
+GOLANGCI_VERSION   = 2.4.0
 GOTESTSUM_VERSION ?= 1.12.0
 
 PROTOC_VERSION             = 29.3
@@ -133,7 +132,7 @@ testrace: ## Test go code and check for possible race conditions.
 
 testall: testrace ## Run all tests for go code.
 
-.PHONY: lint lint-fix
+.PHONY: lint
 lint: ## Run linter.
 	@golangci-lint version
 	@golangci-lint run
@@ -141,7 +140,7 @@ lint: ## Run linter.
 .PHONY: fix
 fix: ## Fix lint violations.
 	@golangci-lint version
-	@golangci-lint run --fix
+	@golangci-lint fmt
 
 docker-compose.override.yaml:
 	cp docker-compose.override.yaml.dist docker-compose.override.yaml

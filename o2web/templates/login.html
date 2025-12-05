@@ -549,6 +549,11 @@
             </a>
         </div>
       {{ end }}
+      {{ if .EnableSignup }}
+        <div class="theme-link-back">
+          <a class="dex-subtle-text" href="{{ .SignupPath }}">Don't have an account? Sign up.</a>
+        </div>
+      {{ end }}
     </div>
   
   

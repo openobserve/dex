@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -58,7 +57,7 @@ func (s *StorageTestSuite) SetupTest() {
 		KubeConfigFile: kubeconfigPath,
 	}
 
-	logger := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
+	logger := slog.New(slog.NewTextHandler(s.T().Output(), &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	kubeClient, err := config.open(logger, true)
 	s.Require().NoError(err)
@@ -67,7 +66,7 @@ func (s *StorageTestSuite) SetupTest() {
 }
 
 func (s *StorageTestSuite) TestStorage() {
-	newStorage := func() storage.Storage {
+	newStorage := func(t *testing.T) storage.Storage {
 		for _, resource := range []string{
 			resourceAuthCode,
 			resourceAuthRequest,
@@ -250,7 +249,7 @@ func newStatusCodesResponseTestClient(getResponseCode, actionResponseCode int) *
 	return &client{
 		client:  &http.Client{Transport: tr},
 		baseURL: s.URL,
-		logger:  slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{})),
+		logger:  slog.New(slog.DiscardHandler),
 	}
 }
 
@@ -307,7 +306,7 @@ func TestRefreshTokenLock(t *testing.T) {
 		KubeConfigFile: kubeconfigPath,
 	}
 
-	logger := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
+	logger := slog.New(slog.DiscardHandler)
 
 	kubeClient, err := config.open(logger, true)
 	require.NoError(t, err)

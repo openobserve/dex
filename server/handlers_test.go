@@ -24,10 +24,7 @@ import (
 )
 
 func TestHandleHealth(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	httpServer, server := newTestServer(ctx, t, nil)
+	httpServer, server := newTestServer(t, nil)
 	defer httpServer.Close()
 
 	rr := httptest.NewRecorder()
@@ -38,10 +35,7 @@ func TestHandleHealth(t *testing.T) {
 }
 
 func TestHandleDiscovery(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	httpServer, server := newTestServer(ctx, t, nil)
+	httpServer, server := newTestServer(t, nil)
 	defer httpServer.Close()
 
 	rr := httptest.NewRecorder()
@@ -61,6 +55,7 @@ func TestHandleDiscovery(t *testing.T) {
 		UserInfo:       fmt.Sprintf("%s/userinfo", httpServer.URL),
 		DeviceEndpoint: fmt.Sprintf("%s/device/code", httpServer.URL),
 		Introspect:     fmt.Sprintf("%s/token/introspect", httpServer.URL),
+		Registration:   fmt.Sprintf("%s/register", httpServer.URL),
 		GrantTypes: []string{
 			"authorization_code",
 			"refresh_token",
@@ -108,10 +103,7 @@ func TestHandleDiscovery(t *testing.T) {
 }
 
 func TestHandleHealthFailure(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	httpServer, server := newTestServer(ctx, t, func(c *Config) {
+	httpServer, server := newTestServer(t, func(c *Config) {
 		c.HealthChecker = gosundheit.New()
 
 		c.HealthChecker.RegisterCheck(
@@ -143,10 +135,7 @@ func (*emptyStorage) GetAuthRequest(context.Context, string) (storage.AuthReques
 }
 
 func TestHandleInvalidOAuth2Callbacks(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	httpServer, server := newTestServer(ctx, t, func(c *Config) {
+	httpServer, server := newTestServer(t, func(c *Config) {
 		c.Storage = &emptyStorage{c.Storage}
 	})
 	defer httpServer.Close()
@@ -171,10 +160,7 @@ func TestHandleInvalidOAuth2Callbacks(t *testing.T) {
 }
 
 func TestHandleInvalidSAMLCallbacks(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	httpServer, server := newTestServer(ctx, t, func(c *Config) {
+	httpServer, server := newTestServer(t, func(c *Config) {
 		c.Storage = &emptyStorage{c.Storage}
 	})
 	defer httpServer.Close()
@@ -251,10 +237,9 @@ func TestHandleAuthCode(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := t.Context()
 
-			httpServer, s := newTestServer(ctx, t, func(c *Config) { c.Issuer += "/non-root-path" })
+			httpServer, s := newTestServer(t, func(c *Config) { c.Issuer += "/non-root-path" })
 			defer httpServer.Close()
 
 			p, err := oidc.NewProvider(ctx, httpServer.URL)
@@ -303,7 +288,7 @@ func TestHandleAuthCode(t *testing.T) {
 }
 
 func mockConnectorDataTestStorage(t *testing.T, s storage.Storage) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := storage.Client{
 		ID:           "test",
 		Secret:       "barfoo",
@@ -339,8 +324,7 @@ func mockConnectorDataTestStorage(t *testing.T, s storage.Storage) {
 }
 
 func TestHandlePassword(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	tests := []struct {
 		name                  string
@@ -361,7 +345,7 @@ func TestHandlePassword(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup a dex server.
-			httpServer, s := newTestServer(ctx, t, func(c *Config) {
+			httpServer, s := newTestServer(t, func(c *Config) {
 				c.PasswordConnector = "test"
 				c.Now = time.Now
 			})
@@ -420,8 +404,7 @@ func TestHandlePassword(t *testing.T) {
 }
 
 func TestHandlePasswordLoginWithSkipApproval(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	connID := "mockPw"
 	authReqID := "test"
@@ -525,7 +508,7 @@ func TestHandlePasswordLoginWithSkipApproval(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			httpServer, s := newTestServer(ctx, t, func(c *Config) {
+			httpServer, s := newTestServer(t, func(c *Config) {
 				c.SkipApprovalScreen = tc.skipApproval
 				c.Now = time.Now
 			})
@@ -574,8 +557,7 @@ func TestHandlePasswordLoginWithSkipApproval(t *testing.T) {
 }
 
 func TestHandleConnectorCallbackWithSkipApproval(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	connID := "mock"
 	authReqID := "test"
@@ -679,7 +661,7 @@ func TestHandleConnectorCallbackWithSkipApproval(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			httpServer, s := newTestServer(ctx, t, func(c *Config) {
+			httpServer, s := newTestServer(t, func(c *Config) {
 				c.SkipApprovalScreen = tc.skipApproval
 				c.Now = time.Now
 			})
@@ -780,9 +762,8 @@ func TestHandleTokenExchange(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			httpServer, s := newTestServer(ctx, t, func(c *Config) {
+			ctx := t.Context()
+			httpServer, s := newTestServer(t, func(c *Config) {
 				c.Storage.CreateClient(ctx, storage.Client{
 					ID:     "client_1",
 					Secret: "secret_1",
@@ -821,4 +802,438 @@ func setNonEmpty(vals url.Values, key, value string) {
 	if value != "" {
 		vals.Set(key, value)
 	}
+}
+
+func TestHandleClientRegistration(t *testing.T) {
+	tests := []struct {
+		name               string
+		requestBody        clientRegistrationRequest
+		expectedStatusCode int
+		validateResponse   func(t *testing.T, resp clientRegistrationResponse)
+	}{
+		{
+			name: "successful registration with minimal fields",
+			requestBody: clientRegistrationRequest{
+				RedirectURIs: []string{"https://example.com/callback"},
+			},
+			expectedStatusCode: http.StatusCreated,
+			validateResponse: func(t *testing.T, resp clientRegistrationResponse) {
+				require.NotEmpty(t, resp.ClientID)
+				require.NotEmpty(t, resp.ClientSecret)
+				require.Equal(t, int64(0), resp.ClientSecretExpiresAt)
+				require.Equal(t, []string{"https://example.com/callback"}, resp.RedirectURIs)
+				require.Equal(t, "client_secret_basic", resp.TokenEndpointAuthMethod)
+				require.Equal(t, []string{"authorization_code", "refresh_token"}, resp.GrantTypes)
+				require.Equal(t, []string{"code"}, resp.ResponseTypes)
+			},
+		},
+		{
+			name: "successful registration with all fields",
+			requestBody: clientRegistrationRequest{
+				RedirectURIs:            []string{"https://example.com/callback", "https://example.com/callback2"},
+				ClientName:              "Test Client",
+				TokenEndpointAuthMethod: "client_secret_post",
+				GrantTypes:              []string{"authorization_code"},
+				ResponseTypes:           []string{"code"},
+				Scope:                   "openid email profile",
+				LogoURI:                 "https://example.com/logo.png",
+			},
+			expectedStatusCode: http.StatusCreated,
+			validateResponse: func(t *testing.T, resp clientRegistrationResponse) {
+				require.NotEmpty(t, resp.ClientID)
+				require.NotEmpty(t, resp.ClientSecret)
+				require.Equal(t, "Test Client", resp.ClientName)
+				require.Equal(t, "client_secret_post", resp.TokenEndpointAuthMethod)
+				require.Equal(t, []string{"authorization_code"}, resp.GrantTypes)
+				require.Equal(t, []string{"code"}, resp.ResponseTypes)
+				require.Equal(t, "openid email profile", resp.Scope)
+				require.Equal(t, "https://example.com/logo.png", resp.LogoURI)
+			},
+		},
+		{
+			name: "public client (no secret)",
+			requestBody: clientRegistrationRequest{
+				RedirectURIs:            []string{"https://example.com/callback"},
+				TokenEndpointAuthMethod: "none",
+			},
+			expectedStatusCode: http.StatusCreated,
+			validateResponse: func(t *testing.T, resp clientRegistrationResponse) {
+				require.NotEmpty(t, resp.ClientID)
+				require.Empty(t, resp.ClientSecret)
+				require.Equal(t, "none", resp.TokenEndpointAuthMethod)
+			},
+		},
+		{
+			name: "missing redirect_uris",
+			requestBody: clientRegistrationRequest{
+				ClientName: "Test Client",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "unsupported token_endpoint_auth_method",
+			requestBody: clientRegistrationRequest{
+				RedirectURIs:            []string{"https://example.com/callback"},
+				TokenEndpointAuthMethod: "invalid_method",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "unsupported grant_type",
+			requestBody: clientRegistrationRequest{
+				RedirectURIs: []string{"https://example.com/callback"},
+				GrantTypes:   []string{"invalid_grant"},
+			},
+			expectedStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "unsupported response_type",
+			requestBody: clientRegistrationRequest{
+				RedirectURIs:  []string{"https://example.com/callback"},
+				ResponseTypes: []string{"invalid_response"},
+			},
+			expectedStatusCode: http.StatusBadRequest,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			httpServer, s := newTestServer(t, nil)
+			defer httpServer.Close()
+
+			body, err := json.Marshal(tc.requestBody)
+			require.NoError(t, err)
+
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, httpServer.URL+"/register", bytes.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+
+			s.handleClientRegistration(rr, req)
+
+			require.Equal(t, tc.expectedStatusCode, rr.Code, rr.Body.String())
+
+			if tc.expectedStatusCode == http.StatusCreated {
+				var resp clientRegistrationResponse
+				err := json.NewDecoder(rr.Result().Body).Decode(&resp)
+				require.NoError(t, err)
+				tc.validateResponse(t, resp)
+
+				// Verify the client was actually created in storage
+				ctx := context.Background()
+				client, err := s.storage.GetClient(ctx, resp.ClientID)
+				require.NoError(t, err)
+				require.Equal(t, resp.ClientID, client.ID)
+				require.Equal(t, resp.RedirectURIs, client.RedirectURIs)
+			}
+		})
+	}
+}
+
+func TestHandleClientRegistrationMethodNotAllowed(t *testing.T) {
+	httpServer, s := newTestServer(t, nil)
+	defer httpServer.Close()
+
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, httpServer.URL+"/register", nil)
+
+	s.handleClientRegistration(rr, req)
+
+	require.Equal(t, http.StatusMethodNotAllowed, rr.Code)
+}
+
+func TestHandleClientRegistrationInvalidJSON(t *testing.T) {
+	httpServer, s := newTestServer(t, nil)
+	defer httpServer.Close()
+
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, httpServer.URL+"/register", strings.NewReader("invalid json"))
+	req.Header.Set("Content-Type", "application/json")
+
+	s.handleClientRegistration(rr, req)
+
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+}
+
+func TestHandleClientRegistrationWithAuth(t *testing.T) {
+	tests := []struct {
+		name               string
+		registrationToken  string
+		authHeader         string
+		requestBody        clientRegistrationRequest
+		expectedStatusCode int
+	}{
+		{
+			name:              "successful registration with valid token",
+			registrationToken: "secret-token-123",
+			authHeader:        "Bearer secret-token-123",
+			requestBody: clientRegistrationRequest{
+				RedirectURIs: []string{"https://example.com/callback"},
+			},
+			expectedStatusCode: http.StatusCreated,
+		},
+		{
+			name:              "missing auth header when token required",
+			registrationToken: "secret-token-123",
+			authHeader:        "",
+			requestBody: clientRegistrationRequest{
+				RedirectURIs: []string{"https://example.com/callback"},
+			},
+			expectedStatusCode: http.StatusUnauthorized,
+		},
+		{
+			name:              "invalid token",
+			registrationToken: "secret-token-123",
+			authHeader:        "Bearer wrong-token",
+			requestBody: clientRegistrationRequest{
+				RedirectURIs: []string{"https://example.com/callback"},
+			},
+			expectedStatusCode: http.StatusUnauthorized,
+		},
+		{
+			name:              "malformed auth header",
+			registrationToken: "secret-token-123",
+			authHeader:        "Basic secret-token-123",
+			requestBody: clientRegistrationRequest{
+				RedirectURIs: []string{"https://example.com/callback"},
+			},
+			expectedStatusCode: http.StatusUnauthorized,
+		},
+		{
+			name:              "open registration (no token configured)",
+			registrationToken: "",
+			authHeader:        "",
+			requestBody: clientRegistrationRequest{
+				RedirectURIs: []string{"https://example.com/callback"},
+			},
+			expectedStatusCode: http.StatusCreated,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			httpServer, s := newTestServer(t, func(c *Config) {
+				c.RegistrationToken = tc.registrationToken
+			})
+			defer httpServer.Close()
+
+			body, err := json.Marshal(tc.requestBody)
+			require.NoError(t, err)
+
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, httpServer.URL+"/register", bytes.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			if tc.authHeader != "" {
+				req.Header.Set("Authorization", tc.authHeader)
+			}
+
+			s.handleClientRegistration(rr, req)
+
+			require.Equal(t, tc.expectedStatusCode, rr.Code, rr.Body.String())
+
+			if tc.expectedStatusCode == http.StatusCreated {
+				var resp clientRegistrationResponse
+				err := json.NewDecoder(rr.Result().Body).Decode(&resp)
+				require.NoError(t, err)
+				require.NotEmpty(t, resp.ClientID)
+				require.NotEmpty(t, resp.ClientSecret)
+
+				// Verify the client was actually created in storage
+				client, err := s.storage.GetClient(ctx, resp.ClientID)
+				require.NoError(t, err)
+				require.Equal(t, resp.ClientID, client.ID)
+			}
+
+			// Check WWW-Authenticate header on 401
+			if tc.expectedStatusCode == http.StatusUnauthorized {
+				wwwAuth := rr.Header().Get("WWW-Authenticate")
+				require.NotEmpty(t, wwwAuth)
+				require.Contains(t, wwwAuth, "Bearer")
+			}
+		})
+	}
+}
+
+func TestHandleSignup(t *testing.T) {
+	tests := []struct {
+		name               string
+		enableSignup       bool
+		requestBody        interface{}
+		expectedStatusCode int
+		expectedError      string
+	}{
+		{
+			name:         "successful signup",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"password": "password123",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusCreated,
+		},
+		{
+			name:         "signup disabled",
+			enableSignup: false,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"password": "password123",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusForbidden,
+			expectedError:      "access_denied",
+		},
+		{
+			name:         "missing email",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"password": "password123",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "invalid email format",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "invalid-email",
+				"password": "password123",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "missing password",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "password too short",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"password": "short",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "missing username",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"password": "password123",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "duplicate email",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "admin@example.com", // This email is already in the test storage
+				"password": "password123",
+				"username": "testuser",
+			},
+			expectedStatusCode: http.StatusConflict,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:               "invalid JSON",
+			enableSignup:       true,
+			requestBody:        "invalid json",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create test server with signup enabled or disabled
+			httpServer, server := newTestServer(t, func(c *Config) {
+				c.EnableSignup = tc.enableSignup
+			})
+			defer httpServer.Close()
+
+			// Add a test user to check duplicate email scenario
+			ctx := context.Background()
+			_ = server.storage.CreatePassword(ctx, storage.Password{
+				Email:    "admin@example.com",
+				Hash:     []byte("$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"),
+				Username: "admin",
+				UserID:   "admin-id",
+			})
+
+			// Prepare request body
+			var bodyBytes []byte
+			if strBody, ok := tc.requestBody.(string); ok {
+				bodyBytes = []byte(strBody)
+			} else {
+				bodyBytes, _ = json.Marshal(tc.requestBody)
+			}
+
+			// Make request
+			req := httptest.NewRequest("POST", "/signup", bytes.NewReader(bodyBytes))
+			req.Header.Set("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+
+			server.ServeHTTP(rr, req)
+
+			// Check status code
+			require.Equal(t, tc.expectedStatusCode, rr.Code)
+
+			// Check response for errors or success
+			if tc.expectedError != "" {
+				var errResp signupErrorResponse
+				err := json.NewDecoder(rr.Body).Decode(&errResp)
+				require.NoError(t, err)
+				require.Equal(t, tc.expectedError, errResp.Error)
+			} else if tc.expectedStatusCode == http.StatusCreated {
+				var resp signupResponse
+				err := json.NewDecoder(rr.Body).Decode(&resp)
+				require.NoError(t, err)
+				require.NotEmpty(t, resp.UserID)
+				require.Equal(t, "test@example.com", resp.Email)
+				require.Equal(t, "testuser", resp.Username)
+
+				// Verify the user was created in storage
+				password, err := server.storage.GetPassword(ctx, "test@example.com")
+				require.NoError(t, err)
+				require.Equal(t, "test@example.com", password.Email)
+				require.Equal(t, "testuser", password.Username)
+			}
+		})
+	}
+}
+
+func TestHandleSignupMethodNotAllowed(t *testing.T) {
+	httpServer, server := newTestServer(t, func(c *Config) {
+		c.EnableSignup = true
+	})
+	defer httpServer.Close()
+
+	// Test GET method (should return signup form with 200)
+	req := httptest.NewRequest("GET", "/signup", nil)
+	rr := httptest.NewRecorder()
+
+	server.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusOK, rr.Code)
+	require.Contains(t, rr.Body.String(), "Create Your Account")
+
+	// Test unsupported method like PUT (should fail)
+	req = httptest.NewRequest("PUT", "/signup", nil)
+	rr = httptest.NewRecorder()
+
+	server.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusMethodNotAllowed, rr.Code)
 }

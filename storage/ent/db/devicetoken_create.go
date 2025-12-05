@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/dexidp/dex/storage/ent/db/devicetoken"
@@ -18,86 +19,87 @@ type DeviceTokenCreate struct {
 	config
 	mutation *DeviceTokenMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetDeviceCode sets the "device_code" field.
-func (dtc *DeviceTokenCreate) SetDeviceCode(s string) *DeviceTokenCreate {
-	dtc.mutation.SetDeviceCode(s)
-	return dtc
+func (_c *DeviceTokenCreate) SetDeviceCode(v string) *DeviceTokenCreate {
+	_c.mutation.SetDeviceCode(v)
+	return _c
 }
 
 // SetStatus sets the "status" field.
-func (dtc *DeviceTokenCreate) SetStatus(s string) *DeviceTokenCreate {
-	dtc.mutation.SetStatus(s)
-	return dtc
+func (_c *DeviceTokenCreate) SetStatus(v string) *DeviceTokenCreate {
+	_c.mutation.SetStatus(v)
+	return _c
 }
 
 // SetToken sets the "token" field.
-func (dtc *DeviceTokenCreate) SetToken(b []byte) *DeviceTokenCreate {
-	dtc.mutation.SetToken(b)
-	return dtc
+func (_c *DeviceTokenCreate) SetToken(v []byte) *DeviceTokenCreate {
+	_c.mutation.SetToken(v)
+	return _c
 }
 
 // SetExpiry sets the "expiry" field.
-func (dtc *DeviceTokenCreate) SetExpiry(t time.Time) *DeviceTokenCreate {
-	dtc.mutation.SetExpiry(t)
-	return dtc
+func (_c *DeviceTokenCreate) SetExpiry(v time.Time) *DeviceTokenCreate {
+	_c.mutation.SetExpiry(v)
+	return _c
 }
 
 // SetLastRequest sets the "last_request" field.
-func (dtc *DeviceTokenCreate) SetLastRequest(t time.Time) *DeviceTokenCreate {
-	dtc.mutation.SetLastRequest(t)
-	return dtc
+func (_c *DeviceTokenCreate) SetLastRequest(v time.Time) *DeviceTokenCreate {
+	_c.mutation.SetLastRequest(v)
+	return _c
 }
 
 // SetPollInterval sets the "poll_interval" field.
-func (dtc *DeviceTokenCreate) SetPollInterval(i int) *DeviceTokenCreate {
-	dtc.mutation.SetPollInterval(i)
-	return dtc
+func (_c *DeviceTokenCreate) SetPollInterval(v int) *DeviceTokenCreate {
+	_c.mutation.SetPollInterval(v)
+	return _c
 }
 
 // SetCodeChallenge sets the "code_challenge" field.
-func (dtc *DeviceTokenCreate) SetCodeChallenge(s string) *DeviceTokenCreate {
-	dtc.mutation.SetCodeChallenge(s)
-	return dtc
+func (_c *DeviceTokenCreate) SetCodeChallenge(v string) *DeviceTokenCreate {
+	_c.mutation.SetCodeChallenge(v)
+	return _c
 }
 
 // SetNillableCodeChallenge sets the "code_challenge" field if the given value is not nil.
-func (dtc *DeviceTokenCreate) SetNillableCodeChallenge(s *string) *DeviceTokenCreate {
-	if s != nil {
-		dtc.SetCodeChallenge(*s)
+func (_c *DeviceTokenCreate) SetNillableCodeChallenge(v *string) *DeviceTokenCreate {
+	if v != nil {
+		_c.SetCodeChallenge(*v)
 	}
-	return dtc
+	return _c
 }
 
 // SetCodeChallengeMethod sets the "code_challenge_method" field.
-func (dtc *DeviceTokenCreate) SetCodeChallengeMethod(s string) *DeviceTokenCreate {
-	dtc.mutation.SetCodeChallengeMethod(s)
-	return dtc
+func (_c *DeviceTokenCreate) SetCodeChallengeMethod(v string) *DeviceTokenCreate {
+	_c.mutation.SetCodeChallengeMethod(v)
+	return _c
 }
 
 // SetNillableCodeChallengeMethod sets the "code_challenge_method" field if the given value is not nil.
-func (dtc *DeviceTokenCreate) SetNillableCodeChallengeMethod(s *string) *DeviceTokenCreate {
-	if s != nil {
-		dtc.SetCodeChallengeMethod(*s)
+func (_c *DeviceTokenCreate) SetNillableCodeChallengeMethod(v *string) *DeviceTokenCreate {
+	if v != nil {
+		_c.SetCodeChallengeMethod(*v)
 	}
-	return dtc
+	return _c
 }
 
 // Mutation returns the DeviceTokenMutation object of the builder.
-func (dtc *DeviceTokenCreate) Mutation() *DeviceTokenMutation {
-	return dtc.mutation
+func (_c *DeviceTokenCreate) Mutation() *DeviceTokenMutation {
+	return _c.mutation
 }
 
 // Save creates the DeviceToken in the database.
-func (dtc *DeviceTokenCreate) Save(ctx context.Context) (*DeviceToken, error) {
-	dtc.defaults()
-	return withHooks(ctx, dtc.sqlSave, dtc.mutation, dtc.hooks)
+func (_c *DeviceTokenCreate) Save(ctx context.Context) (*DeviceToken, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (dtc *DeviceTokenCreate) SaveX(ctx context.Context) *DeviceToken {
-	v, err := dtc.Save(ctx)
+func (_c *DeviceTokenCreate) SaveX(ctx context.Context) *DeviceToken {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -105,72 +107,72 @@ func (dtc *DeviceTokenCreate) SaveX(ctx context.Context) *DeviceToken {
 }
 
 // Exec executes the query.
-func (dtc *DeviceTokenCreate) Exec(ctx context.Context) error {
-	_, err := dtc.Save(ctx)
+func (_c *DeviceTokenCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (dtc *DeviceTokenCreate) ExecX(ctx context.Context) {
-	if err := dtc.Exec(ctx); err != nil {
+func (_c *DeviceTokenCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (dtc *DeviceTokenCreate) defaults() {
-	if _, ok := dtc.mutation.CodeChallenge(); !ok {
+func (_c *DeviceTokenCreate) defaults() {
+	if _, ok := _c.mutation.CodeChallenge(); !ok {
 		v := devicetoken.DefaultCodeChallenge
-		dtc.mutation.SetCodeChallenge(v)
+		_c.mutation.SetCodeChallenge(v)
 	}
-	if _, ok := dtc.mutation.CodeChallengeMethod(); !ok {
+	if _, ok := _c.mutation.CodeChallengeMethod(); !ok {
 		v := devicetoken.DefaultCodeChallengeMethod
-		dtc.mutation.SetCodeChallengeMethod(v)
+		_c.mutation.SetCodeChallengeMethod(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (dtc *DeviceTokenCreate) check() error {
-	if _, ok := dtc.mutation.DeviceCode(); !ok {
+func (_c *DeviceTokenCreate) check() error {
+	if _, ok := _c.mutation.DeviceCode(); !ok {
 		return &ValidationError{Name: "device_code", err: errors.New(`db: missing required field "DeviceToken.device_code"`)}
 	}
-	if v, ok := dtc.mutation.DeviceCode(); ok {
+	if v, ok := _c.mutation.DeviceCode(); ok {
 		if err := devicetoken.DeviceCodeValidator(v); err != nil {
 			return &ValidationError{Name: "device_code", err: fmt.Errorf(`db: validator failed for field "DeviceToken.device_code": %w`, err)}
 		}
 	}
-	if _, ok := dtc.mutation.Status(); !ok {
+	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`db: missing required field "DeviceToken.status"`)}
 	}
-	if v, ok := dtc.mutation.Status(); ok {
+	if v, ok := _c.mutation.Status(); ok {
 		if err := devicetoken.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`db: validator failed for field "DeviceToken.status": %w`, err)}
 		}
 	}
-	if _, ok := dtc.mutation.Expiry(); !ok {
+	if _, ok := _c.mutation.Expiry(); !ok {
 		return &ValidationError{Name: "expiry", err: errors.New(`db: missing required field "DeviceToken.expiry"`)}
 	}
-	if _, ok := dtc.mutation.LastRequest(); !ok {
+	if _, ok := _c.mutation.LastRequest(); !ok {
 		return &ValidationError{Name: "last_request", err: errors.New(`db: missing required field "DeviceToken.last_request"`)}
 	}
-	if _, ok := dtc.mutation.PollInterval(); !ok {
+	if _, ok := _c.mutation.PollInterval(); !ok {
 		return &ValidationError{Name: "poll_interval", err: errors.New(`db: missing required field "DeviceToken.poll_interval"`)}
 	}
-	if _, ok := dtc.mutation.CodeChallenge(); !ok {
+	if _, ok := _c.mutation.CodeChallenge(); !ok {
 		return &ValidationError{Name: "code_challenge", err: errors.New(`db: missing required field "DeviceToken.code_challenge"`)}
 	}
-	if _, ok := dtc.mutation.CodeChallengeMethod(); !ok {
+	if _, ok := _c.mutation.CodeChallengeMethod(); !ok {
 		return &ValidationError{Name: "code_challenge_method", err: errors.New(`db: missing required field "DeviceToken.code_challenge_method"`)}
 	}
 	return nil
 }
 
-func (dtc *DeviceTokenCreate) sqlSave(ctx context.Context) (*DeviceToken, error) {
-	if err := dtc.check(); err != nil {
+func (_c *DeviceTokenCreate) sqlSave(ctx context.Context) (*DeviceToken, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := dtc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, dtc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -178,49 +180,406 @@ func (dtc *DeviceTokenCreate) sqlSave(ctx context.Context) (*DeviceToken, error)
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
-	dtc.mutation.id = &_node.ID
-	dtc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (dtc *DeviceTokenCreate) createSpec() (*DeviceToken, *sqlgraph.CreateSpec) {
+func (_c *DeviceTokenCreate) createSpec() (*DeviceToken, *sqlgraph.CreateSpec) {
 	var (
-		_node = &DeviceToken{config: dtc.config}
+		_node = &DeviceToken{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(devicetoken.Table, sqlgraph.NewFieldSpec(devicetoken.FieldID, field.TypeInt))
 	)
-	if value, ok := dtc.mutation.DeviceCode(); ok {
+	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.DeviceCode(); ok {
 		_spec.SetField(devicetoken.FieldDeviceCode, field.TypeString, value)
 		_node.DeviceCode = value
 	}
-	if value, ok := dtc.mutation.Status(); ok {
+	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(devicetoken.FieldStatus, field.TypeString, value)
 		_node.Status = value
 	}
-	if value, ok := dtc.mutation.Token(); ok {
+	if value, ok := _c.mutation.Token(); ok {
 		_spec.SetField(devicetoken.FieldToken, field.TypeBytes, value)
 		_node.Token = &value
 	}
-	if value, ok := dtc.mutation.Expiry(); ok {
+	if value, ok := _c.mutation.Expiry(); ok {
 		_spec.SetField(devicetoken.FieldExpiry, field.TypeTime, value)
 		_node.Expiry = value
 	}
-	if value, ok := dtc.mutation.LastRequest(); ok {
+	if value, ok := _c.mutation.LastRequest(); ok {
 		_spec.SetField(devicetoken.FieldLastRequest, field.TypeTime, value)
 		_node.LastRequest = value
 	}
-	if value, ok := dtc.mutation.PollInterval(); ok {
+	if value, ok := _c.mutation.PollInterval(); ok {
 		_spec.SetField(devicetoken.FieldPollInterval, field.TypeInt, value)
 		_node.PollInterval = value
 	}
-	if value, ok := dtc.mutation.CodeChallenge(); ok {
+	if value, ok := _c.mutation.CodeChallenge(); ok {
 		_spec.SetField(devicetoken.FieldCodeChallenge, field.TypeString, value)
 		_node.CodeChallenge = value
 	}
-	if value, ok := dtc.mutation.CodeChallengeMethod(); ok {
+	if value, ok := _c.mutation.CodeChallengeMethod(); ok {
 		_spec.SetField(devicetoken.FieldCodeChallengeMethod, field.TypeString, value)
 		_node.CodeChallengeMethod = value
 	}
 	return _node, _spec
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.DeviceToken.Create().
+//		SetDeviceCode(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DeviceTokenUpsert) {
+//			SetDeviceCode(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *DeviceTokenCreate) OnConflict(opts ...sql.ConflictOption) *DeviceTokenUpsertOne {
+	_c.conflict = opts
+	return &DeviceTokenUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.DeviceToken.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *DeviceTokenCreate) OnConflictColumns(columns ...string) *DeviceTokenUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &DeviceTokenUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// DeviceTokenUpsertOne is the builder for "upsert"-ing
+	//  one DeviceToken node.
+	DeviceTokenUpsertOne struct {
+		create *DeviceTokenCreate
+	}
+
+	// DeviceTokenUpsert is the "OnConflict" setter.
+	DeviceTokenUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetDeviceCode sets the "device_code" field.
+func (u *DeviceTokenUpsert) SetDeviceCode(v string) *DeviceTokenUpsert {
+	u.Set(devicetoken.FieldDeviceCode, v)
+	return u
+}
+
+// UpdateDeviceCode sets the "device_code" field to the value that was provided on create.
+func (u *DeviceTokenUpsert) UpdateDeviceCode() *DeviceTokenUpsert {
+	u.SetExcluded(devicetoken.FieldDeviceCode)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *DeviceTokenUpsert) SetStatus(v string) *DeviceTokenUpsert {
+	u.Set(devicetoken.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *DeviceTokenUpsert) UpdateStatus() *DeviceTokenUpsert {
+	u.SetExcluded(devicetoken.FieldStatus)
+	return u
+}
+
+// SetToken sets the "token" field.
+func (u *DeviceTokenUpsert) SetToken(v []byte) *DeviceTokenUpsert {
+	u.Set(devicetoken.FieldToken, v)
+	return u
+}
+
+// UpdateToken sets the "token" field to the value that was provided on create.
+func (u *DeviceTokenUpsert) UpdateToken() *DeviceTokenUpsert {
+	u.SetExcluded(devicetoken.FieldToken)
+	return u
+}
+
+// ClearToken clears the value of the "token" field.
+func (u *DeviceTokenUpsert) ClearToken() *DeviceTokenUpsert {
+	u.SetNull(devicetoken.FieldToken)
+	return u
+}
+
+// SetExpiry sets the "expiry" field.
+func (u *DeviceTokenUpsert) SetExpiry(v time.Time) *DeviceTokenUpsert {
+	u.Set(devicetoken.FieldExpiry, v)
+	return u
+}
+
+// UpdateExpiry sets the "expiry" field to the value that was provided on create.
+func (u *DeviceTokenUpsert) UpdateExpiry() *DeviceTokenUpsert {
+	u.SetExcluded(devicetoken.FieldExpiry)
+	return u
+}
+
+// SetLastRequest sets the "last_request" field.
+func (u *DeviceTokenUpsert) SetLastRequest(v time.Time) *DeviceTokenUpsert {
+	u.Set(devicetoken.FieldLastRequest, v)
+	return u
+}
+
+// UpdateLastRequest sets the "last_request" field to the value that was provided on create.
+func (u *DeviceTokenUpsert) UpdateLastRequest() *DeviceTokenUpsert {
+	u.SetExcluded(devicetoken.FieldLastRequest)
+	return u
+}
+
+// SetPollInterval sets the "poll_interval" field.
+func (u *DeviceTokenUpsert) SetPollInterval(v int) *DeviceTokenUpsert {
+	u.Set(devicetoken.FieldPollInterval, v)
+	return u
+}
+
+// UpdatePollInterval sets the "poll_interval" field to the value that was provided on create.
+func (u *DeviceTokenUpsert) UpdatePollInterval() *DeviceTokenUpsert {
+	u.SetExcluded(devicetoken.FieldPollInterval)
+	return u
+}
+
+// AddPollInterval adds v to the "poll_interval" field.
+func (u *DeviceTokenUpsert) AddPollInterval(v int) *DeviceTokenUpsert {
+	u.Add(devicetoken.FieldPollInterval, v)
+	return u
+}
+
+// SetCodeChallenge sets the "code_challenge" field.
+func (u *DeviceTokenUpsert) SetCodeChallenge(v string) *DeviceTokenUpsert {
+	u.Set(devicetoken.FieldCodeChallenge, v)
+	return u
+}
+
+// UpdateCodeChallenge sets the "code_challenge" field to the value that was provided on create.
+func (u *DeviceTokenUpsert) UpdateCodeChallenge() *DeviceTokenUpsert {
+	u.SetExcluded(devicetoken.FieldCodeChallenge)
+	return u
+}
+
+// SetCodeChallengeMethod sets the "code_challenge_method" field.
+func (u *DeviceTokenUpsert) SetCodeChallengeMethod(v string) *DeviceTokenUpsert {
+	u.Set(devicetoken.FieldCodeChallengeMethod, v)
+	return u
+}
+
+// UpdateCodeChallengeMethod sets the "code_challenge_method" field to the value that was provided on create.
+func (u *DeviceTokenUpsert) UpdateCodeChallengeMethod() *DeviceTokenUpsert {
+	u.SetExcluded(devicetoken.FieldCodeChallengeMethod)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create.
+// Using this option is equivalent to using:
+//
+//	client.DeviceToken.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//		).
+//		Exec(ctx)
+func (u *DeviceTokenUpsertOne) UpdateNewValues() *DeviceTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.DeviceToken.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *DeviceTokenUpsertOne) Ignore() *DeviceTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DeviceTokenUpsertOne) DoNothing() *DeviceTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DeviceTokenCreate.OnConflict
+// documentation for more info.
+func (u *DeviceTokenUpsertOne) Update(set func(*DeviceTokenUpsert)) *DeviceTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DeviceTokenUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDeviceCode sets the "device_code" field.
+func (u *DeviceTokenUpsertOne) SetDeviceCode(v string) *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetDeviceCode(v)
+	})
+}
+
+// UpdateDeviceCode sets the "device_code" field to the value that was provided on create.
+func (u *DeviceTokenUpsertOne) UpdateDeviceCode() *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateDeviceCode()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *DeviceTokenUpsertOne) SetStatus(v string) *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *DeviceTokenUpsertOne) UpdateStatus() *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetToken sets the "token" field.
+func (u *DeviceTokenUpsertOne) SetToken(v []byte) *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetToken(v)
+	})
+}
+
+// UpdateToken sets the "token" field to the value that was provided on create.
+func (u *DeviceTokenUpsertOne) UpdateToken() *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateToken()
+	})
+}
+
+// ClearToken clears the value of the "token" field.
+func (u *DeviceTokenUpsertOne) ClearToken() *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.ClearToken()
+	})
+}
+
+// SetExpiry sets the "expiry" field.
+func (u *DeviceTokenUpsertOne) SetExpiry(v time.Time) *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetExpiry(v)
+	})
+}
+
+// UpdateExpiry sets the "expiry" field to the value that was provided on create.
+func (u *DeviceTokenUpsertOne) UpdateExpiry() *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateExpiry()
+	})
+}
+
+// SetLastRequest sets the "last_request" field.
+func (u *DeviceTokenUpsertOne) SetLastRequest(v time.Time) *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetLastRequest(v)
+	})
+}
+
+// UpdateLastRequest sets the "last_request" field to the value that was provided on create.
+func (u *DeviceTokenUpsertOne) UpdateLastRequest() *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateLastRequest()
+	})
+}
+
+// SetPollInterval sets the "poll_interval" field.
+func (u *DeviceTokenUpsertOne) SetPollInterval(v int) *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetPollInterval(v)
+	})
+}
+
+// AddPollInterval adds v to the "poll_interval" field.
+func (u *DeviceTokenUpsertOne) AddPollInterval(v int) *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.AddPollInterval(v)
+	})
+}
+
+// UpdatePollInterval sets the "poll_interval" field to the value that was provided on create.
+func (u *DeviceTokenUpsertOne) UpdatePollInterval() *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdatePollInterval()
+	})
+}
+
+// SetCodeChallenge sets the "code_challenge" field.
+func (u *DeviceTokenUpsertOne) SetCodeChallenge(v string) *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetCodeChallenge(v)
+	})
+}
+
+// UpdateCodeChallenge sets the "code_challenge" field to the value that was provided on create.
+func (u *DeviceTokenUpsertOne) UpdateCodeChallenge() *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateCodeChallenge()
+	})
+}
+
+// SetCodeChallengeMethod sets the "code_challenge_method" field.
+func (u *DeviceTokenUpsertOne) SetCodeChallengeMethod(v string) *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetCodeChallengeMethod(v)
+	})
+}
+
+// UpdateCodeChallengeMethod sets the "code_challenge_method" field to the value that was provided on create.
+func (u *DeviceTokenUpsertOne) UpdateCodeChallengeMethod() *DeviceTokenUpsertOne {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateCodeChallengeMethod()
+	})
+}
+
+// Exec executes the query.
+func (u *DeviceTokenUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for DeviceTokenCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DeviceTokenUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *DeviceTokenUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *DeviceTokenUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
 }
 
 // DeviceTokenCreateBulk is the builder for creating many DeviceToken entities in bulk.
@@ -228,19 +587,20 @@ type DeviceTokenCreateBulk struct {
 	config
 	err      error
 	builders []*DeviceTokenCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the DeviceToken entities in the database.
-func (dtcb *DeviceTokenCreateBulk) Save(ctx context.Context) ([]*DeviceToken, error) {
-	if dtcb.err != nil {
-		return nil, dtcb.err
+func (_c *DeviceTokenCreateBulk) Save(ctx context.Context) ([]*DeviceToken, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(dtcb.builders))
-	nodes := make([]*DeviceToken, len(dtcb.builders))
-	mutators := make([]Mutator, len(dtcb.builders))
-	for i := range dtcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*DeviceToken, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := dtcb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*DeviceTokenMutation)
@@ -254,11 +614,12 @@ func (dtcb *DeviceTokenCreateBulk) Save(ctx context.Context) ([]*DeviceToken, er
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, dtcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, dtcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -282,7 +643,7 @@ func (dtcb *DeviceTokenCreateBulk) Save(ctx context.Context) ([]*DeviceToken, er
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, dtcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -290,8 +651,8 @@ func (dtcb *DeviceTokenCreateBulk) Save(ctx context.Context) ([]*DeviceToken, er
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (dtcb *DeviceTokenCreateBulk) SaveX(ctx context.Context) []*DeviceToken {
-	v, err := dtcb.Save(ctx)
+func (_c *DeviceTokenCreateBulk) SaveX(ctx context.Context) []*DeviceToken {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -299,14 +660,244 @@ func (dtcb *DeviceTokenCreateBulk) SaveX(ctx context.Context) []*DeviceToken {
 }
 
 // Exec executes the query.
-func (dtcb *DeviceTokenCreateBulk) Exec(ctx context.Context) error {
-	_, err := dtcb.Save(ctx)
+func (_c *DeviceTokenCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (dtcb *DeviceTokenCreateBulk) ExecX(ctx context.Context) {
-	if err := dtcb.Exec(ctx); err != nil {
+func (_c *DeviceTokenCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.DeviceToken.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DeviceTokenUpsert) {
+//			SetDeviceCode(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *DeviceTokenCreateBulk) OnConflict(opts ...sql.ConflictOption) *DeviceTokenUpsertBulk {
+	_c.conflict = opts
+	return &DeviceTokenUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.DeviceToken.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *DeviceTokenCreateBulk) OnConflictColumns(columns ...string) *DeviceTokenUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &DeviceTokenUpsertBulk{
+		create: _c,
+	}
+}
+
+// DeviceTokenUpsertBulk is the builder for "upsert"-ing
+// a bulk of DeviceToken nodes.
+type DeviceTokenUpsertBulk struct {
+	create *DeviceTokenCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.DeviceToken.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//		).
+//		Exec(ctx)
+func (u *DeviceTokenUpsertBulk) UpdateNewValues() *DeviceTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.DeviceToken.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *DeviceTokenUpsertBulk) Ignore() *DeviceTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DeviceTokenUpsertBulk) DoNothing() *DeviceTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DeviceTokenCreateBulk.OnConflict
+// documentation for more info.
+func (u *DeviceTokenUpsertBulk) Update(set func(*DeviceTokenUpsert)) *DeviceTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DeviceTokenUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDeviceCode sets the "device_code" field.
+func (u *DeviceTokenUpsertBulk) SetDeviceCode(v string) *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetDeviceCode(v)
+	})
+}
+
+// UpdateDeviceCode sets the "device_code" field to the value that was provided on create.
+func (u *DeviceTokenUpsertBulk) UpdateDeviceCode() *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateDeviceCode()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *DeviceTokenUpsertBulk) SetStatus(v string) *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *DeviceTokenUpsertBulk) UpdateStatus() *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetToken sets the "token" field.
+func (u *DeviceTokenUpsertBulk) SetToken(v []byte) *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetToken(v)
+	})
+}
+
+// UpdateToken sets the "token" field to the value that was provided on create.
+func (u *DeviceTokenUpsertBulk) UpdateToken() *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateToken()
+	})
+}
+
+// ClearToken clears the value of the "token" field.
+func (u *DeviceTokenUpsertBulk) ClearToken() *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.ClearToken()
+	})
+}
+
+// SetExpiry sets the "expiry" field.
+func (u *DeviceTokenUpsertBulk) SetExpiry(v time.Time) *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetExpiry(v)
+	})
+}
+
+// UpdateExpiry sets the "expiry" field to the value that was provided on create.
+func (u *DeviceTokenUpsertBulk) UpdateExpiry() *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateExpiry()
+	})
+}
+
+// SetLastRequest sets the "last_request" field.
+func (u *DeviceTokenUpsertBulk) SetLastRequest(v time.Time) *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetLastRequest(v)
+	})
+}
+
+// UpdateLastRequest sets the "last_request" field to the value that was provided on create.
+func (u *DeviceTokenUpsertBulk) UpdateLastRequest() *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateLastRequest()
+	})
+}
+
+// SetPollInterval sets the "poll_interval" field.
+func (u *DeviceTokenUpsertBulk) SetPollInterval(v int) *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetPollInterval(v)
+	})
+}
+
+// AddPollInterval adds v to the "poll_interval" field.
+func (u *DeviceTokenUpsertBulk) AddPollInterval(v int) *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.AddPollInterval(v)
+	})
+}
+
+// UpdatePollInterval sets the "poll_interval" field to the value that was provided on create.
+func (u *DeviceTokenUpsertBulk) UpdatePollInterval() *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdatePollInterval()
+	})
+}
+
+// SetCodeChallenge sets the "code_challenge" field.
+func (u *DeviceTokenUpsertBulk) SetCodeChallenge(v string) *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetCodeChallenge(v)
+	})
+}
+
+// UpdateCodeChallenge sets the "code_challenge" field to the value that was provided on create.
+func (u *DeviceTokenUpsertBulk) UpdateCodeChallenge() *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateCodeChallenge()
+	})
+}
+
+// SetCodeChallengeMethod sets the "code_challenge_method" field.
+func (u *DeviceTokenUpsertBulk) SetCodeChallengeMethod(v string) *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.SetCodeChallengeMethod(v)
+	})
+}
+
+// UpdateCodeChallengeMethod sets the "code_challenge_method" field to the value that was provided on create.
+func (u *DeviceTokenUpsertBulk) UpdateCodeChallengeMethod() *DeviceTokenUpsertBulk {
+	return u.Update(func(s *DeviceTokenUpsert) {
+		s.UpdateCodeChallengeMethod()
+	})
+}
+
+// Exec executes the query.
+func (u *DeviceTokenUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("db: OnConflict was set for builder %d. Set it on the DeviceTokenCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for DeviceTokenCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DeviceTokenUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -36,6 +36,7 @@ import (
 	"github.com/dexidp/dex/connector/github"
 	"github.com/dexidp/dex/connector/gitlab"
 	"github.com/dexidp/dex/connector/google"
+	"github.com/dexidp/dex/connector/introspection"
 	"github.com/dexidp/dex/connector/keystone"
 	"github.com/dexidp/dex/connector/ldap"
 	"github.com/dexidp/dex/connector/linkedin"
@@ -107,7 +108,21 @@ type Config struct {
 	// If set, the server will use this connector to handle password grants
 	PasswordConnector string
 
+	// If enabled, allows users to sign up with email and password via REST API
+	EnableSignup bool
+
+	// smtp config for sending emails
+	SmtpHost     string
+	SmtpSender   string
+	SmtpUser     string
+	SmtpPassword string
+
 	GCFrequency time.Duration // Defaults to 5 minutes
+
+	// RegistrationToken is an optional bearer token required for dynamic client registration.
+	// If empty, the /register endpoint allows open registration (not recommended for production).
+	// Set this to restrict registration to authorized parties only.
+	RegistrationToken string
 
 	// If specified, the server will use this function for determining time.
 	Now func() time.Time
@@ -119,6 +134,12 @@ type Config struct {
 	PrometheusRegistry *prometheus.Registry
 
 	HealthChecker gosundheit.Health
+
+	HiddenConnectors []string
+
+	// If enabled, the server will continue starting even if some connectors fail to initialize.
+	// This allows the server to operate with a subset of connectors if some are misconfigured.
+	ContinueOnConnectorFailure bool
 }
 
 // WebConfig holds the server's frontend templates and asset configuration.
@@ -183,6 +204,17 @@ type Server struct {
 	// Used for password grant
 	passwordConnector string
 
+	// If enabled, allows users to sign up with email and password
+	enableSignup bool
+
+	SmtpHost     string
+	SmtpSender   string
+	SmtpUser     string
+	SmtpPassword string
+
+	// Optional bearer token for client registration endpoint
+	registrationToken string
+
 	supportedResponseTypes map[string]bool
 
 	supportedGrantTypes []string
@@ -196,6 +228,8 @@ type Server struct {
 	refreshTokenPolicy *RefreshTokenPolicy
 
 	logger *slog.Logger
+
+	hiddenConnectors []string
 }
 
 // NewServer constructs a server from the provided config.
@@ -311,7 +345,14 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		now:                    now,
 		templates:              tmpls,
 		passwordConnector:      c.PasswordConnector,
+		enableSignup:           c.EnableSignup,
+		SmtpHost:               c.SmtpHost,
+		SmtpSender:             c.SmtpSender,
+		SmtpUser:               c.SmtpUser,
+		SmtpPassword:           c.SmtpPassword,
+		registrationToken:      c.RegistrationToken,
 		logger:                 c.Logger,
+		hiddenConnectors:       c.HiddenConnectors,
 	}
 
 	// Retrieves connector objects in backend storage. This list includes the static connectors
@@ -325,10 +366,20 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		return nil, errors.New("server: no connectors specified")
 	}
 
+	var failedCount int
 	for _, conn := range storageConnectors {
 		if _, err := s.OpenConnector(conn); err != nil {
+			failedCount++
+			if c.ContinueOnConnectorFailure {
+				s.logger.Error("server: Failed to open connector", "id", conn.ID, "err", err)
+				continue
+			}
 			return nil, fmt.Errorf("server: Failed to open connector %s: %v", conn.ID, err)
 		}
+	}
+
+	if c.ContinueOnConnectorFailure && failedCount == len(storageConnectors) {
+		return nil, fmt.Errorf("server: failed to open all connectors (%d/%d)", failedCount, len(storageConnectors))
 	}
 
 	instrumentHandler := func(_ string, handler http.Handler) http.HandlerFunc {
@@ -450,7 +501,7 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 			<h1>Dex IdP</h1>
 			<h3>A Federated OpenID Connect Provider</h3>
 			<p><a href=%q>Discovery</a></p>`,
-			s.issuerURL.String()+"/.well-known/openid-configuration")
+			s.issuerURL.JoinPath(".well-known", "openid-configuration").String())
 		if err != nil {
 			s.logger.Error("failed to write response", "err", err)
 			s.renderError(r, w, http.StatusInternalServerError, "Handling the / path error.")
@@ -463,6 +514,9 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 	handleWithCORS("/keys", s.handlePublicKeys)
 	handleWithCORS("/userinfo", s.handleUserInfo)
 	handleWithCORS("/token/introspect", s.handleIntrospect)
+	handleWithCORS("/register", s.handleClientRegistration)
+	handleWithCORS("/signup", s.handleSignup)
+	handleWithCORS("/signup-token", s.handleSignupToken)
 	handleFunc("/auth", s.handleAuthorization)
 	handleFunc("/auth/{connector}", s.handleConnectorLogin)
 	handleFunc("/auth/{connector}/login", s.handlePasswordLogin)
@@ -665,6 +719,7 @@ var ConnectorsConfig = map[string]func() ConnectorConfig{
 	"atlassian-crowd": func() ConnectorConfig { return new(atlassiancrowd.Config) },
 	// Keep around for backwards compatibility.
 	"samlExperimental": func() ConnectorConfig { return new(saml.Config) },
+	"introspection":    func() ConnectorConfig { return new(introspection.Config) },
 }
 
 // openConnector will parse the connector config and open the connector.

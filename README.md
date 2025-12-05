@@ -127,6 +127,106 @@ Please see our [security policy](.github/SECURITY.md) for details about reportin
 [issue-1065]: https://github.com/dexidp/dex/issues/1065
 [release-notes]: https://github.com/dexidp/dex/releases
 
+## Custom Signup Feature (Fork Addition)
+
+This fork includes a custom user signup feature that allows users to register with email and password.
+
+### Configuration
+
+Enable the signup feature in your `config.yaml`:
+
+```yaml
+enablePasswordDB: true  # Required
+enableSignup: true      # Enables signup
+```
+
+### API Endpoint
+
+**Create a new user:**
+```bash
+curl -X POST http://127.0.0.1:5556/dex/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "username": "username",
+    "password": "password123"
+  }'
+```
+
+**Response:**
+```json
+{
+  "user_id": "generated-id",
+  "email": "user@example.com",
+  "username": "username",
+  "message": "User created successfully"
+}
+```
+
+### UI Access
+
+- Signup page: `http://127.0.0.1:5556/dex/signup`
+- Signup links automatically appear on login pages when enabled
+
+### Validation Rules
+
+- Email: Required, valid format
+- Password: Minimum 8 characters
+- Username: Required
+- Duplicate emails rejected with 409 Conflict
+
+### Security
+
+- Passwords hashed with bcrypt (cost 10)
+- Emails stored in lowercase
+- Request body size limit (1MB)
+- Input validation and sanitization
+
+### Code Organization
+
+The signup feature is modularized to minimize merge conflicts with upstream:
+
+**New Files:**
+- `server/handlers_signup.go` - Complete signup implementation
+- `web/templates/signup.html` - Signup form template
+
+**Modified Files (minimal changes):**
+- `cmd/dex/config.go` - Config field + validation
+- `server/server.go` - Field + route registration
+- `server/templates.go` - Template rendering
+- `web/templates/login.html` & `password.html` - Conditional signup links
+
+### Testing
+
+```bash
+# Run signup tests
+go test ./server -run TestHandleSignup -v
+
+# Build and start
+go build -o bin/dex ./cmd/dex
+./bin/dex serve config.dev.yaml
+
+# Test API
+curl -X POST http://127.0.0.1:5556/dex/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","username":"test","password":"password123"}'
+
+# Verify in database
+sqlite3 var/sqlite/dex.db "SELECT email, username FROM password;"
+```
+
+### Syncing with Upstream
+
+When syncing with upstream dexidp/dex:
+
+1. **No conflict files**: `handlers_signup.go`, `signup.html` (completely custom)
+2. **Potential conflicts**: Config, server struct, templates
+3. **Resolution**: Re-add the `enableSignup` field and route registration lines
+
+The modular structure isolates ~350 lines of custom code with only ~45 lines of integration changes across 6 existing files.
+
+---
+
 ## Development
 
 When all coding and testing is done, please run the test suite:

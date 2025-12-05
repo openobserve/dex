@@ -24,6 +24,7 @@ import (
 	"github.com/dexidp/dex/storage/ent/db/offlinesession"
 	"github.com/dexidp/dex/storage/ent/db/password"
 	"github.com/dexidp/dex/storage/ent/db/refreshtoken"
+	"github.com/dexidp/dex/storage/ent/db/signuptoken"
 )
 
 // Client is the client that holds all ent builders.
@@ -51,6 +52,8 @@ type Client struct {
 	Password *PasswordClient
 	// RefreshToken is the client for interacting with the RefreshToken builders.
 	RefreshToken *RefreshTokenClient
+	// SignupToken is the client for interacting with the SignupToken builders.
+	SignupToken *SignupTokenClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -72,6 +75,7 @@ func (c *Client) init() {
 	c.OfflineSession = NewOfflineSessionClient(c.config)
 	c.Password = NewPasswordClient(c.config)
 	c.RefreshToken = NewRefreshTokenClient(c.config)
+	c.SignupToken = NewSignupTokenClient(c.config)
 }
 
 type (
@@ -174,6 +178,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		OfflineSession: NewOfflineSessionClient(cfg),
 		Password:       NewPasswordClient(cfg),
 		RefreshToken:   NewRefreshTokenClient(cfg),
+		SignupToken:    NewSignupTokenClient(cfg),
 	}, nil
 }
 
@@ -203,6 +208,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		OfflineSession: NewOfflineSessionClient(cfg),
 		Password:       NewPasswordClient(cfg),
 		RefreshToken:   NewRefreshTokenClient(cfg),
+		SignupToken:    NewSignupTokenClient(cfg),
 	}, nil
 }
 
@@ -233,7 +239,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.AuthCode, c.AuthRequest, c.Connector, c.DeviceRequest, c.DeviceToken, c.Keys,
-		c.OAuth2Client, c.OfflineSession, c.Password, c.RefreshToken,
+		c.OAuth2Client, c.OfflineSession, c.Password, c.RefreshToken, c.SignupToken,
 	} {
 		n.Use(hooks...)
 	}
@@ -244,7 +250,7 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.AuthCode, c.AuthRequest, c.Connector, c.DeviceRequest, c.DeviceToken, c.Keys,
-		c.OAuth2Client, c.OfflineSession, c.Password, c.RefreshToken,
+		c.OAuth2Client, c.OfflineSession, c.Password, c.RefreshToken, c.SignupToken,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -273,6 +279,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Password.mutate(ctx, m)
 	case *RefreshTokenMutation:
 		return c.RefreshToken.mutate(ctx, m)
+	case *SignupTokenMutation:
+		return c.SignupToken.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("db: unknown mutation type %T", m)
 	}
@@ -333,8 +341,8 @@ func (c *AuthCodeClient) Update() *AuthCodeUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *AuthCodeClient) UpdateOne(ac *AuthCode) *AuthCodeUpdateOne {
-	mutation := newAuthCodeMutation(c.config, OpUpdateOne, withAuthCode(ac))
+func (c *AuthCodeClient) UpdateOne(_m *AuthCode) *AuthCodeUpdateOne {
+	mutation := newAuthCodeMutation(c.config, OpUpdateOne, withAuthCode(_m))
 	return &AuthCodeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -351,8 +359,8 @@ func (c *AuthCodeClient) Delete() *AuthCodeDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *AuthCodeClient) DeleteOne(ac *AuthCode) *AuthCodeDeleteOne {
-	return c.DeleteOneID(ac.ID)
+func (c *AuthCodeClient) DeleteOne(_m *AuthCode) *AuthCodeDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -466,8 +474,8 @@ func (c *AuthRequestClient) Update() *AuthRequestUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *AuthRequestClient) UpdateOne(ar *AuthRequest) *AuthRequestUpdateOne {
-	mutation := newAuthRequestMutation(c.config, OpUpdateOne, withAuthRequest(ar))
+func (c *AuthRequestClient) UpdateOne(_m *AuthRequest) *AuthRequestUpdateOne {
+	mutation := newAuthRequestMutation(c.config, OpUpdateOne, withAuthRequest(_m))
 	return &AuthRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -484,8 +492,8 @@ func (c *AuthRequestClient) Delete() *AuthRequestDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *AuthRequestClient) DeleteOne(ar *AuthRequest) *AuthRequestDeleteOne {
-	return c.DeleteOneID(ar.ID)
+func (c *AuthRequestClient) DeleteOne(_m *AuthRequest) *AuthRequestDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -599,8 +607,8 @@ func (c *ConnectorClient) Update() *ConnectorUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *ConnectorClient) UpdateOne(co *Connector) *ConnectorUpdateOne {
-	mutation := newConnectorMutation(c.config, OpUpdateOne, withConnector(co))
+func (c *ConnectorClient) UpdateOne(_m *Connector) *ConnectorUpdateOne {
+	mutation := newConnectorMutation(c.config, OpUpdateOne, withConnector(_m))
 	return &ConnectorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -617,8 +625,8 @@ func (c *ConnectorClient) Delete() *ConnectorDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *ConnectorClient) DeleteOne(co *Connector) *ConnectorDeleteOne {
-	return c.DeleteOneID(co.ID)
+func (c *ConnectorClient) DeleteOne(_m *Connector) *ConnectorDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -732,8 +740,8 @@ func (c *DeviceRequestClient) Update() *DeviceRequestUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *DeviceRequestClient) UpdateOne(dr *DeviceRequest) *DeviceRequestUpdateOne {
-	mutation := newDeviceRequestMutation(c.config, OpUpdateOne, withDeviceRequest(dr))
+func (c *DeviceRequestClient) UpdateOne(_m *DeviceRequest) *DeviceRequestUpdateOne {
+	mutation := newDeviceRequestMutation(c.config, OpUpdateOne, withDeviceRequest(_m))
 	return &DeviceRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -750,8 +758,8 @@ func (c *DeviceRequestClient) Delete() *DeviceRequestDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *DeviceRequestClient) DeleteOne(dr *DeviceRequest) *DeviceRequestDeleteOne {
-	return c.DeleteOneID(dr.ID)
+func (c *DeviceRequestClient) DeleteOne(_m *DeviceRequest) *DeviceRequestDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -865,8 +873,8 @@ func (c *DeviceTokenClient) Update() *DeviceTokenUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *DeviceTokenClient) UpdateOne(dt *DeviceToken) *DeviceTokenUpdateOne {
-	mutation := newDeviceTokenMutation(c.config, OpUpdateOne, withDeviceToken(dt))
+func (c *DeviceTokenClient) UpdateOne(_m *DeviceToken) *DeviceTokenUpdateOne {
+	mutation := newDeviceTokenMutation(c.config, OpUpdateOne, withDeviceToken(_m))
 	return &DeviceTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -883,8 +891,8 @@ func (c *DeviceTokenClient) Delete() *DeviceTokenDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *DeviceTokenClient) DeleteOne(dt *DeviceToken) *DeviceTokenDeleteOne {
-	return c.DeleteOneID(dt.ID)
+func (c *DeviceTokenClient) DeleteOne(_m *DeviceToken) *DeviceTokenDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -998,8 +1006,8 @@ func (c *KeysClient) Update() *KeysUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *KeysClient) UpdateOne(k *Keys) *KeysUpdateOne {
-	mutation := newKeysMutation(c.config, OpUpdateOne, withKeys(k))
+func (c *KeysClient) UpdateOne(_m *Keys) *KeysUpdateOne {
+	mutation := newKeysMutation(c.config, OpUpdateOne, withKeys(_m))
 	return &KeysUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -1016,8 +1024,8 @@ func (c *KeysClient) Delete() *KeysDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *KeysClient) DeleteOne(k *Keys) *KeysDeleteOne {
-	return c.DeleteOneID(k.ID)
+func (c *KeysClient) DeleteOne(_m *Keys) *KeysDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -1131,8 +1139,8 @@ func (c *OAuth2ClientClient) Update() *OAuth2ClientUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *OAuth2ClientClient) UpdateOne(o *OAuth2Client) *OAuth2ClientUpdateOne {
-	mutation := newOAuth2ClientMutation(c.config, OpUpdateOne, withOAuth2Client(o))
+func (c *OAuth2ClientClient) UpdateOne(_m *OAuth2Client) *OAuth2ClientUpdateOne {
+	mutation := newOAuth2ClientMutation(c.config, OpUpdateOne, withOAuth2Client(_m))
 	return &OAuth2ClientUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -1149,8 +1157,8 @@ func (c *OAuth2ClientClient) Delete() *OAuth2ClientDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *OAuth2ClientClient) DeleteOne(o *OAuth2Client) *OAuth2ClientDeleteOne {
-	return c.DeleteOneID(o.ID)
+func (c *OAuth2ClientClient) DeleteOne(_m *OAuth2Client) *OAuth2ClientDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -1264,8 +1272,8 @@ func (c *OfflineSessionClient) Update() *OfflineSessionUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *OfflineSessionClient) UpdateOne(os *OfflineSession) *OfflineSessionUpdateOne {
-	mutation := newOfflineSessionMutation(c.config, OpUpdateOne, withOfflineSession(os))
+func (c *OfflineSessionClient) UpdateOne(_m *OfflineSession) *OfflineSessionUpdateOne {
+	mutation := newOfflineSessionMutation(c.config, OpUpdateOne, withOfflineSession(_m))
 	return &OfflineSessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -1282,8 +1290,8 @@ func (c *OfflineSessionClient) Delete() *OfflineSessionDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *OfflineSessionClient) DeleteOne(os *OfflineSession) *OfflineSessionDeleteOne {
-	return c.DeleteOneID(os.ID)
+func (c *OfflineSessionClient) DeleteOne(_m *OfflineSession) *OfflineSessionDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -1397,8 +1405,8 @@ func (c *PasswordClient) Update() *PasswordUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *PasswordClient) UpdateOne(pa *Password) *PasswordUpdateOne {
-	mutation := newPasswordMutation(c.config, OpUpdateOne, withPassword(pa))
+func (c *PasswordClient) UpdateOne(_m *Password) *PasswordUpdateOne {
+	mutation := newPasswordMutation(c.config, OpUpdateOne, withPassword(_m))
 	return &PasswordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -1415,8 +1423,8 @@ func (c *PasswordClient) Delete() *PasswordDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *PasswordClient) DeleteOne(pa *Password) *PasswordDeleteOne {
-	return c.DeleteOneID(pa.ID)
+func (c *PasswordClient) DeleteOne(_m *Password) *PasswordDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -1530,8 +1538,8 @@ func (c *RefreshTokenClient) Update() *RefreshTokenUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *RefreshTokenClient) UpdateOne(rt *RefreshToken) *RefreshTokenUpdateOne {
-	mutation := newRefreshTokenMutation(c.config, OpUpdateOne, withRefreshToken(rt))
+func (c *RefreshTokenClient) UpdateOne(_m *RefreshToken) *RefreshTokenUpdateOne {
+	mutation := newRefreshTokenMutation(c.config, OpUpdateOne, withRefreshToken(_m))
 	return &RefreshTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -1548,8 +1556,8 @@ func (c *RefreshTokenClient) Delete() *RefreshTokenDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *RefreshTokenClient) DeleteOne(rt *RefreshToken) *RefreshTokenDeleteOne {
-	return c.DeleteOneID(rt.ID)
+func (c *RefreshTokenClient) DeleteOne(_m *RefreshToken) *RefreshTokenDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -1608,14 +1616,148 @@ func (c *RefreshTokenClient) mutate(ctx context.Context, m *RefreshTokenMutation
 	}
 }
 
+// SignupTokenClient is a client for the SignupToken schema.
+type SignupTokenClient struct {
+	config
+}
+
+// NewSignupTokenClient returns a client for the SignupToken from the given config.
+func NewSignupTokenClient(c config) *SignupTokenClient {
+	return &SignupTokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `signuptoken.Hooks(f(g(h())))`.
+func (c *SignupTokenClient) Use(hooks ...Hook) {
+	c.hooks.SignupToken = append(c.hooks.SignupToken, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `signuptoken.Intercept(f(g(h())))`.
+func (c *SignupTokenClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SignupToken = append(c.inters.SignupToken, interceptors...)
+}
+
+// Create returns a builder for creating a SignupToken entity.
+func (c *SignupTokenClient) Create() *SignupTokenCreate {
+	mutation := newSignupTokenMutation(c.config, OpCreate)
+	return &SignupTokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SignupToken entities.
+func (c *SignupTokenClient) CreateBulk(builders ...*SignupTokenCreate) *SignupTokenCreateBulk {
+	return &SignupTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SignupTokenClient) MapCreateBulk(slice any, setFunc func(*SignupTokenCreate, int)) *SignupTokenCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SignupTokenCreateBulk{err: fmt.Errorf("calling to SignupTokenClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SignupTokenCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SignupTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SignupToken.
+func (c *SignupTokenClient) Update() *SignupTokenUpdate {
+	mutation := newSignupTokenMutation(c.config, OpUpdate)
+	return &SignupTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SignupTokenClient) UpdateOne(_m *SignupToken) *SignupTokenUpdateOne {
+	mutation := newSignupTokenMutation(c.config, OpUpdateOne, withSignupToken(_m))
+	return &SignupTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SignupTokenClient) UpdateOneID(id int) *SignupTokenUpdateOne {
+	mutation := newSignupTokenMutation(c.config, OpUpdateOne, withSignupTokenID(id))
+	return &SignupTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SignupToken.
+func (c *SignupTokenClient) Delete() *SignupTokenDelete {
+	mutation := newSignupTokenMutation(c.config, OpDelete)
+	return &SignupTokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SignupTokenClient) DeleteOne(_m *SignupToken) *SignupTokenDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SignupTokenClient) DeleteOneID(id int) *SignupTokenDeleteOne {
+	builder := c.Delete().Where(signuptoken.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SignupTokenDeleteOne{builder}
+}
+
+// Query returns a query builder for SignupToken.
+func (c *SignupTokenClient) Query() *SignupTokenQuery {
+	return &SignupTokenQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSignupToken},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SignupToken entity by its id.
+func (c *SignupTokenClient) Get(ctx context.Context, id int) (*SignupToken, error) {
+	return c.Query().Where(signuptoken.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SignupTokenClient) GetX(ctx context.Context, id int) *SignupToken {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SignupTokenClient) Hooks() []Hook {
+	return c.hooks.SignupToken
+}
+
+// Interceptors returns the client interceptors.
+func (c *SignupTokenClient) Interceptors() []Interceptor {
+	return c.inters.SignupToken
+}
+
+func (c *SignupTokenClient) mutate(ctx context.Context, m *SignupTokenMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SignupTokenCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SignupTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SignupTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SignupTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("db: unknown SignupToken mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
 		AuthCode, AuthRequest, Connector, DeviceRequest, DeviceToken, Keys,
-		OAuth2Client, OfflineSession, Password, RefreshToken []ent.Hook
+		OAuth2Client, OfflineSession, Password, RefreshToken, SignupToken []ent.Hook
 	}
 	inters struct {
 		AuthCode, AuthRequest, Connector, DeviceRequest, DeviceToken, Keys,
-		OAuth2Client, OfflineSession, Password, RefreshToken []ent.Interceptor
+		OAuth2Client, OfflineSession, Password, RefreshToken,
+		SignupToken []ent.Interceptor
 	}
 )

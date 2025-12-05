@@ -22,6 +22,7 @@ import (
 	"github.com/dexidp/dex/storage/ent/db/offlinesession"
 	"github.com/dexidp/dex/storage/ent/db/password"
 	"github.com/dexidp/dex/storage/ent/db/refreshtoken"
+	"github.com/dexidp/dex/storage/ent/db/signuptoken"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -79,7 +80,7 @@ var (
 )
 
 // checkColumn checks if the column exists in the given table.
-func checkColumn(table, column string) error {
+func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			authcode.Table:       authcode.ValidColumn,
@@ -92,9 +93,10 @@ func checkColumn(table, column string) error {
 			offlinesession.Table: offlinesession.ValidColumn,
 			password.Table:       password.ValidColumn,
 			refreshtoken.Table:   refreshtoken.ValidColumn,
+			signuptoken.Table:    signuptoken.ValidColumn,
 		})
 	})
-	return columnCheck(table, column)
+	return columnCheck(t, c)
 }
 
 // Asc applies the given fields in ASC order.

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/dexidp/dex/storage"
@@ -20,51 +22,52 @@ type KeysCreate struct {
 	config
 	mutation *KeysMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetVerificationKeys sets the "verification_keys" field.
-func (kc *KeysCreate) SetVerificationKeys(sk []storage.VerificationKey) *KeysCreate {
-	kc.mutation.SetVerificationKeys(sk)
-	return kc
+func (_c *KeysCreate) SetVerificationKeys(v []storage.VerificationKey) *KeysCreate {
+	_c.mutation.SetVerificationKeys(v)
+	return _c
 }
 
 // SetSigningKey sets the "signing_key" field.
-func (kc *KeysCreate) SetSigningKey(jwk jose.JSONWebKey) *KeysCreate {
-	kc.mutation.SetSigningKey(jwk)
-	return kc
+func (_c *KeysCreate) SetSigningKey(v jose.JSONWebKey) *KeysCreate {
+	_c.mutation.SetSigningKey(v)
+	return _c
 }
 
 // SetSigningKeyPub sets the "signing_key_pub" field.
-func (kc *KeysCreate) SetSigningKeyPub(jwk jose.JSONWebKey) *KeysCreate {
-	kc.mutation.SetSigningKeyPub(jwk)
-	return kc
+func (_c *KeysCreate) SetSigningKeyPub(v jose.JSONWebKey) *KeysCreate {
+	_c.mutation.SetSigningKeyPub(v)
+	return _c
 }
 
 // SetNextRotation sets the "next_rotation" field.
-func (kc *KeysCreate) SetNextRotation(t time.Time) *KeysCreate {
-	kc.mutation.SetNextRotation(t)
-	return kc
+func (_c *KeysCreate) SetNextRotation(v time.Time) *KeysCreate {
+	_c.mutation.SetNextRotation(v)
+	return _c
 }
 
 // SetID sets the "id" field.
-func (kc *KeysCreate) SetID(s string) *KeysCreate {
-	kc.mutation.SetID(s)
-	return kc
+func (_c *KeysCreate) SetID(v string) *KeysCreate {
+	_c.mutation.SetID(v)
+	return _c
 }
 
 // Mutation returns the KeysMutation object of the builder.
-func (kc *KeysCreate) Mutation() *KeysMutation {
-	return kc.mutation
+func (_c *KeysCreate) Mutation() *KeysMutation {
+	return _c.mutation
 }
 
 // Save creates the Keys in the database.
-func (kc *KeysCreate) Save(ctx context.Context) (*Keys, error) {
-	return withHooks(ctx, kc.sqlSave, kc.mutation, kc.hooks)
+func (_c *KeysCreate) Save(ctx context.Context) (*Keys, error) {
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (kc *KeysCreate) SaveX(ctx context.Context) *Keys {
-	v, err := kc.Save(ctx)
+func (_c *KeysCreate) SaveX(ctx context.Context) *Keys {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -72,33 +75,33 @@ func (kc *KeysCreate) SaveX(ctx context.Context) *Keys {
 }
 
 // Exec executes the query.
-func (kc *KeysCreate) Exec(ctx context.Context) error {
-	_, err := kc.Save(ctx)
+func (_c *KeysCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (kc *KeysCreate) ExecX(ctx context.Context) {
-	if err := kc.Exec(ctx); err != nil {
+func (_c *KeysCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (kc *KeysCreate) check() error {
-	if _, ok := kc.mutation.VerificationKeys(); !ok {
+func (_c *KeysCreate) check() error {
+	if _, ok := _c.mutation.VerificationKeys(); !ok {
 		return &ValidationError{Name: "verification_keys", err: errors.New(`db: missing required field "Keys.verification_keys"`)}
 	}
-	if _, ok := kc.mutation.SigningKey(); !ok {
+	if _, ok := _c.mutation.SigningKey(); !ok {
 		return &ValidationError{Name: "signing_key", err: errors.New(`db: missing required field "Keys.signing_key"`)}
 	}
-	if _, ok := kc.mutation.SigningKeyPub(); !ok {
+	if _, ok := _c.mutation.SigningKeyPub(); !ok {
 		return &ValidationError{Name: "signing_key_pub", err: errors.New(`db: missing required field "Keys.signing_key_pub"`)}
 	}
-	if _, ok := kc.mutation.NextRotation(); !ok {
+	if _, ok := _c.mutation.NextRotation(); !ok {
 		return &ValidationError{Name: "next_rotation", err: errors.New(`db: missing required field "Keys.next_rotation"`)}
 	}
-	if v, ok := kc.mutation.ID(); ok {
+	if v, ok := _c.mutation.ID(); ok {
 		if err := keys.IDValidator(v); err != nil {
 			return &ValidationError{Name: "id", err: fmt.Errorf(`db: validator failed for field "Keys.id": %w`, err)}
 		}
@@ -106,12 +109,12 @@ func (kc *KeysCreate) check() error {
 	return nil
 }
 
-func (kc *KeysCreate) sqlSave(ctx context.Context) (*Keys, error) {
-	if err := kc.check(); err != nil {
+func (_c *KeysCreate) sqlSave(ctx context.Context) (*Keys, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := kc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, kc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -124,37 +127,277 @@ func (kc *KeysCreate) sqlSave(ctx context.Context) (*Keys, error) {
 			return nil, fmt.Errorf("unexpected Keys.ID type: %T", _spec.ID.Value)
 		}
 	}
-	kc.mutation.id = &_node.ID
-	kc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (kc *KeysCreate) createSpec() (*Keys, *sqlgraph.CreateSpec) {
+func (_c *KeysCreate) createSpec() (*Keys, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Keys{config: kc.config}
+		_node = &Keys{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(keys.Table, sqlgraph.NewFieldSpec(keys.FieldID, field.TypeString))
 	)
-	if id, ok := kc.mutation.ID(); ok {
+	_spec.OnConflict = _c.conflict
+	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
 	}
-	if value, ok := kc.mutation.VerificationKeys(); ok {
+	if value, ok := _c.mutation.VerificationKeys(); ok {
 		_spec.SetField(keys.FieldVerificationKeys, field.TypeJSON, value)
 		_node.VerificationKeys = value
 	}
-	if value, ok := kc.mutation.SigningKey(); ok {
+	if value, ok := _c.mutation.SigningKey(); ok {
 		_spec.SetField(keys.FieldSigningKey, field.TypeJSON, value)
 		_node.SigningKey = value
 	}
-	if value, ok := kc.mutation.SigningKeyPub(); ok {
+	if value, ok := _c.mutation.SigningKeyPub(); ok {
 		_spec.SetField(keys.FieldSigningKeyPub, field.TypeJSON, value)
 		_node.SigningKeyPub = value
 	}
-	if value, ok := kc.mutation.NextRotation(); ok {
+	if value, ok := _c.mutation.NextRotation(); ok {
 		_spec.SetField(keys.FieldNextRotation, field.TypeTime, value)
 		_node.NextRotation = value
 	}
 	return _node, _spec
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Keys.Create().
+//		SetVerificationKeys(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.KeysUpsert) {
+//			SetVerificationKeys(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *KeysCreate) OnConflict(opts ...sql.ConflictOption) *KeysUpsertOne {
+	_c.conflict = opts
+	return &KeysUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *KeysCreate) OnConflictColumns(columns ...string) *KeysUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &KeysUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// KeysUpsertOne is the builder for "upsert"-ing
+	//  one Keys node.
+	KeysUpsertOne struct {
+		create *KeysCreate
+	}
+
+	// KeysUpsert is the "OnConflict" setter.
+	KeysUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetVerificationKeys sets the "verification_keys" field.
+func (u *KeysUpsert) SetVerificationKeys(v []storage.VerificationKey) *KeysUpsert {
+	u.Set(keys.FieldVerificationKeys, v)
+	return u
+}
+
+// UpdateVerificationKeys sets the "verification_keys" field to the value that was provided on create.
+func (u *KeysUpsert) UpdateVerificationKeys() *KeysUpsert {
+	u.SetExcluded(keys.FieldVerificationKeys)
+	return u
+}
+
+// SetSigningKey sets the "signing_key" field.
+func (u *KeysUpsert) SetSigningKey(v jose.JSONWebKey) *KeysUpsert {
+	u.Set(keys.FieldSigningKey, v)
+	return u
+}
+
+// UpdateSigningKey sets the "signing_key" field to the value that was provided on create.
+func (u *KeysUpsert) UpdateSigningKey() *KeysUpsert {
+	u.SetExcluded(keys.FieldSigningKey)
+	return u
+}
+
+// SetSigningKeyPub sets the "signing_key_pub" field.
+func (u *KeysUpsert) SetSigningKeyPub(v jose.JSONWebKey) *KeysUpsert {
+	u.Set(keys.FieldSigningKeyPub, v)
+	return u
+}
+
+// UpdateSigningKeyPub sets the "signing_key_pub" field to the value that was provided on create.
+func (u *KeysUpsert) UpdateSigningKeyPub() *KeysUpsert {
+	u.SetExcluded(keys.FieldSigningKeyPub)
+	return u
+}
+
+// SetNextRotation sets the "next_rotation" field.
+func (u *KeysUpsert) SetNextRotation(v time.Time) *KeysUpsert {
+	u.Set(keys.FieldNextRotation, v)
+	return u
+}
+
+// UpdateNextRotation sets the "next_rotation" field to the value that was provided on create.
+func (u *KeysUpsert) UpdateNextRotation() *KeysUpsert {
+	u.SetExcluded(keys.FieldNextRotation)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(keys.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *KeysUpsertOne) UpdateNewValues() *KeysUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(keys.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *KeysUpsertOne) Ignore() *KeysUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *KeysUpsertOne) DoNothing() *KeysUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the KeysCreate.OnConflict
+// documentation for more info.
+func (u *KeysUpsertOne) Update(set func(*KeysUpsert)) *KeysUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&KeysUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetVerificationKeys sets the "verification_keys" field.
+func (u *KeysUpsertOne) SetVerificationKeys(v []storage.VerificationKey) *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetVerificationKeys(v)
+	})
+}
+
+// UpdateVerificationKeys sets the "verification_keys" field to the value that was provided on create.
+func (u *KeysUpsertOne) UpdateVerificationKeys() *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateVerificationKeys()
+	})
+}
+
+// SetSigningKey sets the "signing_key" field.
+func (u *KeysUpsertOne) SetSigningKey(v jose.JSONWebKey) *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetSigningKey(v)
+	})
+}
+
+// UpdateSigningKey sets the "signing_key" field to the value that was provided on create.
+func (u *KeysUpsertOne) UpdateSigningKey() *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateSigningKey()
+	})
+}
+
+// SetSigningKeyPub sets the "signing_key_pub" field.
+func (u *KeysUpsertOne) SetSigningKeyPub(v jose.JSONWebKey) *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetSigningKeyPub(v)
+	})
+}
+
+// UpdateSigningKeyPub sets the "signing_key_pub" field to the value that was provided on create.
+func (u *KeysUpsertOne) UpdateSigningKeyPub() *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateSigningKeyPub()
+	})
+}
+
+// SetNextRotation sets the "next_rotation" field.
+func (u *KeysUpsertOne) SetNextRotation(v time.Time) *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetNextRotation(v)
+	})
+}
+
+// UpdateNextRotation sets the "next_rotation" field to the value that was provided on create.
+func (u *KeysUpsertOne) UpdateNextRotation() *KeysUpsertOne {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateNextRotation()
+	})
+}
+
+// Exec executes the query.
+func (u *KeysUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for KeysCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *KeysUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *KeysUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("db: KeysUpsertOne.ID is not supported by MySQL driver. Use KeysUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *KeysUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
 }
 
 // KeysCreateBulk is the builder for creating many Keys entities in bulk.
@@ -162,19 +405,20 @@ type KeysCreateBulk struct {
 	config
 	err      error
 	builders []*KeysCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Keys entities in the database.
-func (kcb *KeysCreateBulk) Save(ctx context.Context) ([]*Keys, error) {
-	if kcb.err != nil {
-		return nil, kcb.err
+func (_c *KeysCreateBulk) Save(ctx context.Context) ([]*Keys, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(kcb.builders))
-	nodes := make([]*Keys, len(kcb.builders))
-	mutators := make([]Mutator, len(kcb.builders))
-	for i := range kcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Keys, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := kcb.builders[i]
+			builder := _c.builders[i]
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*KeysMutation)
 				if !ok {
@@ -187,11 +431,12 @@ func (kcb *KeysCreateBulk) Save(ctx context.Context) ([]*Keys, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, kcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, kcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -211,7 +456,7 @@ func (kcb *KeysCreateBulk) Save(ctx context.Context) ([]*Keys, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, kcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -219,8 +464,8 @@ func (kcb *KeysCreateBulk) Save(ctx context.Context) ([]*Keys, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (kcb *KeysCreateBulk) SaveX(ctx context.Context) []*Keys {
-	v, err := kcb.Save(ctx)
+func (_c *KeysCreateBulk) SaveX(ctx context.Context) []*Keys {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -228,14 +473,184 @@ func (kcb *KeysCreateBulk) SaveX(ctx context.Context) []*Keys {
 }
 
 // Exec executes the query.
-func (kcb *KeysCreateBulk) Exec(ctx context.Context) error {
-	_, err := kcb.Save(ctx)
+func (_c *KeysCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (kcb *KeysCreateBulk) ExecX(ctx context.Context) {
-	if err := kcb.Exec(ctx); err != nil {
+func (_c *KeysCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Keys.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.KeysUpsert) {
+//			SetVerificationKeys(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *KeysCreateBulk) OnConflict(opts ...sql.ConflictOption) *KeysUpsertBulk {
+	_c.conflict = opts
+	return &KeysUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *KeysCreateBulk) OnConflictColumns(columns ...string) *KeysUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &KeysUpsertBulk{
+		create: _c,
+	}
+}
+
+// KeysUpsertBulk is the builder for "upsert"-ing
+// a bulk of Keys nodes.
+type KeysUpsertBulk struct {
+	create *KeysCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(keys.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *KeysUpsertBulk) UpdateNewValues() *KeysUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(keys.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Keys.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *KeysUpsertBulk) Ignore() *KeysUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *KeysUpsertBulk) DoNothing() *KeysUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the KeysCreateBulk.OnConflict
+// documentation for more info.
+func (u *KeysUpsertBulk) Update(set func(*KeysUpsert)) *KeysUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&KeysUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetVerificationKeys sets the "verification_keys" field.
+func (u *KeysUpsertBulk) SetVerificationKeys(v []storage.VerificationKey) *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetVerificationKeys(v)
+	})
+}
+
+// UpdateVerificationKeys sets the "verification_keys" field to the value that was provided on create.
+func (u *KeysUpsertBulk) UpdateVerificationKeys() *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateVerificationKeys()
+	})
+}
+
+// SetSigningKey sets the "signing_key" field.
+func (u *KeysUpsertBulk) SetSigningKey(v jose.JSONWebKey) *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetSigningKey(v)
+	})
+}
+
+// UpdateSigningKey sets the "signing_key" field to the value that was provided on create.
+func (u *KeysUpsertBulk) UpdateSigningKey() *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateSigningKey()
+	})
+}
+
+// SetSigningKeyPub sets the "signing_key_pub" field.
+func (u *KeysUpsertBulk) SetSigningKeyPub(v jose.JSONWebKey) *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetSigningKeyPub(v)
+	})
+}
+
+// UpdateSigningKeyPub sets the "signing_key_pub" field to the value that was provided on create.
+func (u *KeysUpsertBulk) UpdateSigningKeyPub() *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateSigningKeyPub()
+	})
+}
+
+// SetNextRotation sets the "next_rotation" field.
+func (u *KeysUpsertBulk) SetNextRotation(v time.Time) *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.SetNextRotation(v)
+	})
+}
+
+// UpdateNextRotation sets the "next_rotation" field to the value that was provided on create.
+func (u *KeysUpsertBulk) UpdateNextRotation() *KeysUpsertBulk {
+	return u.Update(func(s *KeysUpsert) {
+		s.UpdateNextRotation()
+	})
+}
+
+// Exec executes the query.
+func (u *KeysUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("db: OnConflict was set for builder %d. Set it on the KeysCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for KeysCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *KeysUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

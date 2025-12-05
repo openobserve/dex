@@ -60,6 +60,7 @@ type GCResult struct {
 	AuthCodes      int64
 	DeviceRequests int64
 	DeviceTokens   int64
+	SignupTokens   int64
 }
 
 // IsEmpty returns whether the garbage collection result is empty or not.
@@ -82,6 +83,7 @@ type Storage interface {
 	CreateAuthCode(ctx context.Context, c AuthCode) error
 	CreateRefresh(ctx context.Context, r RefreshToken) error
 	CreatePassword(ctx context.Context, p Password) error
+	CreateSignupToken(ctx context.Context, t SignupToken) error
 	CreateOfflineSessions(ctx context.Context, s OfflineSessions) error
 	CreateConnector(ctx context.Context, c Connector) error
 	CreateDeviceRequest(ctx context.Context, d DeviceRequest) error
@@ -95,6 +97,7 @@ type Storage interface {
 	GetKeys(ctx context.Context) (Keys, error)
 	GetRefresh(ctx context.Context, id string) (RefreshToken, error)
 	GetPassword(ctx context.Context, email string) (Password, error)
+	GetSignupToken(ctx context.Context, email string) (SignupToken, error)
 	GetOfflineSessions(ctx context.Context, userID string, connID string) (OfflineSessions, error)
 	GetConnector(ctx context.Context, id string) (Connector, error)
 	GetDeviceRequest(ctx context.Context, userCode string) (DeviceRequest, error)
@@ -111,6 +114,7 @@ type Storage interface {
 	DeleteClient(ctx context.Context, id string) error
 	DeleteRefresh(ctx context.Context, id string) error
 	DeletePassword(ctx context.Context, email string) error
+	DeleteSignupToken(ctx context.Context, email string) error
 	DeleteOfflineSessions(ctx context.Context, userID string, connID string) error
 	DeleteConnector(ctx context.Context, id string) error
 
@@ -356,6 +360,26 @@ type Password struct {
 	UserID string `json:"userID"`
 }
 
+// SignupToken is email-csfr-token mapping managed by the storage.
+type SignupToken struct {
+	// Email and identifying name of the password. Emails are assumed to be valid and
+	// determining that an end-user controls the address is left to an outside application.
+	//
+	// Emails are case insensitive and should be standardized by the storage.
+	//
+	// Storages that don't support an extended character set for IDs, such as '.' and '@'
+	// (cough cough, kubernetes), must map this value appropriately.
+	Email string `json:"email"`
+
+	// CsrfToken for the particular validation
+	CsrfToken string `json:"csrfToken"`
+
+	// ValidationToken for the verification of email
+	ValidationToken string `json:"validationToken"`
+
+	Expiry time.Time `json:"expiry"`
+}
+
 // Connector is an object that contains the metadata about connectors used to login to Dex.
 type Connector struct {
 	// ID that will uniquely identify the connector object.
@@ -374,6 +398,8 @@ type Connector struct {
 	// However, fixing this requires migrating Kubernetes objects for all previously created connectors,
 	// or making Dex reading both tags and act accordingly.
 	Config []byte `json:"email"`
+
+	Hidden bool `json:"hidden,omitempty"`
 }
 
 // VerificationKey is a rotated signing key which can still be used to verify

@@ -194,6 +194,20 @@ var (
 		Columns:    RefreshTokensColumns,
 		PrimaryKey: []*schema.Column{RefreshTokensColumns[0]},
 	}
+	// SignupTokensColumns holds the columns for the "signup_tokens" table.
+	SignupTokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "email", Type: field.TypeString, Unique: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "varchar(384)", "postgres": "text", "sqlite3": "text"}},
+		{Name: "csrf_token", Type: field.TypeString, Size: 2147483647, SchemaType: map[string]string{"mysql": "varchar(384)", "postgres": "text", "sqlite3": "text"}},
+		{Name: "validation_token", Type: field.TypeString, Size: 2147483647, SchemaType: map[string]string{"mysql": "varchar(384)", "postgres": "text", "sqlite3": "text"}},
+		{Name: "expiry", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)", "postgres": "timestamptz", "sqlite3": "timestamp"}},
+	}
+	// SignupTokensTable holds the schema information for the "signup_tokens" table.
+	SignupTokensTable = &schema.Table{
+		Name:       "signup_tokens",
+		Columns:    SignupTokensColumns,
+		PrimaryKey: []*schema.Column{SignupTokensColumns[0]},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AuthCodesTable,
@@ -206,6 +220,7 @@ var (
 		OfflineSessionsTable,
 		PasswordsTable,
 		RefreshTokensTable,
+		SignupTokensTable,
 	}
 )
 

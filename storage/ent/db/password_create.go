@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/dexidp/dex/storage/ent/db/password"
@@ -17,45 +18,46 @@ type PasswordCreate struct {
 	config
 	mutation *PasswordMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetEmail sets the "email" field.
-func (pc *PasswordCreate) SetEmail(s string) *PasswordCreate {
-	pc.mutation.SetEmail(s)
-	return pc
+func (_c *PasswordCreate) SetEmail(v string) *PasswordCreate {
+	_c.mutation.SetEmail(v)
+	return _c
 }
 
 // SetHash sets the "hash" field.
-func (pc *PasswordCreate) SetHash(b []byte) *PasswordCreate {
-	pc.mutation.SetHash(b)
-	return pc
+func (_c *PasswordCreate) SetHash(v []byte) *PasswordCreate {
+	_c.mutation.SetHash(v)
+	return _c
 }
 
 // SetUsername sets the "username" field.
-func (pc *PasswordCreate) SetUsername(s string) *PasswordCreate {
-	pc.mutation.SetUsername(s)
-	return pc
+func (_c *PasswordCreate) SetUsername(v string) *PasswordCreate {
+	_c.mutation.SetUsername(v)
+	return _c
 }
 
 // SetUserID sets the "user_id" field.
-func (pc *PasswordCreate) SetUserID(s string) *PasswordCreate {
-	pc.mutation.SetUserID(s)
-	return pc
+func (_c *PasswordCreate) SetUserID(v string) *PasswordCreate {
+	_c.mutation.SetUserID(v)
+	return _c
 }
 
 // Mutation returns the PasswordMutation object of the builder.
-func (pc *PasswordCreate) Mutation() *PasswordMutation {
-	return pc.mutation
+func (_c *PasswordCreate) Mutation() *PasswordMutation {
+	return _c.mutation
 }
 
 // Save creates the Password in the database.
-func (pc *PasswordCreate) Save(ctx context.Context) (*Password, error) {
-	return withHooks(ctx, pc.sqlSave, pc.mutation, pc.hooks)
+func (_c *PasswordCreate) Save(ctx context.Context) (*Password, error) {
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (pc *PasswordCreate) SaveX(ctx context.Context) *Password {
-	v, err := pc.Save(ctx)
+func (_c *PasswordCreate) SaveX(ctx context.Context) *Password {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -63,43 +65,43 @@ func (pc *PasswordCreate) SaveX(ctx context.Context) *Password {
 }
 
 // Exec executes the query.
-func (pc *PasswordCreate) Exec(ctx context.Context) error {
-	_, err := pc.Save(ctx)
+func (_c *PasswordCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (pc *PasswordCreate) ExecX(ctx context.Context) {
-	if err := pc.Exec(ctx); err != nil {
+func (_c *PasswordCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (pc *PasswordCreate) check() error {
-	if _, ok := pc.mutation.Email(); !ok {
+func (_c *PasswordCreate) check() error {
+	if _, ok := _c.mutation.Email(); !ok {
 		return &ValidationError{Name: "email", err: errors.New(`db: missing required field "Password.email"`)}
 	}
-	if v, ok := pc.mutation.Email(); ok {
+	if v, ok := _c.mutation.Email(); ok {
 		if err := password.EmailValidator(v); err != nil {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`db: validator failed for field "Password.email": %w`, err)}
 		}
 	}
-	if _, ok := pc.mutation.Hash(); !ok {
+	if _, ok := _c.mutation.Hash(); !ok {
 		return &ValidationError{Name: "hash", err: errors.New(`db: missing required field "Password.hash"`)}
 	}
-	if _, ok := pc.mutation.Username(); !ok {
+	if _, ok := _c.mutation.Username(); !ok {
 		return &ValidationError{Name: "username", err: errors.New(`db: missing required field "Password.username"`)}
 	}
-	if v, ok := pc.mutation.Username(); ok {
+	if v, ok := _c.mutation.Username(); ok {
 		if err := password.UsernameValidator(v); err != nil {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`db: validator failed for field "Password.username": %w`, err)}
 		}
 	}
-	if _, ok := pc.mutation.UserID(); !ok {
+	if _, ok := _c.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`db: missing required field "Password.user_id"`)}
 	}
-	if v, ok := pc.mutation.UserID(); ok {
+	if v, ok := _c.mutation.UserID(); ok {
 		if err := password.UserIDValidator(v); err != nil {
 			return &ValidationError{Name: "user_id", err: fmt.Errorf(`db: validator failed for field "Password.user_id": %w`, err)}
 		}
@@ -107,12 +109,12 @@ func (pc *PasswordCreate) check() error {
 	return nil
 }
 
-func (pc *PasswordCreate) sqlSave(ctx context.Context) (*Password, error) {
-	if err := pc.check(); err != nil {
+func (_c *PasswordCreate) sqlSave(ctx context.Context) (*Password, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := pc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, pc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -120,33 +122,260 @@ func (pc *PasswordCreate) sqlSave(ctx context.Context) (*Password, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
-	pc.mutation.id = &_node.ID
-	pc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (pc *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
+func (_c *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Password{config: pc.config}
+		_node = &Password{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(password.Table, sqlgraph.NewFieldSpec(password.FieldID, field.TypeInt))
 	)
-	if value, ok := pc.mutation.Email(); ok {
+	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.Email(); ok {
 		_spec.SetField(password.FieldEmail, field.TypeString, value)
 		_node.Email = value
 	}
-	if value, ok := pc.mutation.Hash(); ok {
+	if value, ok := _c.mutation.Hash(); ok {
 		_spec.SetField(password.FieldHash, field.TypeBytes, value)
 		_node.Hash = value
 	}
-	if value, ok := pc.mutation.Username(); ok {
+	if value, ok := _c.mutation.Username(); ok {
 		_spec.SetField(password.FieldUsername, field.TypeString, value)
 		_node.Username = value
 	}
-	if value, ok := pc.mutation.UserID(); ok {
+	if value, ok := _c.mutation.UserID(); ok {
 		_spec.SetField(password.FieldUserID, field.TypeString, value)
 		_node.UserID = value
 	}
 	return _node, _spec
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Password.Create().
+//		SetEmail(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.PasswordUpsert) {
+//			SetEmail(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *PasswordCreate) OnConflict(opts ...sql.ConflictOption) *PasswordUpsertOne {
+	_c.conflict = opts
+	return &PasswordUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Password.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *PasswordCreate) OnConflictColumns(columns ...string) *PasswordUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &PasswordUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// PasswordUpsertOne is the builder for "upsert"-ing
+	//  one Password node.
+	PasswordUpsertOne struct {
+		create *PasswordCreate
+	}
+
+	// PasswordUpsert is the "OnConflict" setter.
+	PasswordUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetEmail sets the "email" field.
+func (u *PasswordUpsert) SetEmail(v string) *PasswordUpsert {
+	u.Set(password.FieldEmail, v)
+	return u
+}
+
+// UpdateEmail sets the "email" field to the value that was provided on create.
+func (u *PasswordUpsert) UpdateEmail() *PasswordUpsert {
+	u.SetExcluded(password.FieldEmail)
+	return u
+}
+
+// SetHash sets the "hash" field.
+func (u *PasswordUpsert) SetHash(v []byte) *PasswordUpsert {
+	u.Set(password.FieldHash, v)
+	return u
+}
+
+// UpdateHash sets the "hash" field to the value that was provided on create.
+func (u *PasswordUpsert) UpdateHash() *PasswordUpsert {
+	u.SetExcluded(password.FieldHash)
+	return u
+}
+
+// SetUsername sets the "username" field.
+func (u *PasswordUpsert) SetUsername(v string) *PasswordUpsert {
+	u.Set(password.FieldUsername, v)
+	return u
+}
+
+// UpdateUsername sets the "username" field to the value that was provided on create.
+func (u *PasswordUpsert) UpdateUsername() *PasswordUpsert {
+	u.SetExcluded(password.FieldUsername)
+	return u
+}
+
+// SetUserID sets the "user_id" field.
+func (u *PasswordUpsert) SetUserID(v string) *PasswordUpsert {
+	u.Set(password.FieldUserID, v)
+	return u
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *PasswordUpsert) UpdateUserID() *PasswordUpsert {
+	u.SetExcluded(password.FieldUserID)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create.
+// Using this option is equivalent to using:
+//
+//	client.Password.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//		).
+//		Exec(ctx)
+func (u *PasswordUpsertOne) UpdateNewValues() *PasswordUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Password.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *PasswordUpsertOne) Ignore() *PasswordUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *PasswordUpsertOne) DoNothing() *PasswordUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the PasswordCreate.OnConflict
+// documentation for more info.
+func (u *PasswordUpsertOne) Update(set func(*PasswordUpsert)) *PasswordUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&PasswordUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetEmail sets the "email" field.
+func (u *PasswordUpsertOne) SetEmail(v string) *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetEmail(v)
+	})
+}
+
+// UpdateEmail sets the "email" field to the value that was provided on create.
+func (u *PasswordUpsertOne) UpdateEmail() *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateEmail()
+	})
+}
+
+// SetHash sets the "hash" field.
+func (u *PasswordUpsertOne) SetHash(v []byte) *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetHash(v)
+	})
+}
+
+// UpdateHash sets the "hash" field to the value that was provided on create.
+func (u *PasswordUpsertOne) UpdateHash() *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateHash()
+	})
+}
+
+// SetUsername sets the "username" field.
+func (u *PasswordUpsertOne) SetUsername(v string) *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetUsername(v)
+	})
+}
+
+// UpdateUsername sets the "username" field to the value that was provided on create.
+func (u *PasswordUpsertOne) UpdateUsername() *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateUsername()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *PasswordUpsertOne) SetUserID(v string) *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *PasswordUpsertOne) UpdateUserID() *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// Exec executes the query.
+func (u *PasswordUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for PasswordCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *PasswordUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *PasswordUpsertOne) ID(ctx context.Context) (id int, err error) {
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *PasswordUpsertOne) IDX(ctx context.Context) int {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
 }
 
 // PasswordCreateBulk is the builder for creating many Password entities in bulk.
@@ -154,19 +383,20 @@ type PasswordCreateBulk struct {
 	config
 	err      error
 	builders []*PasswordCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Password entities in the database.
-func (pcb *PasswordCreateBulk) Save(ctx context.Context) ([]*Password, error) {
-	if pcb.err != nil {
-		return nil, pcb.err
+func (_c *PasswordCreateBulk) Save(ctx context.Context) ([]*Password, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(pcb.builders))
-	nodes := make([]*Password, len(pcb.builders))
-	mutators := make([]Mutator, len(pcb.builders))
-	for i := range pcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Password, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := pcb.builders[i]
+			builder := _c.builders[i]
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*PasswordMutation)
 				if !ok {
@@ -179,11 +409,12 @@ func (pcb *PasswordCreateBulk) Save(ctx context.Context) ([]*Password, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, pcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, pcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -207,7 +438,7 @@ func (pcb *PasswordCreateBulk) Save(ctx context.Context) ([]*Password, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, pcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -215,8 +446,8 @@ func (pcb *PasswordCreateBulk) Save(ctx context.Context) ([]*Password, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (pcb *PasswordCreateBulk) SaveX(ctx context.Context) []*Password {
-	v, err := pcb.Save(ctx)
+func (_c *PasswordCreateBulk) SaveX(ctx context.Context) []*Password {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -224,14 +455,174 @@ func (pcb *PasswordCreateBulk) SaveX(ctx context.Context) []*Password {
 }
 
 // Exec executes the query.
-func (pcb *PasswordCreateBulk) Exec(ctx context.Context) error {
-	_, err := pcb.Save(ctx)
+func (_c *PasswordCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (pcb *PasswordCreateBulk) ExecX(ctx context.Context) {
-	if err := pcb.Exec(ctx); err != nil {
+func (_c *PasswordCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Password.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.PasswordUpsert) {
+//			SetEmail(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *PasswordCreateBulk) OnConflict(opts ...sql.ConflictOption) *PasswordUpsertBulk {
+	_c.conflict = opts
+	return &PasswordUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Password.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *PasswordCreateBulk) OnConflictColumns(columns ...string) *PasswordUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &PasswordUpsertBulk{
+		create: _c,
+	}
+}
+
+// PasswordUpsertBulk is the builder for "upsert"-ing
+// a bulk of Password nodes.
+type PasswordUpsertBulk struct {
+	create *PasswordCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Password.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//		).
+//		Exec(ctx)
+func (u *PasswordUpsertBulk) UpdateNewValues() *PasswordUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Password.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *PasswordUpsertBulk) Ignore() *PasswordUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *PasswordUpsertBulk) DoNothing() *PasswordUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the PasswordCreateBulk.OnConflict
+// documentation for more info.
+func (u *PasswordUpsertBulk) Update(set func(*PasswordUpsert)) *PasswordUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&PasswordUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetEmail sets the "email" field.
+func (u *PasswordUpsertBulk) SetEmail(v string) *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetEmail(v)
+	})
+}
+
+// UpdateEmail sets the "email" field to the value that was provided on create.
+func (u *PasswordUpsertBulk) UpdateEmail() *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateEmail()
+	})
+}
+
+// SetHash sets the "hash" field.
+func (u *PasswordUpsertBulk) SetHash(v []byte) *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetHash(v)
+	})
+}
+
+// UpdateHash sets the "hash" field to the value that was provided on create.
+func (u *PasswordUpsertBulk) UpdateHash() *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateHash()
+	})
+}
+
+// SetUsername sets the "username" field.
+func (u *PasswordUpsertBulk) SetUsername(v string) *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetUsername(v)
+	})
+}
+
+// UpdateUsername sets the "username" field to the value that was provided on create.
+func (u *PasswordUpsertBulk) UpdateUsername() *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateUsername()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *PasswordUpsertBulk) SetUserID(v string) *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *PasswordUpsertBulk) UpdateUserID() *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// Exec executes the query.
+func (u *PasswordUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("db: OnConflict was set for builder %d. Set it on the PasswordCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for PasswordCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *PasswordUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

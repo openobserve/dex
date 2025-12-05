@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/dexidp/dex/storage/ent/db/authrequest"
@@ -18,172 +20,173 @@ type AuthRequestCreate struct {
 	config
 	mutation *AuthRequestMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetClientID sets the "client_id" field.
-func (arc *AuthRequestCreate) SetClientID(s string) *AuthRequestCreate {
-	arc.mutation.SetClientID(s)
-	return arc
+func (_c *AuthRequestCreate) SetClientID(v string) *AuthRequestCreate {
+	_c.mutation.SetClientID(v)
+	return _c
 }
 
 // SetScopes sets the "scopes" field.
-func (arc *AuthRequestCreate) SetScopes(s []string) *AuthRequestCreate {
-	arc.mutation.SetScopes(s)
-	return arc
+func (_c *AuthRequestCreate) SetScopes(v []string) *AuthRequestCreate {
+	_c.mutation.SetScopes(v)
+	return _c
 }
 
 // SetResponseTypes sets the "response_types" field.
-func (arc *AuthRequestCreate) SetResponseTypes(s []string) *AuthRequestCreate {
-	arc.mutation.SetResponseTypes(s)
-	return arc
+func (_c *AuthRequestCreate) SetResponseTypes(v []string) *AuthRequestCreate {
+	_c.mutation.SetResponseTypes(v)
+	return _c
 }
 
 // SetRedirectURI sets the "redirect_uri" field.
-func (arc *AuthRequestCreate) SetRedirectURI(s string) *AuthRequestCreate {
-	arc.mutation.SetRedirectURI(s)
-	return arc
+func (_c *AuthRequestCreate) SetRedirectURI(v string) *AuthRequestCreate {
+	_c.mutation.SetRedirectURI(v)
+	return _c
 }
 
 // SetNonce sets the "nonce" field.
-func (arc *AuthRequestCreate) SetNonce(s string) *AuthRequestCreate {
-	arc.mutation.SetNonce(s)
-	return arc
+func (_c *AuthRequestCreate) SetNonce(v string) *AuthRequestCreate {
+	_c.mutation.SetNonce(v)
+	return _c
 }
 
 // SetState sets the "state" field.
-func (arc *AuthRequestCreate) SetState(s string) *AuthRequestCreate {
-	arc.mutation.SetState(s)
-	return arc
+func (_c *AuthRequestCreate) SetState(v string) *AuthRequestCreate {
+	_c.mutation.SetState(v)
+	return _c
 }
 
 // SetForceApprovalPrompt sets the "force_approval_prompt" field.
-func (arc *AuthRequestCreate) SetForceApprovalPrompt(b bool) *AuthRequestCreate {
-	arc.mutation.SetForceApprovalPrompt(b)
-	return arc
+func (_c *AuthRequestCreate) SetForceApprovalPrompt(v bool) *AuthRequestCreate {
+	_c.mutation.SetForceApprovalPrompt(v)
+	return _c
 }
 
 // SetLoggedIn sets the "logged_in" field.
-func (arc *AuthRequestCreate) SetLoggedIn(b bool) *AuthRequestCreate {
-	arc.mutation.SetLoggedIn(b)
-	return arc
+func (_c *AuthRequestCreate) SetLoggedIn(v bool) *AuthRequestCreate {
+	_c.mutation.SetLoggedIn(v)
+	return _c
 }
 
 // SetClaimsUserID sets the "claims_user_id" field.
-func (arc *AuthRequestCreate) SetClaimsUserID(s string) *AuthRequestCreate {
-	arc.mutation.SetClaimsUserID(s)
-	return arc
+func (_c *AuthRequestCreate) SetClaimsUserID(v string) *AuthRequestCreate {
+	_c.mutation.SetClaimsUserID(v)
+	return _c
 }
 
 // SetClaimsUsername sets the "claims_username" field.
-func (arc *AuthRequestCreate) SetClaimsUsername(s string) *AuthRequestCreate {
-	arc.mutation.SetClaimsUsername(s)
-	return arc
+func (_c *AuthRequestCreate) SetClaimsUsername(v string) *AuthRequestCreate {
+	_c.mutation.SetClaimsUsername(v)
+	return _c
 }
 
 // SetClaimsEmail sets the "claims_email" field.
-func (arc *AuthRequestCreate) SetClaimsEmail(s string) *AuthRequestCreate {
-	arc.mutation.SetClaimsEmail(s)
-	return arc
+func (_c *AuthRequestCreate) SetClaimsEmail(v string) *AuthRequestCreate {
+	_c.mutation.SetClaimsEmail(v)
+	return _c
 }
 
 // SetClaimsEmailVerified sets the "claims_email_verified" field.
-func (arc *AuthRequestCreate) SetClaimsEmailVerified(b bool) *AuthRequestCreate {
-	arc.mutation.SetClaimsEmailVerified(b)
-	return arc
+func (_c *AuthRequestCreate) SetClaimsEmailVerified(v bool) *AuthRequestCreate {
+	_c.mutation.SetClaimsEmailVerified(v)
+	return _c
 }
 
 // SetClaimsGroups sets the "claims_groups" field.
-func (arc *AuthRequestCreate) SetClaimsGroups(s []string) *AuthRequestCreate {
-	arc.mutation.SetClaimsGroups(s)
-	return arc
+func (_c *AuthRequestCreate) SetClaimsGroups(v []string) *AuthRequestCreate {
+	_c.mutation.SetClaimsGroups(v)
+	return _c
 }
 
 // SetClaimsPreferredUsername sets the "claims_preferred_username" field.
-func (arc *AuthRequestCreate) SetClaimsPreferredUsername(s string) *AuthRequestCreate {
-	arc.mutation.SetClaimsPreferredUsername(s)
-	return arc
+func (_c *AuthRequestCreate) SetClaimsPreferredUsername(v string) *AuthRequestCreate {
+	_c.mutation.SetClaimsPreferredUsername(v)
+	return _c
 }
 
 // SetNillableClaimsPreferredUsername sets the "claims_preferred_username" field if the given value is not nil.
-func (arc *AuthRequestCreate) SetNillableClaimsPreferredUsername(s *string) *AuthRequestCreate {
-	if s != nil {
-		arc.SetClaimsPreferredUsername(*s)
+func (_c *AuthRequestCreate) SetNillableClaimsPreferredUsername(v *string) *AuthRequestCreate {
+	if v != nil {
+		_c.SetClaimsPreferredUsername(*v)
 	}
-	return arc
+	return _c
 }
 
 // SetConnectorID sets the "connector_id" field.
-func (arc *AuthRequestCreate) SetConnectorID(s string) *AuthRequestCreate {
-	arc.mutation.SetConnectorID(s)
-	return arc
+func (_c *AuthRequestCreate) SetConnectorID(v string) *AuthRequestCreate {
+	_c.mutation.SetConnectorID(v)
+	return _c
 }
 
 // SetConnectorData sets the "connector_data" field.
-func (arc *AuthRequestCreate) SetConnectorData(b []byte) *AuthRequestCreate {
-	arc.mutation.SetConnectorData(b)
-	return arc
+func (_c *AuthRequestCreate) SetConnectorData(v []byte) *AuthRequestCreate {
+	_c.mutation.SetConnectorData(v)
+	return _c
 }
 
 // SetExpiry sets the "expiry" field.
-func (arc *AuthRequestCreate) SetExpiry(t time.Time) *AuthRequestCreate {
-	arc.mutation.SetExpiry(t)
-	return arc
+func (_c *AuthRequestCreate) SetExpiry(v time.Time) *AuthRequestCreate {
+	_c.mutation.SetExpiry(v)
+	return _c
 }
 
 // SetCodeChallenge sets the "code_challenge" field.
-func (arc *AuthRequestCreate) SetCodeChallenge(s string) *AuthRequestCreate {
-	arc.mutation.SetCodeChallenge(s)
-	return arc
+func (_c *AuthRequestCreate) SetCodeChallenge(v string) *AuthRequestCreate {
+	_c.mutation.SetCodeChallenge(v)
+	return _c
 }
 
 // SetNillableCodeChallenge sets the "code_challenge" field if the given value is not nil.
-func (arc *AuthRequestCreate) SetNillableCodeChallenge(s *string) *AuthRequestCreate {
-	if s != nil {
-		arc.SetCodeChallenge(*s)
+func (_c *AuthRequestCreate) SetNillableCodeChallenge(v *string) *AuthRequestCreate {
+	if v != nil {
+		_c.SetCodeChallenge(*v)
 	}
-	return arc
+	return _c
 }
 
 // SetCodeChallengeMethod sets the "code_challenge_method" field.
-func (arc *AuthRequestCreate) SetCodeChallengeMethod(s string) *AuthRequestCreate {
-	arc.mutation.SetCodeChallengeMethod(s)
-	return arc
+func (_c *AuthRequestCreate) SetCodeChallengeMethod(v string) *AuthRequestCreate {
+	_c.mutation.SetCodeChallengeMethod(v)
+	return _c
 }
 
 // SetNillableCodeChallengeMethod sets the "code_challenge_method" field if the given value is not nil.
-func (arc *AuthRequestCreate) SetNillableCodeChallengeMethod(s *string) *AuthRequestCreate {
-	if s != nil {
-		arc.SetCodeChallengeMethod(*s)
+func (_c *AuthRequestCreate) SetNillableCodeChallengeMethod(v *string) *AuthRequestCreate {
+	if v != nil {
+		_c.SetCodeChallengeMethod(*v)
 	}
-	return arc
+	return _c
 }
 
 // SetHmacKey sets the "hmac_key" field.
-func (arc *AuthRequestCreate) SetHmacKey(b []byte) *AuthRequestCreate {
-	arc.mutation.SetHmacKey(b)
-	return arc
+func (_c *AuthRequestCreate) SetHmacKey(v []byte) *AuthRequestCreate {
+	_c.mutation.SetHmacKey(v)
+	return _c
 }
 
 // SetID sets the "id" field.
-func (arc *AuthRequestCreate) SetID(s string) *AuthRequestCreate {
-	arc.mutation.SetID(s)
-	return arc
+func (_c *AuthRequestCreate) SetID(v string) *AuthRequestCreate {
+	_c.mutation.SetID(v)
+	return _c
 }
 
 // Mutation returns the AuthRequestMutation object of the builder.
-func (arc *AuthRequestCreate) Mutation() *AuthRequestMutation {
-	return arc.mutation
+func (_c *AuthRequestCreate) Mutation() *AuthRequestMutation {
+	return _c.mutation
 }
 
 // Save creates the AuthRequest in the database.
-func (arc *AuthRequestCreate) Save(ctx context.Context) (*AuthRequest, error) {
-	arc.defaults()
-	return withHooks(ctx, arc.sqlSave, arc.mutation, arc.hooks)
+func (_c *AuthRequestCreate) Save(ctx context.Context) (*AuthRequest, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (arc *AuthRequestCreate) SaveX(ctx context.Context) *AuthRequest {
-	v, err := arc.Save(ctx)
+func (_c *AuthRequestCreate) SaveX(ctx context.Context) *AuthRequest {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -191,85 +194,85 @@ func (arc *AuthRequestCreate) SaveX(ctx context.Context) *AuthRequest {
 }
 
 // Exec executes the query.
-func (arc *AuthRequestCreate) Exec(ctx context.Context) error {
-	_, err := arc.Save(ctx)
+func (_c *AuthRequestCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (arc *AuthRequestCreate) ExecX(ctx context.Context) {
-	if err := arc.Exec(ctx); err != nil {
+func (_c *AuthRequestCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (arc *AuthRequestCreate) defaults() {
-	if _, ok := arc.mutation.ClaimsPreferredUsername(); !ok {
+func (_c *AuthRequestCreate) defaults() {
+	if _, ok := _c.mutation.ClaimsPreferredUsername(); !ok {
 		v := authrequest.DefaultClaimsPreferredUsername
-		arc.mutation.SetClaimsPreferredUsername(v)
+		_c.mutation.SetClaimsPreferredUsername(v)
 	}
-	if _, ok := arc.mutation.CodeChallenge(); !ok {
+	if _, ok := _c.mutation.CodeChallenge(); !ok {
 		v := authrequest.DefaultCodeChallenge
-		arc.mutation.SetCodeChallenge(v)
+		_c.mutation.SetCodeChallenge(v)
 	}
-	if _, ok := arc.mutation.CodeChallengeMethod(); !ok {
+	if _, ok := _c.mutation.CodeChallengeMethod(); !ok {
 		v := authrequest.DefaultCodeChallengeMethod
-		arc.mutation.SetCodeChallengeMethod(v)
+		_c.mutation.SetCodeChallengeMethod(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (arc *AuthRequestCreate) check() error {
-	if _, ok := arc.mutation.ClientID(); !ok {
+func (_c *AuthRequestCreate) check() error {
+	if _, ok := _c.mutation.ClientID(); !ok {
 		return &ValidationError{Name: "client_id", err: errors.New(`db: missing required field "AuthRequest.client_id"`)}
 	}
-	if _, ok := arc.mutation.RedirectURI(); !ok {
+	if _, ok := _c.mutation.RedirectURI(); !ok {
 		return &ValidationError{Name: "redirect_uri", err: errors.New(`db: missing required field "AuthRequest.redirect_uri"`)}
 	}
-	if _, ok := arc.mutation.Nonce(); !ok {
+	if _, ok := _c.mutation.Nonce(); !ok {
 		return &ValidationError{Name: "nonce", err: errors.New(`db: missing required field "AuthRequest.nonce"`)}
 	}
-	if _, ok := arc.mutation.State(); !ok {
+	if _, ok := _c.mutation.State(); !ok {
 		return &ValidationError{Name: "state", err: errors.New(`db: missing required field "AuthRequest.state"`)}
 	}
-	if _, ok := arc.mutation.ForceApprovalPrompt(); !ok {
+	if _, ok := _c.mutation.ForceApprovalPrompt(); !ok {
 		return &ValidationError{Name: "force_approval_prompt", err: errors.New(`db: missing required field "AuthRequest.force_approval_prompt"`)}
 	}
-	if _, ok := arc.mutation.LoggedIn(); !ok {
+	if _, ok := _c.mutation.LoggedIn(); !ok {
 		return &ValidationError{Name: "logged_in", err: errors.New(`db: missing required field "AuthRequest.logged_in"`)}
 	}
-	if _, ok := arc.mutation.ClaimsUserID(); !ok {
+	if _, ok := _c.mutation.ClaimsUserID(); !ok {
 		return &ValidationError{Name: "claims_user_id", err: errors.New(`db: missing required field "AuthRequest.claims_user_id"`)}
 	}
-	if _, ok := arc.mutation.ClaimsUsername(); !ok {
+	if _, ok := _c.mutation.ClaimsUsername(); !ok {
 		return &ValidationError{Name: "claims_username", err: errors.New(`db: missing required field "AuthRequest.claims_username"`)}
 	}
-	if _, ok := arc.mutation.ClaimsEmail(); !ok {
+	if _, ok := _c.mutation.ClaimsEmail(); !ok {
 		return &ValidationError{Name: "claims_email", err: errors.New(`db: missing required field "AuthRequest.claims_email"`)}
 	}
-	if _, ok := arc.mutation.ClaimsEmailVerified(); !ok {
+	if _, ok := _c.mutation.ClaimsEmailVerified(); !ok {
 		return &ValidationError{Name: "claims_email_verified", err: errors.New(`db: missing required field "AuthRequest.claims_email_verified"`)}
 	}
-	if _, ok := arc.mutation.ClaimsPreferredUsername(); !ok {
+	if _, ok := _c.mutation.ClaimsPreferredUsername(); !ok {
 		return &ValidationError{Name: "claims_preferred_username", err: errors.New(`db: missing required field "AuthRequest.claims_preferred_username"`)}
 	}
-	if _, ok := arc.mutation.ConnectorID(); !ok {
+	if _, ok := _c.mutation.ConnectorID(); !ok {
 		return &ValidationError{Name: "connector_id", err: errors.New(`db: missing required field "AuthRequest.connector_id"`)}
 	}
-	if _, ok := arc.mutation.Expiry(); !ok {
+	if _, ok := _c.mutation.Expiry(); !ok {
 		return &ValidationError{Name: "expiry", err: errors.New(`db: missing required field "AuthRequest.expiry"`)}
 	}
-	if _, ok := arc.mutation.CodeChallenge(); !ok {
+	if _, ok := _c.mutation.CodeChallenge(); !ok {
 		return &ValidationError{Name: "code_challenge", err: errors.New(`db: missing required field "AuthRequest.code_challenge"`)}
 	}
-	if _, ok := arc.mutation.CodeChallengeMethod(); !ok {
+	if _, ok := _c.mutation.CodeChallengeMethod(); !ok {
 		return &ValidationError{Name: "code_challenge_method", err: errors.New(`db: missing required field "AuthRequest.code_challenge_method"`)}
 	}
-	if _, ok := arc.mutation.HmacKey(); !ok {
+	if _, ok := _c.mutation.HmacKey(); !ok {
 		return &ValidationError{Name: "hmac_key", err: errors.New(`db: missing required field "AuthRequest.hmac_key"`)}
 	}
-	if v, ok := arc.mutation.ID(); ok {
+	if v, ok := _c.mutation.ID(); ok {
 		if err := authrequest.IDValidator(v); err != nil {
 			return &ValidationError{Name: "id", err: fmt.Errorf(`db: validator failed for field "AuthRequest.id": %w`, err)}
 		}
@@ -277,12 +280,12 @@ func (arc *AuthRequestCreate) check() error {
 	return nil
 }
 
-func (arc *AuthRequestCreate) sqlSave(ctx context.Context) (*AuthRequest, error) {
-	if err := arc.check(); err != nil {
+func (_c *AuthRequestCreate) sqlSave(ctx context.Context) (*AuthRequest, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := arc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, arc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -295,101 +298,809 @@ func (arc *AuthRequestCreate) sqlSave(ctx context.Context) (*AuthRequest, error)
 			return nil, fmt.Errorf("unexpected AuthRequest.ID type: %T", _spec.ID.Value)
 		}
 	}
-	arc.mutation.id = &_node.ID
-	arc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (arc *AuthRequestCreate) createSpec() (*AuthRequest, *sqlgraph.CreateSpec) {
+func (_c *AuthRequestCreate) createSpec() (*AuthRequest, *sqlgraph.CreateSpec) {
 	var (
-		_node = &AuthRequest{config: arc.config}
+		_node = &AuthRequest{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(authrequest.Table, sqlgraph.NewFieldSpec(authrequest.FieldID, field.TypeString))
 	)
-	if id, ok := arc.mutation.ID(); ok {
+	_spec.OnConflict = _c.conflict
+	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
 	}
-	if value, ok := arc.mutation.ClientID(); ok {
+	if value, ok := _c.mutation.ClientID(); ok {
 		_spec.SetField(authrequest.FieldClientID, field.TypeString, value)
 		_node.ClientID = value
 	}
-	if value, ok := arc.mutation.Scopes(); ok {
+	if value, ok := _c.mutation.Scopes(); ok {
 		_spec.SetField(authrequest.FieldScopes, field.TypeJSON, value)
 		_node.Scopes = value
 	}
-	if value, ok := arc.mutation.ResponseTypes(); ok {
+	if value, ok := _c.mutation.ResponseTypes(); ok {
 		_spec.SetField(authrequest.FieldResponseTypes, field.TypeJSON, value)
 		_node.ResponseTypes = value
 	}
-	if value, ok := arc.mutation.RedirectURI(); ok {
+	if value, ok := _c.mutation.RedirectURI(); ok {
 		_spec.SetField(authrequest.FieldRedirectURI, field.TypeString, value)
 		_node.RedirectURI = value
 	}
-	if value, ok := arc.mutation.Nonce(); ok {
+	if value, ok := _c.mutation.Nonce(); ok {
 		_spec.SetField(authrequest.FieldNonce, field.TypeString, value)
 		_node.Nonce = value
 	}
-	if value, ok := arc.mutation.State(); ok {
+	if value, ok := _c.mutation.State(); ok {
 		_spec.SetField(authrequest.FieldState, field.TypeString, value)
 		_node.State = value
 	}
-	if value, ok := arc.mutation.ForceApprovalPrompt(); ok {
+	if value, ok := _c.mutation.ForceApprovalPrompt(); ok {
 		_spec.SetField(authrequest.FieldForceApprovalPrompt, field.TypeBool, value)
 		_node.ForceApprovalPrompt = value
 	}
-	if value, ok := arc.mutation.LoggedIn(); ok {
+	if value, ok := _c.mutation.LoggedIn(); ok {
 		_spec.SetField(authrequest.FieldLoggedIn, field.TypeBool, value)
 		_node.LoggedIn = value
 	}
-	if value, ok := arc.mutation.ClaimsUserID(); ok {
+	if value, ok := _c.mutation.ClaimsUserID(); ok {
 		_spec.SetField(authrequest.FieldClaimsUserID, field.TypeString, value)
 		_node.ClaimsUserID = value
 	}
-	if value, ok := arc.mutation.ClaimsUsername(); ok {
+	if value, ok := _c.mutation.ClaimsUsername(); ok {
 		_spec.SetField(authrequest.FieldClaimsUsername, field.TypeString, value)
 		_node.ClaimsUsername = value
 	}
-	if value, ok := arc.mutation.ClaimsEmail(); ok {
+	if value, ok := _c.mutation.ClaimsEmail(); ok {
 		_spec.SetField(authrequest.FieldClaimsEmail, field.TypeString, value)
 		_node.ClaimsEmail = value
 	}
-	if value, ok := arc.mutation.ClaimsEmailVerified(); ok {
+	if value, ok := _c.mutation.ClaimsEmailVerified(); ok {
 		_spec.SetField(authrequest.FieldClaimsEmailVerified, field.TypeBool, value)
 		_node.ClaimsEmailVerified = value
 	}
-	if value, ok := arc.mutation.ClaimsGroups(); ok {
+	if value, ok := _c.mutation.ClaimsGroups(); ok {
 		_spec.SetField(authrequest.FieldClaimsGroups, field.TypeJSON, value)
 		_node.ClaimsGroups = value
 	}
-	if value, ok := arc.mutation.ClaimsPreferredUsername(); ok {
+	if value, ok := _c.mutation.ClaimsPreferredUsername(); ok {
 		_spec.SetField(authrequest.FieldClaimsPreferredUsername, field.TypeString, value)
 		_node.ClaimsPreferredUsername = value
 	}
-	if value, ok := arc.mutation.ConnectorID(); ok {
+	if value, ok := _c.mutation.ConnectorID(); ok {
 		_spec.SetField(authrequest.FieldConnectorID, field.TypeString, value)
 		_node.ConnectorID = value
 	}
-	if value, ok := arc.mutation.ConnectorData(); ok {
+	if value, ok := _c.mutation.ConnectorData(); ok {
 		_spec.SetField(authrequest.FieldConnectorData, field.TypeBytes, value)
 		_node.ConnectorData = &value
 	}
-	if value, ok := arc.mutation.Expiry(); ok {
+	if value, ok := _c.mutation.Expiry(); ok {
 		_spec.SetField(authrequest.FieldExpiry, field.TypeTime, value)
 		_node.Expiry = value
 	}
-	if value, ok := arc.mutation.CodeChallenge(); ok {
+	if value, ok := _c.mutation.CodeChallenge(); ok {
 		_spec.SetField(authrequest.FieldCodeChallenge, field.TypeString, value)
 		_node.CodeChallenge = value
 	}
-	if value, ok := arc.mutation.CodeChallengeMethod(); ok {
+	if value, ok := _c.mutation.CodeChallengeMethod(); ok {
 		_spec.SetField(authrequest.FieldCodeChallengeMethod, field.TypeString, value)
 		_node.CodeChallengeMethod = value
 	}
-	if value, ok := arc.mutation.HmacKey(); ok {
+	if value, ok := _c.mutation.HmacKey(); ok {
 		_spec.SetField(authrequest.FieldHmacKey, field.TypeBytes, value)
 		_node.HmacKey = value
 	}
 	return _node, _spec
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AuthRequest.Create().
+//		SetClientID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AuthRequestUpsert) {
+//			SetClientID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AuthRequestCreate) OnConflict(opts ...sql.ConflictOption) *AuthRequestUpsertOne {
+	_c.conflict = opts
+	return &AuthRequestUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AuthRequest.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AuthRequestCreate) OnConflictColumns(columns ...string) *AuthRequestUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AuthRequestUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// AuthRequestUpsertOne is the builder for "upsert"-ing
+	//  one AuthRequest node.
+	AuthRequestUpsertOne struct {
+		create *AuthRequestCreate
+	}
+
+	// AuthRequestUpsert is the "OnConflict" setter.
+	AuthRequestUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetClientID sets the "client_id" field.
+func (u *AuthRequestUpsert) SetClientID(v string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldClientID, v)
+	return u
+}
+
+// UpdateClientID sets the "client_id" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateClientID() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldClientID)
+	return u
+}
+
+// SetScopes sets the "scopes" field.
+func (u *AuthRequestUpsert) SetScopes(v []string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldScopes, v)
+	return u
+}
+
+// UpdateScopes sets the "scopes" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateScopes() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldScopes)
+	return u
+}
+
+// ClearScopes clears the value of the "scopes" field.
+func (u *AuthRequestUpsert) ClearScopes() *AuthRequestUpsert {
+	u.SetNull(authrequest.FieldScopes)
+	return u
+}
+
+// SetResponseTypes sets the "response_types" field.
+func (u *AuthRequestUpsert) SetResponseTypes(v []string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldResponseTypes, v)
+	return u
+}
+
+// UpdateResponseTypes sets the "response_types" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateResponseTypes() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldResponseTypes)
+	return u
+}
+
+// ClearResponseTypes clears the value of the "response_types" field.
+func (u *AuthRequestUpsert) ClearResponseTypes() *AuthRequestUpsert {
+	u.SetNull(authrequest.FieldResponseTypes)
+	return u
+}
+
+// SetRedirectURI sets the "redirect_uri" field.
+func (u *AuthRequestUpsert) SetRedirectURI(v string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldRedirectURI, v)
+	return u
+}
+
+// UpdateRedirectURI sets the "redirect_uri" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateRedirectURI() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldRedirectURI)
+	return u
+}
+
+// SetNonce sets the "nonce" field.
+func (u *AuthRequestUpsert) SetNonce(v string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldNonce, v)
+	return u
+}
+
+// UpdateNonce sets the "nonce" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateNonce() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldNonce)
+	return u
+}
+
+// SetState sets the "state" field.
+func (u *AuthRequestUpsert) SetState(v string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldState, v)
+	return u
+}
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateState() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldState)
+	return u
+}
+
+// SetForceApprovalPrompt sets the "force_approval_prompt" field.
+func (u *AuthRequestUpsert) SetForceApprovalPrompt(v bool) *AuthRequestUpsert {
+	u.Set(authrequest.FieldForceApprovalPrompt, v)
+	return u
+}
+
+// UpdateForceApprovalPrompt sets the "force_approval_prompt" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateForceApprovalPrompt() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldForceApprovalPrompt)
+	return u
+}
+
+// SetLoggedIn sets the "logged_in" field.
+func (u *AuthRequestUpsert) SetLoggedIn(v bool) *AuthRequestUpsert {
+	u.Set(authrequest.FieldLoggedIn, v)
+	return u
+}
+
+// UpdateLoggedIn sets the "logged_in" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateLoggedIn() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldLoggedIn)
+	return u
+}
+
+// SetClaimsUserID sets the "claims_user_id" field.
+func (u *AuthRequestUpsert) SetClaimsUserID(v string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldClaimsUserID, v)
+	return u
+}
+
+// UpdateClaimsUserID sets the "claims_user_id" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateClaimsUserID() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldClaimsUserID)
+	return u
+}
+
+// SetClaimsUsername sets the "claims_username" field.
+func (u *AuthRequestUpsert) SetClaimsUsername(v string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldClaimsUsername, v)
+	return u
+}
+
+// UpdateClaimsUsername sets the "claims_username" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateClaimsUsername() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldClaimsUsername)
+	return u
+}
+
+// SetClaimsEmail sets the "claims_email" field.
+func (u *AuthRequestUpsert) SetClaimsEmail(v string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldClaimsEmail, v)
+	return u
+}
+
+// UpdateClaimsEmail sets the "claims_email" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateClaimsEmail() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldClaimsEmail)
+	return u
+}
+
+// SetClaimsEmailVerified sets the "claims_email_verified" field.
+func (u *AuthRequestUpsert) SetClaimsEmailVerified(v bool) *AuthRequestUpsert {
+	u.Set(authrequest.FieldClaimsEmailVerified, v)
+	return u
+}
+
+// UpdateClaimsEmailVerified sets the "claims_email_verified" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateClaimsEmailVerified() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldClaimsEmailVerified)
+	return u
+}
+
+// SetClaimsGroups sets the "claims_groups" field.
+func (u *AuthRequestUpsert) SetClaimsGroups(v []string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldClaimsGroups, v)
+	return u
+}
+
+// UpdateClaimsGroups sets the "claims_groups" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateClaimsGroups() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldClaimsGroups)
+	return u
+}
+
+// ClearClaimsGroups clears the value of the "claims_groups" field.
+func (u *AuthRequestUpsert) ClearClaimsGroups() *AuthRequestUpsert {
+	u.SetNull(authrequest.FieldClaimsGroups)
+	return u
+}
+
+// SetClaimsPreferredUsername sets the "claims_preferred_username" field.
+func (u *AuthRequestUpsert) SetClaimsPreferredUsername(v string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldClaimsPreferredUsername, v)
+	return u
+}
+
+// UpdateClaimsPreferredUsername sets the "claims_preferred_username" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateClaimsPreferredUsername() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldClaimsPreferredUsername)
+	return u
+}
+
+// SetConnectorID sets the "connector_id" field.
+func (u *AuthRequestUpsert) SetConnectorID(v string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldConnectorID, v)
+	return u
+}
+
+// UpdateConnectorID sets the "connector_id" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateConnectorID() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldConnectorID)
+	return u
+}
+
+// SetConnectorData sets the "connector_data" field.
+func (u *AuthRequestUpsert) SetConnectorData(v []byte) *AuthRequestUpsert {
+	u.Set(authrequest.FieldConnectorData, v)
+	return u
+}
+
+// UpdateConnectorData sets the "connector_data" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateConnectorData() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldConnectorData)
+	return u
+}
+
+// ClearConnectorData clears the value of the "connector_data" field.
+func (u *AuthRequestUpsert) ClearConnectorData() *AuthRequestUpsert {
+	u.SetNull(authrequest.FieldConnectorData)
+	return u
+}
+
+// SetExpiry sets the "expiry" field.
+func (u *AuthRequestUpsert) SetExpiry(v time.Time) *AuthRequestUpsert {
+	u.Set(authrequest.FieldExpiry, v)
+	return u
+}
+
+// UpdateExpiry sets the "expiry" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateExpiry() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldExpiry)
+	return u
+}
+
+// SetCodeChallenge sets the "code_challenge" field.
+func (u *AuthRequestUpsert) SetCodeChallenge(v string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldCodeChallenge, v)
+	return u
+}
+
+// UpdateCodeChallenge sets the "code_challenge" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateCodeChallenge() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldCodeChallenge)
+	return u
+}
+
+// SetCodeChallengeMethod sets the "code_challenge_method" field.
+func (u *AuthRequestUpsert) SetCodeChallengeMethod(v string) *AuthRequestUpsert {
+	u.Set(authrequest.FieldCodeChallengeMethod, v)
+	return u
+}
+
+// UpdateCodeChallengeMethod sets the "code_challenge_method" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateCodeChallengeMethod() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldCodeChallengeMethod)
+	return u
+}
+
+// SetHmacKey sets the "hmac_key" field.
+func (u *AuthRequestUpsert) SetHmacKey(v []byte) *AuthRequestUpsert {
+	u.Set(authrequest.FieldHmacKey, v)
+	return u
+}
+
+// UpdateHmacKey sets the "hmac_key" field to the value that was provided on create.
+func (u *AuthRequestUpsert) UpdateHmacKey() *AuthRequestUpsert {
+	u.SetExcluded(authrequest.FieldHmacKey)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.AuthRequest.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(authrequest.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AuthRequestUpsertOne) UpdateNewValues() *AuthRequestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(authrequest.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AuthRequest.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *AuthRequestUpsertOne) Ignore() *AuthRequestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AuthRequestUpsertOne) DoNothing() *AuthRequestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AuthRequestCreate.OnConflict
+// documentation for more info.
+func (u *AuthRequestUpsertOne) Update(set func(*AuthRequestUpsert)) *AuthRequestUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AuthRequestUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetClientID sets the "client_id" field.
+func (u *AuthRequestUpsertOne) SetClientID(v string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClientID(v)
+	})
+}
+
+// UpdateClientID sets the "client_id" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateClientID() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClientID()
+	})
+}
+
+// SetScopes sets the "scopes" field.
+func (u *AuthRequestUpsertOne) SetScopes(v []string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetScopes(v)
+	})
+}
+
+// UpdateScopes sets the "scopes" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateScopes() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateScopes()
+	})
+}
+
+// ClearScopes clears the value of the "scopes" field.
+func (u *AuthRequestUpsertOne) ClearScopes() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.ClearScopes()
+	})
+}
+
+// SetResponseTypes sets the "response_types" field.
+func (u *AuthRequestUpsertOne) SetResponseTypes(v []string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetResponseTypes(v)
+	})
+}
+
+// UpdateResponseTypes sets the "response_types" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateResponseTypes() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateResponseTypes()
+	})
+}
+
+// ClearResponseTypes clears the value of the "response_types" field.
+func (u *AuthRequestUpsertOne) ClearResponseTypes() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.ClearResponseTypes()
+	})
+}
+
+// SetRedirectURI sets the "redirect_uri" field.
+func (u *AuthRequestUpsertOne) SetRedirectURI(v string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetRedirectURI(v)
+	})
+}
+
+// UpdateRedirectURI sets the "redirect_uri" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateRedirectURI() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateRedirectURI()
+	})
+}
+
+// SetNonce sets the "nonce" field.
+func (u *AuthRequestUpsertOne) SetNonce(v string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetNonce(v)
+	})
+}
+
+// UpdateNonce sets the "nonce" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateNonce() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateNonce()
+	})
+}
+
+// SetState sets the "state" field.
+func (u *AuthRequestUpsertOne) SetState(v string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetState(v)
+	})
+}
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateState() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateState()
+	})
+}
+
+// SetForceApprovalPrompt sets the "force_approval_prompt" field.
+func (u *AuthRequestUpsertOne) SetForceApprovalPrompt(v bool) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetForceApprovalPrompt(v)
+	})
+}
+
+// UpdateForceApprovalPrompt sets the "force_approval_prompt" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateForceApprovalPrompt() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateForceApprovalPrompt()
+	})
+}
+
+// SetLoggedIn sets the "logged_in" field.
+func (u *AuthRequestUpsertOne) SetLoggedIn(v bool) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetLoggedIn(v)
+	})
+}
+
+// UpdateLoggedIn sets the "logged_in" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateLoggedIn() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateLoggedIn()
+	})
+}
+
+// SetClaimsUserID sets the "claims_user_id" field.
+func (u *AuthRequestUpsertOne) SetClaimsUserID(v string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsUserID(v)
+	})
+}
+
+// UpdateClaimsUserID sets the "claims_user_id" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateClaimsUserID() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsUserID()
+	})
+}
+
+// SetClaimsUsername sets the "claims_username" field.
+func (u *AuthRequestUpsertOne) SetClaimsUsername(v string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsUsername(v)
+	})
+}
+
+// UpdateClaimsUsername sets the "claims_username" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateClaimsUsername() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsUsername()
+	})
+}
+
+// SetClaimsEmail sets the "claims_email" field.
+func (u *AuthRequestUpsertOne) SetClaimsEmail(v string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsEmail(v)
+	})
+}
+
+// UpdateClaimsEmail sets the "claims_email" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateClaimsEmail() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsEmail()
+	})
+}
+
+// SetClaimsEmailVerified sets the "claims_email_verified" field.
+func (u *AuthRequestUpsertOne) SetClaimsEmailVerified(v bool) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsEmailVerified(v)
+	})
+}
+
+// UpdateClaimsEmailVerified sets the "claims_email_verified" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateClaimsEmailVerified() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsEmailVerified()
+	})
+}
+
+// SetClaimsGroups sets the "claims_groups" field.
+func (u *AuthRequestUpsertOne) SetClaimsGroups(v []string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsGroups(v)
+	})
+}
+
+// UpdateClaimsGroups sets the "claims_groups" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateClaimsGroups() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsGroups()
+	})
+}
+
+// ClearClaimsGroups clears the value of the "claims_groups" field.
+func (u *AuthRequestUpsertOne) ClearClaimsGroups() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.ClearClaimsGroups()
+	})
+}
+
+// SetClaimsPreferredUsername sets the "claims_preferred_username" field.
+func (u *AuthRequestUpsertOne) SetClaimsPreferredUsername(v string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsPreferredUsername(v)
+	})
+}
+
+// UpdateClaimsPreferredUsername sets the "claims_preferred_username" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateClaimsPreferredUsername() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsPreferredUsername()
+	})
+}
+
+// SetConnectorID sets the "connector_id" field.
+func (u *AuthRequestUpsertOne) SetConnectorID(v string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetConnectorID(v)
+	})
+}
+
+// UpdateConnectorID sets the "connector_id" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateConnectorID() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateConnectorID()
+	})
+}
+
+// SetConnectorData sets the "connector_data" field.
+func (u *AuthRequestUpsertOne) SetConnectorData(v []byte) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetConnectorData(v)
+	})
+}
+
+// UpdateConnectorData sets the "connector_data" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateConnectorData() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateConnectorData()
+	})
+}
+
+// ClearConnectorData clears the value of the "connector_data" field.
+func (u *AuthRequestUpsertOne) ClearConnectorData() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.ClearConnectorData()
+	})
+}
+
+// SetExpiry sets the "expiry" field.
+func (u *AuthRequestUpsertOne) SetExpiry(v time.Time) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetExpiry(v)
+	})
+}
+
+// UpdateExpiry sets the "expiry" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateExpiry() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateExpiry()
+	})
+}
+
+// SetCodeChallenge sets the "code_challenge" field.
+func (u *AuthRequestUpsertOne) SetCodeChallenge(v string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetCodeChallenge(v)
+	})
+}
+
+// UpdateCodeChallenge sets the "code_challenge" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateCodeChallenge() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateCodeChallenge()
+	})
+}
+
+// SetCodeChallengeMethod sets the "code_challenge_method" field.
+func (u *AuthRequestUpsertOne) SetCodeChallengeMethod(v string) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetCodeChallengeMethod(v)
+	})
+}
+
+// UpdateCodeChallengeMethod sets the "code_challenge_method" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateCodeChallengeMethod() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateCodeChallengeMethod()
+	})
+}
+
+// SetHmacKey sets the "hmac_key" field.
+func (u *AuthRequestUpsertOne) SetHmacKey(v []byte) *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetHmacKey(v)
+	})
+}
+
+// UpdateHmacKey sets the "hmac_key" field to the value that was provided on create.
+func (u *AuthRequestUpsertOne) UpdateHmacKey() *AuthRequestUpsertOne {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateHmacKey()
+	})
+}
+
+// Exec executes the query.
+func (u *AuthRequestUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for AuthRequestCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AuthRequestUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *AuthRequestUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("db: AuthRequestUpsertOne.ID is not supported by MySQL driver. Use AuthRequestUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *AuthRequestUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
 }
 
 // AuthRequestCreateBulk is the builder for creating many AuthRequest entities in bulk.
@@ -397,19 +1108,20 @@ type AuthRequestCreateBulk struct {
 	config
 	err      error
 	builders []*AuthRequestCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the AuthRequest entities in the database.
-func (arcb *AuthRequestCreateBulk) Save(ctx context.Context) ([]*AuthRequest, error) {
-	if arcb.err != nil {
-		return nil, arcb.err
+func (_c *AuthRequestCreateBulk) Save(ctx context.Context) ([]*AuthRequest, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(arcb.builders))
-	nodes := make([]*AuthRequest, len(arcb.builders))
-	mutators := make([]Mutator, len(arcb.builders))
-	for i := range arcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*AuthRequest, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := arcb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*AuthRequestMutation)
@@ -423,11 +1135,12 @@ func (arcb *AuthRequestCreateBulk) Save(ctx context.Context) ([]*AuthRequest, er
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, arcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, arcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -447,7 +1160,7 @@ func (arcb *AuthRequestCreateBulk) Save(ctx context.Context) ([]*AuthRequest, er
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, arcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -455,8 +1168,8 @@ func (arcb *AuthRequestCreateBulk) Save(ctx context.Context) ([]*AuthRequest, er
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (arcb *AuthRequestCreateBulk) SaveX(ctx context.Context) []*AuthRequest {
-	v, err := arcb.Save(ctx)
+func (_c *AuthRequestCreateBulk) SaveX(ctx context.Context) []*AuthRequest {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -464,14 +1177,436 @@ func (arcb *AuthRequestCreateBulk) SaveX(ctx context.Context) []*AuthRequest {
 }
 
 // Exec executes the query.
-func (arcb *AuthRequestCreateBulk) Exec(ctx context.Context) error {
-	_, err := arcb.Save(ctx)
+func (_c *AuthRequestCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (arcb *AuthRequestCreateBulk) ExecX(ctx context.Context) {
-	if err := arcb.Exec(ctx); err != nil {
+func (_c *AuthRequestCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AuthRequest.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AuthRequestUpsert) {
+//			SetClientID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AuthRequestCreateBulk) OnConflict(opts ...sql.ConflictOption) *AuthRequestUpsertBulk {
+	_c.conflict = opts
+	return &AuthRequestUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AuthRequest.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AuthRequestCreateBulk) OnConflictColumns(columns ...string) *AuthRequestUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AuthRequestUpsertBulk{
+		create: _c,
+	}
+}
+
+// AuthRequestUpsertBulk is the builder for "upsert"-ing
+// a bulk of AuthRequest nodes.
+type AuthRequestUpsertBulk struct {
+	create *AuthRequestCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.AuthRequest.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(authrequest.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AuthRequestUpsertBulk) UpdateNewValues() *AuthRequestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(authrequest.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AuthRequest.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *AuthRequestUpsertBulk) Ignore() *AuthRequestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AuthRequestUpsertBulk) DoNothing() *AuthRequestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AuthRequestCreateBulk.OnConflict
+// documentation for more info.
+func (u *AuthRequestUpsertBulk) Update(set func(*AuthRequestUpsert)) *AuthRequestUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AuthRequestUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetClientID sets the "client_id" field.
+func (u *AuthRequestUpsertBulk) SetClientID(v string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClientID(v)
+	})
+}
+
+// UpdateClientID sets the "client_id" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateClientID() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClientID()
+	})
+}
+
+// SetScopes sets the "scopes" field.
+func (u *AuthRequestUpsertBulk) SetScopes(v []string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetScopes(v)
+	})
+}
+
+// UpdateScopes sets the "scopes" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateScopes() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateScopes()
+	})
+}
+
+// ClearScopes clears the value of the "scopes" field.
+func (u *AuthRequestUpsertBulk) ClearScopes() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.ClearScopes()
+	})
+}
+
+// SetResponseTypes sets the "response_types" field.
+func (u *AuthRequestUpsertBulk) SetResponseTypes(v []string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetResponseTypes(v)
+	})
+}
+
+// UpdateResponseTypes sets the "response_types" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateResponseTypes() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateResponseTypes()
+	})
+}
+
+// ClearResponseTypes clears the value of the "response_types" field.
+func (u *AuthRequestUpsertBulk) ClearResponseTypes() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.ClearResponseTypes()
+	})
+}
+
+// SetRedirectURI sets the "redirect_uri" field.
+func (u *AuthRequestUpsertBulk) SetRedirectURI(v string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetRedirectURI(v)
+	})
+}
+
+// UpdateRedirectURI sets the "redirect_uri" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateRedirectURI() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateRedirectURI()
+	})
+}
+
+// SetNonce sets the "nonce" field.
+func (u *AuthRequestUpsertBulk) SetNonce(v string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetNonce(v)
+	})
+}
+
+// UpdateNonce sets the "nonce" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateNonce() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateNonce()
+	})
+}
+
+// SetState sets the "state" field.
+func (u *AuthRequestUpsertBulk) SetState(v string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetState(v)
+	})
+}
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateState() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateState()
+	})
+}
+
+// SetForceApprovalPrompt sets the "force_approval_prompt" field.
+func (u *AuthRequestUpsertBulk) SetForceApprovalPrompt(v bool) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetForceApprovalPrompt(v)
+	})
+}
+
+// UpdateForceApprovalPrompt sets the "force_approval_prompt" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateForceApprovalPrompt() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateForceApprovalPrompt()
+	})
+}
+
+// SetLoggedIn sets the "logged_in" field.
+func (u *AuthRequestUpsertBulk) SetLoggedIn(v bool) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetLoggedIn(v)
+	})
+}
+
+// UpdateLoggedIn sets the "logged_in" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateLoggedIn() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateLoggedIn()
+	})
+}
+
+// SetClaimsUserID sets the "claims_user_id" field.
+func (u *AuthRequestUpsertBulk) SetClaimsUserID(v string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsUserID(v)
+	})
+}
+
+// UpdateClaimsUserID sets the "claims_user_id" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateClaimsUserID() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsUserID()
+	})
+}
+
+// SetClaimsUsername sets the "claims_username" field.
+func (u *AuthRequestUpsertBulk) SetClaimsUsername(v string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsUsername(v)
+	})
+}
+
+// UpdateClaimsUsername sets the "claims_username" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateClaimsUsername() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsUsername()
+	})
+}
+
+// SetClaimsEmail sets the "claims_email" field.
+func (u *AuthRequestUpsertBulk) SetClaimsEmail(v string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsEmail(v)
+	})
+}
+
+// UpdateClaimsEmail sets the "claims_email" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateClaimsEmail() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsEmail()
+	})
+}
+
+// SetClaimsEmailVerified sets the "claims_email_verified" field.
+func (u *AuthRequestUpsertBulk) SetClaimsEmailVerified(v bool) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsEmailVerified(v)
+	})
+}
+
+// UpdateClaimsEmailVerified sets the "claims_email_verified" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateClaimsEmailVerified() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsEmailVerified()
+	})
+}
+
+// SetClaimsGroups sets the "claims_groups" field.
+func (u *AuthRequestUpsertBulk) SetClaimsGroups(v []string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsGroups(v)
+	})
+}
+
+// UpdateClaimsGroups sets the "claims_groups" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateClaimsGroups() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsGroups()
+	})
+}
+
+// ClearClaimsGroups clears the value of the "claims_groups" field.
+func (u *AuthRequestUpsertBulk) ClearClaimsGroups() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.ClearClaimsGroups()
+	})
+}
+
+// SetClaimsPreferredUsername sets the "claims_preferred_username" field.
+func (u *AuthRequestUpsertBulk) SetClaimsPreferredUsername(v string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetClaimsPreferredUsername(v)
+	})
+}
+
+// UpdateClaimsPreferredUsername sets the "claims_preferred_username" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateClaimsPreferredUsername() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateClaimsPreferredUsername()
+	})
+}
+
+// SetConnectorID sets the "connector_id" field.
+func (u *AuthRequestUpsertBulk) SetConnectorID(v string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetConnectorID(v)
+	})
+}
+
+// UpdateConnectorID sets the "connector_id" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateConnectorID() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateConnectorID()
+	})
+}
+
+// SetConnectorData sets the "connector_data" field.
+func (u *AuthRequestUpsertBulk) SetConnectorData(v []byte) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetConnectorData(v)
+	})
+}
+
+// UpdateConnectorData sets the "connector_data" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateConnectorData() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateConnectorData()
+	})
+}
+
+// ClearConnectorData clears the value of the "connector_data" field.
+func (u *AuthRequestUpsertBulk) ClearConnectorData() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.ClearConnectorData()
+	})
+}
+
+// SetExpiry sets the "expiry" field.
+func (u *AuthRequestUpsertBulk) SetExpiry(v time.Time) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetExpiry(v)
+	})
+}
+
+// UpdateExpiry sets the "expiry" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateExpiry() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateExpiry()
+	})
+}
+
+// SetCodeChallenge sets the "code_challenge" field.
+func (u *AuthRequestUpsertBulk) SetCodeChallenge(v string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetCodeChallenge(v)
+	})
+}
+
+// UpdateCodeChallenge sets the "code_challenge" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateCodeChallenge() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateCodeChallenge()
+	})
+}
+
+// SetCodeChallengeMethod sets the "code_challenge_method" field.
+func (u *AuthRequestUpsertBulk) SetCodeChallengeMethod(v string) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetCodeChallengeMethod(v)
+	})
+}
+
+// UpdateCodeChallengeMethod sets the "code_challenge_method" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateCodeChallengeMethod() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateCodeChallengeMethod()
+	})
+}
+
+// SetHmacKey sets the "hmac_key" field.
+func (u *AuthRequestUpsertBulk) SetHmacKey(v []byte) *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.SetHmacKey(v)
+	})
+}
+
+// UpdateHmacKey sets the "hmac_key" field to the value that was provided on create.
+func (u *AuthRequestUpsertBulk) UpdateHmacKey() *AuthRequestUpsertBulk {
+	return u.Update(func(s *AuthRequestUpsert) {
+		s.UpdateHmacKey()
+	})
+}
+
+// Exec executes the query.
+func (u *AuthRequestUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("db: OnConflict was set for builder %d. Set it on the AuthRequestCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for AuthRequestCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AuthRequestUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

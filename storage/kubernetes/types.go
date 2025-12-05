@@ -226,6 +226,23 @@ func customResourceDefinitions(apiVersion string) []k8sapi.CustomResourceDefinit
 				},
 			},
 		},
+		{
+			ObjectMeta: k8sapi.ObjectMeta{
+				Name: "signuptokens.dex.coreos.com",
+			},
+			TypeMeta: crdMeta,
+			Spec: k8sapi.CustomResourceDefinitionSpec{
+				Group:    apiGroup,
+				Version:  version,
+				Versions: versions,
+				Scope:    scope,
+				Names: k8sapi.CustomResourceDefinitionNames{
+					Plural:   "signuptokens",
+					Singular: "signuptoken",
+					Kind:     "SignupToken",
+				},
+			},
+		},
 	}
 }
 
@@ -467,6 +484,54 @@ func toStoragePassword(p Password) storage.Password {
 		Hash:     p.Hash,
 		Username: p.Username,
 		UserID:   p.UserID,
+	}
+}
+
+// SignupToken is a mirrored struct from the storage with JSON struct tags and
+// Kubernetes type metadata.
+type SignupToken struct {
+	k8sapi.TypeMeta   `json:",inline"`
+	k8sapi.ObjectMeta `json:"metadata,omitempty"`
+
+	// This field is IMMUTABLE. Do not change.
+	Email string `json:"email,omitempty"`
+
+	CsrfToken       string    `json:"csrfToken,omitempty"`
+	ValidationToken string    `json:"validationToken,omitempty"`
+	Expiry          time.Time `json:"expiry"`
+}
+
+// SignupTokenList is a list of signup tokens.
+type SignupTokenList struct {
+	k8sapi.TypeMeta `json:",inline"`
+	k8sapi.ListMeta `json:"metadata,omitempty"`
+	SignupTokens    []SignupToken `json:"items"`
+}
+
+func (cli *client) fromStorageSignupToken(t storage.SignupToken) SignupToken {
+	email := strings.ToLower(t.Email)
+	return SignupToken{
+		TypeMeta: k8sapi.TypeMeta{
+			Kind:       kindSignupToken,
+			APIVersion: cli.apiVersion,
+		},
+		ObjectMeta: k8sapi.ObjectMeta{
+			Name:      cli.idToName(email),
+			Namespace: cli.namespace,
+		},
+		Email:           email,
+		CsrfToken:       t.CsrfToken,
+		ValidationToken: t.ValidationToken,
+		Expiry:          t.Expiry,
+	}
+}
+
+func toStorageSignupToken(t SignupToken) storage.SignupToken {
+	return storage.SignupToken{
+		Email:           t.Email,
+		CsrfToken:       t.CsrfToken,
+		ValidationToken: t.ValidationToken,
+		Expiry:          t.Expiry,
 	}
 }
 
