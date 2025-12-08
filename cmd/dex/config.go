@@ -51,6 +51,12 @@ type Config struct {
 	// querying the storage. Cannot be specified without enabling a passwords
 	// database.
 	StaticPasswords []password `json:"staticPasswords"`
+
+	// If enabled, allows users to sign up with email and password via REST API.
+	// Requires EnablePasswordDB to be true.
+	EnableSignup bool `json:"enableSignup"`
+
+	HiddenConnectors []string `json:"hiddenConnectors"`
 }
 
 // Validate the configuration
@@ -62,6 +68,7 @@ func (c Config) Validate() error {
 	}{
 		{c.Issuer == "", "no issuer specified in config file"},
 		{!c.EnablePasswordDB && len(c.StaticPasswords) != 0, "cannot specify static passwords without enabling password db"},
+		{c.EnableSignup && !c.EnablePasswordDB, "cannot enable signup without enabling password db"},
 		{c.Storage.Config == nil, "no storage supplied in config file"},
 		{c.Web.HTTP == "" && c.Web.HTTPS == "", "must supply a HTTP/HTTPS  address to listen on"},
 		{c.Web.HTTPS != "" && c.Web.TLSCert == "", "no cert specified for HTTPS"},

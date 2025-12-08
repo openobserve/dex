@@ -18,6 +18,7 @@ const (
 	tmplApproval      = "approval.html"
 	tmplLogin         = "login.html"
 	tmplPassword      = "password.html"
+	tmplSignup        = "signup.html"
 	tmplOOB           = "oob.html"
 	tmplError         = "error.html"
 	tmplDevice        = "device.html"
@@ -28,6 +29,7 @@ var requiredTmpls = []string{
 	tmplApproval,
 	tmplLogin,
 	tmplPassword,
+	tmplSignup,
 	tmplOOB,
 	tmplError,
 	tmplDevice,
@@ -38,6 +40,7 @@ type templates struct {
 	loginTmpl         *template.Template
 	approvalTmpl      *template.Template
 	passwordTmpl      *template.Template
+	signupTmpl        *template.Template
 	oobTmpl           *template.Template
 	errorTmpl         *template.Template
 	deviceTmpl        *template.Template
@@ -165,6 +168,7 @@ func loadTemplates(c webConfig, templatesDir string) (*templates, error) {
 		loginTmpl:         tmpls.Lookup(tmplLogin),
 		approvalTmpl:      tmpls.Lookup(tmplApproval),
 		passwordTmpl:      tmpls.Lookup(tmplPassword),
+		signupTmpl:        tmpls.Lookup(tmplSignup),
 		oobTmpl:           tmpls.Lookup(tmplOOB),
 		errorTmpl:         tmpls.Lookup(tmplError),
 		deviceTmpl:        tmpls.Lookup(tmplDevice),
@@ -249,10 +253,11 @@ var scopeDescriptions = map[string]string{
 }
 
 type connectorInfo struct {
-	ID   string
-	Name string
-	URL  template.URL
-	Type string
+	ID     string
+	Name   string
+	URL    template.URL
+	Type   string
+	Hidden bool
 }
 
 type byName []connectorInfo
@@ -282,16 +287,17 @@ func (t *templates) deviceSuccess(r *http.Request, w http.ResponseWriter, client
 	return renderTemplate(w, t.deviceSuccessTmpl, data)
 }
 
-func (t *templates) login(r *http.Request, w http.ResponseWriter, connectors []connectorInfo) error {
+func (t *templates) login(r *http.Request, w http.ResponseWriter, connectors []connectorInfo, enableSignup bool) error {
 	sort.Sort(byName(connectors))
 	data := struct {
-		Connectors []connectorInfo
-		ReqPath    string
-	}{connectors, r.URL.Path}
+		Connectors   []connectorInfo
+		ReqPath      string
+		EnableSignup bool
+	}{connectors, r.URL.Path, enableSignup}
 	return renderTemplate(w, t.loginTmpl, data)
 }
 
-func (t *templates) password(r *http.Request, w http.ResponseWriter, postURL, lastUsername, usernamePrompt string, lastWasInvalid bool, backLink string) error {
+func (t *templates) password(r *http.Request, w http.ResponseWriter, postURL, lastUsername, usernamePrompt string, lastWasInvalid bool, backLink string, enableSignup bool) error {
 	if lastWasInvalid {
 		w.WriteHeader(http.StatusUnauthorized)
 	}
@@ -302,8 +308,25 @@ func (t *templates) password(r *http.Request, w http.ResponseWriter, postURL, la
 		UsernamePrompt string
 		Invalid        bool
 		ReqPath        string
-	}{postURL, backLink, lastUsername, usernamePrompt, lastWasInvalid, r.URL.Path}
+		EnableSignup   bool
+	}{postURL, backLink, lastUsername, usernamePrompt, lastWasInvalid, r.URL.Path, enableSignup}
 	return renderTemplate(w, t.passwordTmpl, data)
+}
+
+func (t *templates) signup(r *http.Request, w http.ResponseWriter, postURL, lastEmail, lastUsername, errorMsg string, lastWasInvalid bool, backLink string) error {
+	if lastWasInvalid {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	data := struct {
+		PostURL  string
+		BackLink string
+		Email    string
+		Username string
+		Invalid  bool
+		Error    string
+		ReqPath  string
+	}{postURL, backLink, lastEmail, lastUsername, lastWasInvalid, errorMsg, r.URL.Path}
+	return renderTemplate(w, t.signupTmpl, data)
 }
 
 func (t *templates) approval(r *http.Request, w http.ResponseWriter, authReqID, username, clientName string, scopes []string) error {

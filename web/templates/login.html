@@ -4,6 +4,7 @@
   <h2 class="theme-heading">Log in to {{ issuer }} </h2>
   <div>
     {{ range $c := .Connectors }}
+      {{ if not $c.Hidden }}
       <div class="theme-form-row">
         <a href="{{ $c.URL }}" target="_self">
           <button class="dex-btn theme-btn-provider">
@@ -13,7 +14,13 @@
         </a>
       </div>
     {{ end }}
+  {{ end }}
   </div>
+  {{ if .EnableSignup }}
+  <div class="theme-link-back">
+    <a class="dex-subtle-text" href="{{ url .ReqPath "/signup" }}">Don't have an account? Sign up.</a>
+  </div>
+  {{ end }}
 </div>
 
 {{ template "footer.html" . }}
