@@ -357,7 +357,12 @@ func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
 		}
 
 		body := fmt.Sprintf("Hello,<br/>The email validation code for signup to openobserve cloud is<br/><h2>%s</h2><br/>Please enter it in the signup form before submitting.<br/>This code is valid for 5 minutes.<br/>Regards,<br/>Openobserve Team.", token)
-		sendEmail(s, req.Email, "Email validation Token for Openobserve Cloud", body)
+		err := sendEmail(s, req.Email, "Email validation Token for Openobserve Cloud", body)
+		if err != nil {
+			s.logger.ErrorContext(ctx, "failed to send token email", err)
+			s.signupErrHelper(w, "invalid_request", "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 
 		resp := signupTokenResponse{
 			Email:     req.Email,
