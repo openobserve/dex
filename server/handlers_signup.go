@@ -66,7 +66,7 @@ func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 		// Show signup form
 		backLink := r.URL.Query().Get("back")
 		if backLink == "" {
-			backPath := fmt.Sprintf("/auth?%s", r.URL.RawQuery)
+			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
 			backLink = s.absPath(backPath)
 		}
 		if err := s.templates.signup(r, w, r.URL.String(), "", "", "", false, backLink); err != nil {
@@ -240,7 +240,7 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 		// Redirect to login page with success message
 		backLink := r.URL.Query().Get("back")
 		if backLink == "" {
-			backPath := fmt.Sprintf("/auth?%s", r.URL.RawQuery)
+			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
 			backLink = s.absPath(backPath)
 		}
 		http.Redirect(w, r, backLink, http.StatusSeeOther)
@@ -254,7 +254,7 @@ func (s *Server) handleSignupError(w http.ResponseWriter, r *http.Request, req s
 	} else {
 		backLink := r.URL.Query().Get("back")
 		if backLink == "" {
-			backPath := fmt.Sprintf("/auth?%s", r.URL.RawQuery)
+			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
 			backLink = s.absPath(backPath)
 		}
 		if err := s.templates.signup(r, w, r.URL.String(), req.Email, req.Username, errorMsg, true, backLink); err != nil {
