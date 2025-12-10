@@ -138,31 +138,17 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 	token, err := s.storage.GetSignupToken(ctx, req.Email)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "validation token not found", "err", err)
-		if isJSONRequest {
-			s.signupErrHelper(w, "bad_request", "Validation token not found", http.StatusBadRequest)
-		} else {
-			s.renderError(r, w, http.StatusBadRequest, "Validation token not found.")
-		}
+		s.handleSignupError(w, r, req, "OTP not found or expired. Please request a new OTP.", http.StatusBadRequest, isJSONRequest)
 		return
 	}
 
 	if req.Csrf != token.CsrfToken {
-		_ = s.storage.DeleteSignupToken(ctx, req.Email)
-		if isJSONRequest {
-			s.signupErrHelper(w, "bad_request", "Invalid token", http.StatusBadRequest)
-		} else {
-			s.renderError(r, w, http.StatusBadRequest, "Invalid token.")
-		}
+		s.handleSignupError(w, r, req, "Invalid session. Please request a new OTP.", http.StatusBadRequest, isJSONRequest)
 		return
 	}
 
 	if req.Token != token.ValidationToken {
-		_ = s.storage.DeleteSignupToken(ctx, req.Email)
-		if isJSONRequest {
-			s.signupErrHelper(w, "bad_request", "Invalid token", http.StatusBadRequest)
-		} else {
-			s.renderError(r, w, http.StatusBadRequest, "Invalid token.")
-		}
+		s.handleSignupError(w, r, req, "Invalid OTP. Please check and try again.", http.StatusBadRequest, isJSONRequest)
 		return
 	}
 	_ = s.storage.DeleteSignupToken(ctx, req.Email)
@@ -275,6 +261,11 @@ func (s *Server) validateSignupRequest(req signupRequest) (string, int) {
 		return "Invalid email format", http.StatusBadRequest
 	}
 
+	// Validate username
+	if req.Username == "" {
+		return "Username is required", http.StatusBadRequest
+	}
+
 	// Validate password
 	if req.Password == "" {
 		return "Password is required", http.StatusBadRequest
@@ -283,11 +274,6 @@ func (s *Server) validateSignupRequest(req signupRequest) (string, int) {
 	// Validate password strength (minimum 8 characters)
 	if len(req.Password) < 8 {
 		return "Password must be at least 8 characters long", http.StatusBadRequest
-	}
-
-	// Validate username
-	if req.Username == "" {
-		return "Username is required", http.StatusBadRequest
 	}
 
 	return "", 0

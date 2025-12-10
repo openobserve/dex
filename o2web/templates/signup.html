@@ -224,7 +224,7 @@
   .login-content-container {
     width: 100%;
     max-width: 400px;
-    margin-top: 100px;
+    margin-top: 40px;
   }
 
   .theme-panel{
@@ -239,21 +239,21 @@
   /* Form header */
   .form-header {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.25rem;
     position: relative;
     z-index: 1;
   }
 
   .form-title {
-    font-size: 2rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: #f1f5f9;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
   }
 
   .form-subtitle {
     color: #cbd5e1;
-    font-size: 1rem;
+    font-size: 0.9rem;
     margin: 0;
   }
 
@@ -262,7 +262,7 @@
     position: relative;
     border: 1px solid rgba(14, 165, 233, 0.2);
     border-radius: 16px;
-    padding: 2rem 1.5rem;
+    padding: 1.5rem 1rem;
     background: rgba(15, 23, 42, 0.9);
     backdrop-filter: blur(20px);
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5), 0 0 1px rgba(14, 165, 233, 0.3);
@@ -313,8 +313,8 @@
   /* Footer at bottom of page */
   .page-footer {
     text-align: center;
-    padding: 1rem;
-    margin-top: 2rem;
+    padding: 0.75rem;
+    margin-top: 1.5rem;
     flex-shrink: 0;
     position: relative;
     z-index: 1;
@@ -415,6 +415,327 @@
   }
 
 
+  /* Signup form styles */
+  .signup-form-group {
+    margin-bottom: 1rem;
+    width: 100%;
+  }
+
+  form {
+    width: 100%;
+  }
+
+  .signup-form-label {
+    display: block;
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+
+  .signup-form-input {
+    width: 100%;
+    max-width: 100%;
+    padding: 10px 14px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(14, 165, 233, 0.2);
+    border-radius: 8px;
+    color: #f1f5f9;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  .signup-form-input:focus {
+    outline: none;
+    border-color: rgba(14, 165, 233, 0.5);
+    background: rgba(15, 23, 42, 0.8);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+  }
+
+  .signup-form-input.input-error:focus {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+  }
+
+  .signup-form-input::placeholder {
+    color: #64748b;
+  }
+
+  .signup-btn-primary {
+    width: 100%;
+    padding: 11px 24px;
+    background: linear-gradient(135deg, #0BA5E9 0%, #38BDF8 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 14px rgba(11, 165, 233, 0.25);
+    margin-top: 0.5rem;
+  }
+
+  .signup-btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(11, 165, 233, 0.4);
+    background: linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%);
+  }
+
+  .signup-btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .signup-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .token-btn {
+    padding: 8px 16px;
+    background: rgba(14, 165, 233, 0.1);
+    color: #38BDF8;
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .token-btn:hover {
+    background: rgba(14, 165, 233, 0.2);
+    border-color: rgba(14, 165, 233, 0.5);
+  }
+
+  .error-message {
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    padding: 10px 14px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 13px;
+  }
+
+  .login-link-section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(14, 165, 233, 0.15);
+    text-align: center;
+  }
+
+  .login-link-text {
+    color: #cbd5e1;
+    font-size: 13px;
+    margin-bottom: 0.5rem;
+  }
+
+  .login-link {
+    color: #38BDF8;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+  }
+
+  .login-link:hover {
+    color: #0EA5E9;
+  }
+
+  /* Password toggle styles */
+  .password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .password-toggle-btn {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    transition: color 0.3s ease;
+  }
+
+  .password-toggle-btn:hover {
+    color: #38BDF8;
+  }
+
+  .password-toggle-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Validation styles */
+  .input-error {
+    border-color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.05) !important;
+  }
+
+  .input-success {
+    border-color: #22c55e !important;
+  }
+
+  .error-text {
+    display: block;
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 0.3rem;
+    animation: slideDown 0.2s ease;
+  }
+
+  .success-text {
+    display: block;
+    color: #22c55e;
+    font-size: 12px;
+    margin-top: 0.3rem;
+    animation: slideDown 0.2s ease;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .input-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+  }
+
+  .input-icon.error {
+    color: #ef4444;
+  }
+
+  .input-icon.success {
+    color: #22c55e;
+  }
+
+  /* Toast notification styles */
+  .toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .toast {
+    min-width: 300px;
+    max-width: 400px;
+    padding: 16px 20px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), 0 0 1px rgba(239, 68, 68, 0.5);
+    backdrop-filter: blur(20px);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .toast.success {
+    border-color: rgba(34, 197, 94, 0.5);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), 0 0 1px rgba(34, 197, 94, 0.5);
+  }
+
+  .toast-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .toast-icon.error {
+    color: #ef4444;
+  }
+
+  .toast-icon.success {
+    color: #22c55e;
+  }
+
+  .toast-content {
+    flex: 1;
+  }
+
+  .toast-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 4px;
+  }
+
+  .toast-message {
+    font-size: 13px;
+    color: #cbd5e1;
+    line-height: 1.5;
+  }
+
+  .toast-close {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+  }
+
+  .toast-close:hover {
+    color: #f1f5f9;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+  }
+
+  .toast.closing {
+    animation: slideOut 0.3s ease-out forwards;
+  }
+
   @media (max-width: 768px) {
     .dex-login-container {
       flex-direction: column;
@@ -474,77 +795,535 @@
     }
   }
 </style>
-<div class="theme-panel">
-  <h2 class="theme-heading">Create Your Account</h2>
-  <form method="post" action="{{ .PostURL }}">
-    <div class="theme-form-row">
-      <div class="theme-form-label">
-        <label for="email">Email</label>
-      </div>
-      <input tabindex="1" required id="email" name="email" type="email" class="theme-form-input" placeholder="email@example.com" {{ if .Email }} value="{{ .Email }}" {{ else }} autofocus {{ end }}/>
-    </div>
-    <div class="theme-form-row">
-      <div class="theme-form-label">
-        <label for="username">Username</label>
-      </div>
-      <input tabindex="2" required id="username" name="username" type="text" class="theme-form-input" placeholder="username" {{ if .Username }} value="{{ .Username }}" {{ end }}/>
-    </div>
-    <div class="theme-form-row">
-      <div class="theme-form-label">
-        <label for="password">Password</label>
-      </div>
-      <input tabindex="3" required id="password" name="password" type="password" class="theme-form-input" placeholder="password (min 8 characters)" minlength="8" {{ if .Invalid }} autofocus {{ end }}/>
-    </div>
-    <div class="theme-form-row">
-      <div class="theme-form-label">
-        <label for="token">Validation Token</label>
-      </div>
-      <input tabindex="4" readonly required id="token" name="token" type="text" class="theme-form-input" placeholder="validation token" {{ if .Invalid }} autofocus {{ end }}/>
-    </div>
-    <div class="theme-form-row">
-      <button id="token-btn">Generate Token</button>
-    </div>
-    <input tabindex="5" readonly hidden id="csrf" name="csrf" type="text" class="theme-form-input" placeholder="" style="display: none;"/>
-    {{ if .Invalid }}
-      <div id="signup-error" class="dex-error-box">
-        {{ .Error }}
-      </div>
-    {{ end }}
 
-    <button tabindex="6" id="submit-signup" type="submit" class="dex-btn theme-btn--primary">Sign Up</button>
+<div class="dex-login-container">
+  <!-- Toast notification container -->
+  <div class="toast-container" id="toast-container"></div>
 
-  </form>
-  <div class="theme-link-back">
-    <a class="dex-subtle-text" href="{{ .BackLink }}">Already have an account? Log in.</a>
+  <div class="bg-container"></div>
+
+  <div class="metrics-overlay">
+    <div class="metric-line metric-line-1"></div>
+    <div class="metric-line metric-line-2"></div>
+    <div class="metric-line metric-line-3"></div>
+  </div>
+
+  <div class="grid-bg"></div>
+
+  <div class="gradient-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- Left side with logo and text -->
+  <div class="login-brand-section">
+    <div class="brand-container">
+      <div class="brand-logo">
+        <img src="{{ url .ReqPath "/theme/openobserve_logo_light.svg" }}" alt="OpenObserve Logo" />
+      </div>
+      <div class="brand-content">
+        <p class="brand-subtitle">The complete observability platform for modern applications</p>
+        <div class="brand-features">
+          <div class="feature-item">
+            <span class="feature-icon">📊</span>
+            <span>Real-time monitoring and analytics</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🔍</span>
+            <span>Advanced search and visualization</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">⚡</span>
+            <span>High performance and scalability</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right side with form -->
+  <div class="login-form-section">
+    <div class="login-content-container">
+      <div class="theme-panel modern-bordered-panel">
+        <div class="form-header">
+          <h2 class="form-title">Create Your Account</h2>
+          <p class="form-subtitle">Get started with OpenObserve</p>
+        </div>
+
+        <form method="post" action="{{ .PostURL }}" novalidate id="signup-form">
+          {{ if .Invalid }}
+            <div class="error-message" id="server-error" style="display: none;">
+              {{ .Error }}
+            </div>
+          {{ end }}
+
+          <div class="signup-form-group">
+            <label for="email" class="signup-form-label">Email Address</label>
+            <input
+              tabindex="1"
+              required
+              id="email"
+              name="email"
+              type="email"
+              class="signup-form-input"
+              placeholder="you@company.com"
+              {{ if .Email }} value="{{ .Email }}" {{ end }}
+            />
+            <span class="error-text" id="email-error" style="display: none;"></span>
+          </div>
+
+          <div class="signup-form-group">
+            <label for="username" class="signup-form-label">Username</label>
+            <input
+              tabindex="2"
+              required
+              id="username"
+              name="username"
+              type="text"
+              class="signup-form-input"
+              placeholder="Choose a username"
+              {{ if .Username }} value="{{ .Username }}" {{ end }}
+            />
+            <span class="error-text" id="username-error" style="display: none;"></span>
+          </div>
+
+          <div class="signup-form-group">
+            <label for="password" class="signup-form-label">Password</label>
+            <div class="password-input-wrapper">
+              <input
+                tabindex="3"
+                required
+                id="password"
+                name="password"
+                type="password"
+                class="signup-form-input"
+                placeholder="Minimum 8 characters"
+                minlength="8"
+                style="padding-right: 40px;"
+              />
+              <button type="button" class="password-toggle-btn" id="toggle-password" aria-label="Toggle password visibility">
+                <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <svg id="eye-slash-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              </button>
+            </div>
+            <span class="error-text" id="password-error" style="display: none;"></span>
+          </div>
+
+          <div class="signup-form-group">
+            <label for="token" class="signup-form-label">Verification OTP</label>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input
+                tabindex="4"
+                readonly
+                required
+                id="token"
+                name="token"
+                type="text"
+                class="signup-form-input"
+                placeholder="Click 'Get OTP' to receive via email"
+                style="flex: 1;"
+              />
+              <button type="button" id="token-btn" class="token-btn" style="white-space: nowrap;">Get OTP</button>
+            </div>
+            <span class="error-text" id="token-error" style="display: none;"></span>
+          </div>
+
+          <input tabindex="5" readonly hidden id="csrf" name="csrf" type="text" style="display: none;"/>
+
+          <button tabindex="6" id="submit-signup" type="submit" class="signup-btn-primary">
+            Create Account
+          </button>
+        </form>
+
+        <div class="login-link-section">
+          <p class="login-link-text">Already have an account? <a class="login-link" href="{{ .BackLink }}">Log in</a></p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="page-footer">
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
+          <a class="dex-link modern-link" href="{{ "terms_of_use" | extra }}" target="_blank">
+            Terms of Use
+            <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" />
+          </a>
+          <a class="dex-link modern-link" href="{{ "privacy_policy" | extra }}" target="_blank">
+            Privacy Policy
+            <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" />
+          </a>
+        </div>
+        <div class="copyright-text">
+          &copy; OpenObserve <span id="year"></span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 
 <script type="text/javascript">
+  // Set current year
+  const year = new Date().getFullYear();
+  document.getElementById('year').innerHTML = year;
+
+  // Toast notification function
+  function showToast(message, type = 'error', duration = 5000) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    const iconSVG = type === 'error'
+      ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+      : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
+
+    toast.innerHTML = `
+      <div class="toast-icon ${type}">
+        ${iconSVG}
+      </div>
+      <div class="toast-content">
+        <div class="toast-title">${type === 'error' ? 'Error' : 'Success'}</div>
+        <div class="toast-message">${message}</div>
+      </div>
+      <button class="toast-close" onclick="this.parentElement.remove()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto remove after duration
+    setTimeout(() => {
+      toast.classList.add('closing');
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  }
+
+  // Show server error as toast if present
+  const serverError = document.getElementById('server-error');
+  if (serverError && serverError.textContent.trim()) {
+    showToast(serverError.textContent.trim(), 'error');
+  }
+
+  // Handle password visibility toggle
+  const togglePasswordBtn = document.getElementById('toggle-password');
+  const passwordInput = document.getElementById('password');
+  const eyeIcon = document.getElementById('eye-icon');
+  const eyeSlashIcon = document.getElementById('eye-slash-icon');
+  const emailInput = document.getElementById('email');
+  const usernameInput = document.getElementById('username');
+  const tokenInput = document.getElementById('token');
+
+  togglePasswordBtn.addEventListener('click', function() {
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      eyeIcon.style.display = 'none';
+      eyeSlashIcon.style.display = 'block';
+    } else {
+      passwordInput.type = 'password';
+      eyeIcon.style.display = 'block';
+      eyeSlashIcon.style.display = 'none';
+    }
+  });
+
+  // Validation helper functions
+  function showError(inputId, message) {
+    const input = document.getElementById(inputId);
+    const errorSpan = document.getElementById(inputId + '-error');
+
+    input.classList.add('input-error');
+    input.classList.remove('input-success');
+    errorSpan.textContent = message;
+    errorSpan.style.display = 'block';
+  }
+
+  function clearError(inputId) {
+    const input = document.getElementById(inputId);
+    const errorSpan = document.getElementById(inputId + '-error');
+
+    input.classList.remove('input-error');
+    input.classList.remove('input-success');
+    errorSpan.style.display = 'none';
+  }
+
+  function showSuccess(inputId) {
+    const input = document.getElementById(inputId);
+    const errorSpan = document.getElementById(inputId + '-error');
+
+    input.classList.add('input-success');
+    input.classList.remove('input-error');
+    errorSpan.style.display = 'none';
+  }
+
+  function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  // Email validation
+  emailInput.addEventListener('blur', function() {
+    const value = this.value.trim();
+    if (!value) {
+      showError('email', 'Email is required');
+    } else if (!validateEmail(value)) {
+      showError('email', 'Please enter a valid email address');
+    } else {
+      showSuccess('email');
+    }
+  });
+
+  emailInput.addEventListener('input', function() {
+    const value = this.value.trim();
+    if (value && validateEmail(value)) {
+      clearError('email');
+    }
+  });
+
+  // Username validation
+  usernameInput.addEventListener('blur', function() {
+    const value = this.value.trim();
+    if (!value) {
+      showError('username', 'Username is required');
+    } else if (value.length < 3) {
+      showError('username', 'Username must be at least 3 characters');
+    } else {
+      showSuccess('username');
+    }
+  });
+
+  usernameInput.addEventListener('input', function() {
+    const value = this.value.trim();
+    if (value && value.length >= 3) {
+      clearError('username');
+    }
+  });
+
+  // Password validation
+  passwordInput.addEventListener('blur', function() {
+    const value = this.value;
+    if (!value) {
+      showError('password', 'Password is required');
+    } else if (value.length < 8) {
+      showError('password', 'Password must be at least 8 characters');
+    } else {
+      showSuccess('password');
+    }
+  });
+
+  passwordInput.addEventListener('input', function() {
+    const value = this.value;
+    if (value && value.length >= 8) {
+      clearError('password');
+    }
+  });
+
+  // OTP validation
+  tokenInput.addEventListener('blur', function() {
+    const value = this.value.trim();
+    if (!value) {
+      showError('token', 'Verification OTP is required');
+    } else {
+      showSuccess('token');
+    }
+  });
+
+  tokenInput.addEventListener('input', function() {
+    const value = this.value.trim();
+    if (value) {
+      clearError('token');
+    }
+  });
+
+  // Handle form submission with validation
   document.querySelector('form').onsubmit = function(e) {
-    var el = document.querySelector('#submit-signup');
-    el.setAttribute('disabled', 'disabled');
+    e.preventDefault(); // Prevent default form submission
+
+    let isValid = true;
+
+    // Validate all fields
+    const email = emailInput.value.trim();
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    const token = tokenInput.value.trim();
+    const csrf = document.querySelector('#csrf').value;
+
+    // Email validation
+    if (!email) {
+      showError('email', 'Email is required');
+      isValid = false;
+    } else if (!validateEmail(email)) {
+      showError('email', 'Please enter a valid email address');
+      isValid = false;
+    }
+
+    // Username validation
+    if (!username) {
+      showError('username', 'Username is required');
+      isValid = false;
+    } else if (username.length < 3) {
+      showError('username', 'Username must be at least 3 characters');
+      isValid = false;
+    }
+
+    // Password validation
+    if (!password) {
+      showError('password', 'Password is required');
+      isValid = false;
+    } else if (password.length < 8) {
+      showError('password', 'Password must be at least 8 characters');
+      isValid = false;
+    }
+
+    // OTP validation
+    if (!token) {
+      showError('token', 'Verification OTP is required');
+      isValid = false;
+    }
+
+    if (!isValid) {
+      return false;
+    }
+
+    // All valid, submit via AJAX
+    const submitBtn = document.querySelector('#submit-signup');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating Account...';
+
+    // Create form data
+    const formData = new URLSearchParams();
+    formData.append('email', email);
+    formData.append('username', username);
+    formData.append('password', password);
+    formData.append('token', token);
+    formData.append('csrf', csrf);
+
+    // Submit via fetch
+    fetch(this.action, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString()
+    })
+    .then(response => {
+      if (response.redirected) {
+        // Success - redirect to login or callback
+        window.location.href = response.url;
+        return;
+      }
+      return response.text();
+    })
+    .then(html => {
+      if (html) {
+        // Parse HTML response to extract error message
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const errorDiv = doc.querySelector('.error-message');
+
+        if (errorDiv) {
+          const errorMessage = errorDiv.textContent.trim();
+          showToast(errorMessage, 'error');
+        } else {
+          showToast('An error occurred. Please try again.', 'error');
+        }
+
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showToast('Network error. Please check your connection.', 'error');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create Account';
+    });
   };
-  document.querySelector('#token-btn').onclick = (e)=>{
+
+  // Handle OTP generation with 60-second cooldown
+  let otpCooldown = 0;
+  let cooldownInterval = null;
+
+  function startOtpCooldown(tokenBtn) {
+    otpCooldown = 60;
+    tokenBtn.disabled = true;
+
+    cooldownInterval = setInterval(() => {
+      otpCooldown--;
+      if (otpCooldown > 0) {
+        tokenBtn.textContent = `Resend in ${otpCooldown}s`;
+      } else {
+        clearInterval(cooldownInterval);
+        tokenBtn.disabled = false;
+        tokenBtn.textContent = 'Get OTP';
+        tokenBtn.style.background = 'rgba(14, 165, 233, 0.1)';
+        tokenBtn.style.color = '#38BDF8';
+        tokenBtn.style.borderColor = 'rgba(14, 165, 233, 0.3)';
+      }
+    }, 1000);
+  }
+
+  document.querySelector('#token-btn').onclick = (e) => {
     e.preventDefault();
-    document.querySelector("#token").readonly = false;
-    // for firefox
-    document.querySelector("#token").readOnly = false;
-    let email = document.querySelector("#email").value;
-    fetch("signup-token",{
-      method:"POST",
+    const emailInput = document.querySelector("#email");
+    const tokenInput = document.querySelector("#token");
+    const tokenBtn = e.target;
+
+    if (!emailInput.value) {
+      showError('email', 'Please enter your email address first');
+      emailInput.focus();
+      return;
+    }
+
+    // Validate email format before sending
+    if (!validateEmail(emailInput.value)) {
+      showError('email', 'Please enter a valid email address');
+      emailInput.focus();
+      return;
+    }
+
+    // Disable button and show loading
+    tokenBtn.disabled = true;
+    tokenBtn.textContent = 'Sending...';
+
+    tokenInput.readonly = false;
+    tokenInput.readOnly = false;
+
+    fetch("signup-token", {
+      method: "POST",
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({email})
-    }).then((r)=>{
-      return r.json();
-    }).then((v)=>{
-      document.querySelector("#csrf").value = v.csrfToken
+      body: JSON.stringify({ email: emailInput.value })
     })
-  }
+    .then((r) => r.json())
+    .then((v) => {
+      document.querySelector("#csrf").value = v.csrfToken;
+      tokenBtn.textContent = '✓ OTP Sent';
+      tokenBtn.style.background = 'rgba(34, 197, 94, 0.1)';
+      tokenBtn.style.color = '#4ade80';
+      tokenBtn.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+      tokenInput.focus();
 
+      // Start 60-second cooldown
+      setTimeout(() => {
+        startOtpCooldown(tokenBtn);
+      }, 2000); // Show success message for 2 seconds first
+    })
+    .catch((err) => {
+      tokenBtn.disabled = false;
+      tokenBtn.textContent = 'Get OTP';
+      showError('token', 'Failed to send OTP. Please try again.');
+    });
+  };
 </script>
 
 {{ template "footer.html" . }}
