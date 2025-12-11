@@ -1069,6 +1069,8 @@ func TestHandleSignup(t *testing.T) {
 				"email":    "test@example.com",
 				"password": "password123",
 				"username": "testuser",
+				"csrf":     "1234",
+				"token":    "5678",
 			},
 			expectedStatusCode: http.StatusCreated,
 		},
@@ -1079,6 +1081,8 @@ func TestHandleSignup(t *testing.T) {
 				"email":    "test@example.com",
 				"password": "password123",
 				"username": "testuser",
+				"csrf":     "1234",
+				"token":    "5678",
 			},
 			expectedStatusCode: http.StatusForbidden,
 			expectedError:      "access_denied",
@@ -1089,6 +1093,8 @@ func TestHandleSignup(t *testing.T) {
 			requestBody: map[string]string{
 				"password": "password123",
 				"username": "testuser",
+				"csrf":     "1234",
+				"token":    "5678",
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedError:      "invalid_request",
@@ -1100,6 +1106,8 @@ func TestHandleSignup(t *testing.T) {
 				"email":    "invalid-email",
 				"password": "password123",
 				"username": "testuser",
+				"csrf":     "1234",
+				"token":    "5678",
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedError:      "invalid_request",
@@ -1110,6 +1118,8 @@ func TestHandleSignup(t *testing.T) {
 			requestBody: map[string]string{
 				"email":    "test@example.com",
 				"username": "testuser",
+				"csrf":     "1234",
+				"token":    "5678",
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedError:      "invalid_request",
@@ -1121,6 +1131,8 @@ func TestHandleSignup(t *testing.T) {
 				"email":    "test@example.com",
 				"password": "short",
 				"username": "testuser",
+				"csrf":     "1234",
+				"token":    "5678",
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedError:      "invalid_request",
@@ -1131,6 +1143,8 @@ func TestHandleSignup(t *testing.T) {
 			requestBody: map[string]string{
 				"email":    "test@example.com",
 				"password": "password123",
+				"csrf":     "1234",
+				"token":    "5678",
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedError:      "invalid_request",
@@ -1142,6 +1156,8 @@ func TestHandleSignup(t *testing.T) {
 				"email":    "admin@example.com", // This email is already in the test storage
 				"password": "password123",
 				"username": "testuser",
+				"csrf":     "1234",
+				"token":    "5678",
 			},
 			expectedStatusCode: http.StatusConflict,
 			expectedError:      "invalid_request",
@@ -1150,6 +1166,32 @@ func TestHandleSignup(t *testing.T) {
 			name:               "invalid JSON",
 			enableSignup:       true,
 			requestBody:        "invalid json",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "invalid validation Token",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"password": "password123",
+				"username": "testuser",
+				"csrf":     "1234",
+				"token":    "1234",
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      "invalid_request",
+		},
+		{
+			name:         "invalid csrf Token",
+			enableSignup: true,
+			requestBody: map[string]string{
+				"email":    "test@example.com",
+				"password": "password123",
+				"username": "testuser",
+				"csrf":     "5678",
+				"token":    "5678",
+			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedError:      "invalid_request",
 		},
@@ -1170,6 +1212,12 @@ func TestHandleSignup(t *testing.T) {
 				Hash:     []byte("$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"),
 				Username: "admin",
 				UserID:   "admin-id",
+			})
+			_ = server.storage.CreateSignupToken(ctx, storage.SignupToken{
+				Email:           "test@Example.com",
+				CsrfToken:       "1234",
+				ValidationToken: "5468",
+				Expiry:          time.Now().Add(time.Duration(5) * time.Minute),
 			})
 
 			// Prepare request body
