@@ -1216,13 +1216,13 @@ func TestHandleSignup(t *testing.T) {
 			_ = server.storage.CreateSignupToken(ctx, storage.SignupToken{
 				Email:           "test@example.com",
 				CsrfToken:       "1234",
-				ValidationToken: "5468",
+				ValidationToken: "5678",
 				Expiry:          time.Now().Add(time.Duration(5) * time.Minute),
 			})
 			_ = server.storage.CreateSignupToken(ctx, storage.SignupToken{
 				Email:           "admin@example.com",
 				CsrfToken:       "1234",
-				ValidationToken: "5468",
+				ValidationToken: "5678",
 				Expiry:          time.Now().Add(time.Duration(5) * time.Minute),
 			})
 
