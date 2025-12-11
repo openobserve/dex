@@ -153,7 +153,6 @@ func toStorageSignupToken(t *db.SignupToken) storage.SignupToken {
 		ValidationToken: t.ValidationToken,
 		Expiry:          t.Expiry,
 	}
-
 }
 
 func toStorageDeviceRequest(r *db.DeviceRequest) storage.DeviceRequest {
