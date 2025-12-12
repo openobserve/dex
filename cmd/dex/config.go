@@ -56,6 +56,7 @@ type Config struct {
 	// Requires EnablePasswordDB to be true.
 	EnableSignup bool   `json:"enableSignup"`
 	SmtpHost     string `json:"smtpHost"`
+	SmtpPort     int    `json:"smtpPort"`
 	SmtpSender   string `json:"smtpSender"`
 	SmtpUser     string `json:"smtpUser"`
 	SmtpPassword string `json:"smtpPassword"`

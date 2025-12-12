@@ -31,9 +31,16 @@ func sendEmail(s *Server, to string, subj string, body string) error {
 	m.Subject(subj)
 	m.SetBodyString(mail.TypeTextHTML, body)
 
+	var port mail.Option
+	if s.SmtpPort != 0 {
+		port = mail.WithPort(s.SmtpPort)
+	} else {
+		port = mail.WithPort(25)
+	}
 	// Secondly the mail client
 	c, err := mail.NewClient(s.SmtpHost,
 		mail.WithSMTPAuth(mail.SMTPAuthPlain),
+		port,
 		mail.WithUsername(s.SmtpUser), mail.WithPassword(s.SmtpPassword))
 	if err != nil {
 		return err

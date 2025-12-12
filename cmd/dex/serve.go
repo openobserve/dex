@@ -298,6 +298,7 @@ func runServe(options serveOptions) error {
 		PasswordConnector:          c.OAuth2.PasswordConnector,
 		EnableSignup:               c.EnableSignup,
 		SmtpHost:                   c.SmtpHost,
+		SmtpPort:                   c.SmtpPort,
 		SmtpSender:                 c.SmtpSender,
 		SmtpUser:                   c.SmtpUser,
 		SmtpPassword:               c.SmtpPassword,

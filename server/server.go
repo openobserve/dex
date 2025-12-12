@@ -113,6 +113,7 @@ type Config struct {
 
 	// smtp config for sending emails
 	SmtpHost     string
+	SmtpPort     int
 	SmtpSender   string
 	SmtpUser     string
 	SmtpPassword string
@@ -208,6 +209,7 @@ type Server struct {
 	enableSignup bool
 
 	SmtpHost     string
+	SmtpPort     int
 	SmtpSender   string
 	SmtpUser     string
 	SmtpPassword string
@@ -347,6 +349,7 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		passwordConnector:      c.PasswordConnector,
 		enableSignup:           c.EnableSignup,
 		SmtpHost:               c.SmtpHost,
+		SmtpPort:               c.SmtpPort,
 		SmtpSender:             c.SmtpSender,
 		SmtpUser:               c.SmtpUser,
 		SmtpPassword:           c.SmtpPassword,
