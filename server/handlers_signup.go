@@ -151,6 +151,13 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 		s.handleSignupError(w, r, req, "Invalid OTP. Please check and try again.", http.StatusBadRequest, isJSONRequest)
 		return
 	}
+
+	if time.Now().After(token.Expiry) {
+		_ = s.storage.DeleteSignupToken(ctx, req.Email)
+		s.handleSignupError(w, r, req, "OTP Expired. Please try again.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
 	_ = s.storage.DeleteSignupToken(ctx, req.Email)
 	// Check if user already exists
 	_, err = s.storage.GetPassword(ctx, req.Email)
