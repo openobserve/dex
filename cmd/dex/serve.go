@@ -301,6 +301,7 @@ func runServe(options serveOptions) error {
 		AllowedOrigins:             c.Web.AllowedOrigins,
 		AllowedHeaders:             c.Web.AllowedHeaders,
 		Issuer:                     c.Issuer,
+		AppUrl:                     c.AppUrl,
 		Storage:                    s,
 		Web:                        c.Frontend,
 		Logger:                     logger,

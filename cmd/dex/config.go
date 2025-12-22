@@ -33,6 +33,8 @@ type Config struct {
 	Expiry    Expiry    `json:"expiry"`
 	Logger    Logger    `json:"logger"`
 
+	AppUrl string `json:"appUrl"`
+
 	Frontend server.WebConfig `json:"frontend"`
 
 	// StaticConnectors are user defined connectors specified in the ConfigMap
@@ -67,6 +69,7 @@ func (c Config) Validate() error {
 		errMsg string
 	}{
 		{c.Issuer == "", "no issuer specified in config file"},
+		{c.AppUrl == "", "no app url specified in config file"},
 		{!c.EnablePasswordDB && len(c.StaticPasswords) != 0, "cannot specify static passwords without enabling password db"},
 		{c.EnableSignup && !c.EnablePasswordDB, "cannot enable signup without enabling password db"},
 		{c.Storage.Config == nil, "no storage supplied in config file"},

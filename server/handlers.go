@@ -352,7 +352,7 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == storage.ErrNotFound {
 			s.logger.ErrorContext(r.Context(), "invalid 'state' parameter provided", "err", err)
-			http.Redirect(w, r, s.issuerURL.String(), http.StatusTemporaryRedirect)
+			http.Redirect(w, r, s.appUrl.String(), http.StatusTemporaryRedirect)
 			return
 		}
 		s.logger.ErrorContext(r.Context(), "failed to get auth request", "err", err)
@@ -455,7 +455,7 @@ func (s *Server) handleConnectorCallback(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		if err == storage.ErrNotFound {
 			s.logger.ErrorContext(r.Context(), "invalid 'state' parameter provided", "err", err)
-			http.Redirect(w, r, s.issuerURL.String(), http.StatusTemporaryRedirect)
+			http.Redirect(w, r, s.appUrl.String(), http.StatusTemporaryRedirect)
 			return
 		}
 		s.logger.ErrorContext(r.Context(), "failed to get auth request", "err", err)

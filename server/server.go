@@ -65,6 +65,7 @@ type Connector struct {
 // Multiple servers using the same storage are expected to be configured identically.
 type Config struct {
 	Issuer string
+	AppUrl string
 
 	// The backing persistence layer.
 	Storage storage.Storage
@@ -177,6 +178,7 @@ func value(val, defaultValue time.Duration) time.Duration {
 // Server is the top level object.
 type Server struct {
 	issuerURL url.URL
+	appUrl    url.URL
 
 	// mutex for the connectors map.
 	mu sync.Mutex
