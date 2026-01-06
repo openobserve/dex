@@ -111,6 +111,13 @@ type Config struct {
 	// If enabled, allows users to sign up with email and password via REST API
 	EnableSignup bool
 
+	// smtp config for sending emails
+	SmtpHost     string
+	SmtpPort     int
+	SmtpSender   string
+	SmtpUser     string
+	SmtpPassword string
+
 	GCFrequency time.Duration // Defaults to 5 minutes
 
 	// RegistrationToken is an optional bearer token required for dynamic client registration.
@@ -200,6 +207,12 @@ type Server struct {
 
 	// If enabled, allows users to sign up with email and password
 	enableSignup bool
+
+	SmtpHost     string
+	SmtpPort     int
+	SmtpSender   string
+	SmtpUser     string
+	SmtpPassword string
 
 	// Optional bearer token for client registration endpoint
 	registrationToken string
@@ -335,6 +348,11 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		templates:              tmpls,
 		passwordConnector:      c.PasswordConnector,
 		enableSignup:           c.EnableSignup,
+		SmtpHost:               c.SmtpHost,
+		SmtpPort:               c.SmtpPort,
+		SmtpSender:             c.SmtpSender,
+		SmtpUser:               c.SmtpUser,
+		SmtpPassword:           c.SmtpPassword,
 		registrationToken:      c.RegistrationToken,
 		logger:                 c.Logger,
 		hiddenConnectors:       c.HiddenConnectors,
@@ -501,6 +519,7 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 	handleWithCORS("/token/introspect", s.handleIntrospect)
 	handleWithCORS("/register", s.handleClientRegistration)
 	handleWithCORS("/signup", s.handleSignup)
+	handleWithCORS("/signup-token", s.handleSignupToken)
 	handleFunc("/auth", s.handleAuthorization)
 	handleFunc("/auth/{connector}", s.handleConnectorLogin)
 	handleFunc("/auth/{connector}/login", s.handlePasswordLogin)

@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/dexidp/dex/storage/ent/db/offlinesession"
@@ -17,6 +19,7 @@ type OfflineSessionCreate struct {
 	config
 	mutation *OfflineSessionMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetUserID sets the "user_id" field.
@@ -138,6 +141,7 @@ func (_c *OfflineSessionCreate) createSpec() (*OfflineSession, *sqlgraph.CreateS
 		_node = &OfflineSession{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(offlinesession.Table, sqlgraph.NewFieldSpec(offlinesession.FieldID, field.TypeString))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -161,11 +165,264 @@ func (_c *OfflineSessionCreate) createSpec() (*OfflineSession, *sqlgraph.CreateS
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.OfflineSession.Create().
+//		SetUserID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.OfflineSessionUpsert) {
+//			SetUserID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *OfflineSessionCreate) OnConflict(opts ...sql.ConflictOption) *OfflineSessionUpsertOne {
+	_c.conflict = opts
+	return &OfflineSessionUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.OfflineSession.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *OfflineSessionCreate) OnConflictColumns(columns ...string) *OfflineSessionUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &OfflineSessionUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// OfflineSessionUpsertOne is the builder for "upsert"-ing
+	//  one OfflineSession node.
+	OfflineSessionUpsertOne struct {
+		create *OfflineSessionCreate
+	}
+
+	// OfflineSessionUpsert is the "OnConflict" setter.
+	OfflineSessionUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetUserID sets the "user_id" field.
+func (u *OfflineSessionUpsert) SetUserID(v string) *OfflineSessionUpsert {
+	u.Set(offlinesession.FieldUserID, v)
+	return u
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *OfflineSessionUpsert) UpdateUserID() *OfflineSessionUpsert {
+	u.SetExcluded(offlinesession.FieldUserID)
+	return u
+}
+
+// SetConnID sets the "conn_id" field.
+func (u *OfflineSessionUpsert) SetConnID(v string) *OfflineSessionUpsert {
+	u.Set(offlinesession.FieldConnID, v)
+	return u
+}
+
+// UpdateConnID sets the "conn_id" field to the value that was provided on create.
+func (u *OfflineSessionUpsert) UpdateConnID() *OfflineSessionUpsert {
+	u.SetExcluded(offlinesession.FieldConnID)
+	return u
+}
+
+// SetRefresh sets the "refresh" field.
+func (u *OfflineSessionUpsert) SetRefresh(v []byte) *OfflineSessionUpsert {
+	u.Set(offlinesession.FieldRefresh, v)
+	return u
+}
+
+// UpdateRefresh sets the "refresh" field to the value that was provided on create.
+func (u *OfflineSessionUpsert) UpdateRefresh() *OfflineSessionUpsert {
+	u.SetExcluded(offlinesession.FieldRefresh)
+	return u
+}
+
+// SetConnectorData sets the "connector_data" field.
+func (u *OfflineSessionUpsert) SetConnectorData(v []byte) *OfflineSessionUpsert {
+	u.Set(offlinesession.FieldConnectorData, v)
+	return u
+}
+
+// UpdateConnectorData sets the "connector_data" field to the value that was provided on create.
+func (u *OfflineSessionUpsert) UpdateConnectorData() *OfflineSessionUpsert {
+	u.SetExcluded(offlinesession.FieldConnectorData)
+	return u
+}
+
+// ClearConnectorData clears the value of the "connector_data" field.
+func (u *OfflineSessionUpsert) ClearConnectorData() *OfflineSessionUpsert {
+	u.SetNull(offlinesession.FieldConnectorData)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.OfflineSession.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(offlinesession.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *OfflineSessionUpsertOne) UpdateNewValues() *OfflineSessionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(offlinesession.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.OfflineSession.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *OfflineSessionUpsertOne) Ignore() *OfflineSessionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *OfflineSessionUpsertOne) DoNothing() *OfflineSessionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the OfflineSessionCreate.OnConflict
+// documentation for more info.
+func (u *OfflineSessionUpsertOne) Update(set func(*OfflineSessionUpsert)) *OfflineSessionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&OfflineSessionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUserID sets the "user_id" field.
+func (u *OfflineSessionUpsertOne) SetUserID(v string) *OfflineSessionUpsertOne {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *OfflineSessionUpsertOne) UpdateUserID() *OfflineSessionUpsertOne {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// SetConnID sets the "conn_id" field.
+func (u *OfflineSessionUpsertOne) SetConnID(v string) *OfflineSessionUpsertOne {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.SetConnID(v)
+	})
+}
+
+// UpdateConnID sets the "conn_id" field to the value that was provided on create.
+func (u *OfflineSessionUpsertOne) UpdateConnID() *OfflineSessionUpsertOne {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.UpdateConnID()
+	})
+}
+
+// SetRefresh sets the "refresh" field.
+func (u *OfflineSessionUpsertOne) SetRefresh(v []byte) *OfflineSessionUpsertOne {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.SetRefresh(v)
+	})
+}
+
+// UpdateRefresh sets the "refresh" field to the value that was provided on create.
+func (u *OfflineSessionUpsertOne) UpdateRefresh() *OfflineSessionUpsertOne {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.UpdateRefresh()
+	})
+}
+
+// SetConnectorData sets the "connector_data" field.
+func (u *OfflineSessionUpsertOne) SetConnectorData(v []byte) *OfflineSessionUpsertOne {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.SetConnectorData(v)
+	})
+}
+
+// UpdateConnectorData sets the "connector_data" field to the value that was provided on create.
+func (u *OfflineSessionUpsertOne) UpdateConnectorData() *OfflineSessionUpsertOne {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.UpdateConnectorData()
+	})
+}
+
+// ClearConnectorData clears the value of the "connector_data" field.
+func (u *OfflineSessionUpsertOne) ClearConnectorData() *OfflineSessionUpsertOne {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.ClearConnectorData()
+	})
+}
+
+// Exec executes the query.
+func (u *OfflineSessionUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for OfflineSessionCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *OfflineSessionUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *OfflineSessionUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("db: OfflineSessionUpsertOne.ID is not supported by MySQL driver. Use OfflineSessionUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *OfflineSessionUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // OfflineSessionCreateBulk is the builder for creating many OfflineSession entities in bulk.
 type OfflineSessionCreateBulk struct {
 	config
 	err      error
 	builders []*OfflineSessionCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the OfflineSession entities in the database.
@@ -194,6 +451,7 @@ func (_c *OfflineSessionCreateBulk) Save(ctx context.Context) ([]*OfflineSession
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -240,6 +498,183 @@ func (_c *OfflineSessionCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *OfflineSessionCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.OfflineSession.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.OfflineSessionUpsert) {
+//			SetUserID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *OfflineSessionCreateBulk) OnConflict(opts ...sql.ConflictOption) *OfflineSessionUpsertBulk {
+	_c.conflict = opts
+	return &OfflineSessionUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.OfflineSession.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *OfflineSessionCreateBulk) OnConflictColumns(columns ...string) *OfflineSessionUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &OfflineSessionUpsertBulk{
+		create: _c,
+	}
+}
+
+// OfflineSessionUpsertBulk is the builder for "upsert"-ing
+// a bulk of OfflineSession nodes.
+type OfflineSessionUpsertBulk struct {
+	create *OfflineSessionCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.OfflineSession.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(offlinesession.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *OfflineSessionUpsertBulk) UpdateNewValues() *OfflineSessionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(offlinesession.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.OfflineSession.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *OfflineSessionUpsertBulk) Ignore() *OfflineSessionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *OfflineSessionUpsertBulk) DoNothing() *OfflineSessionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the OfflineSessionCreateBulk.OnConflict
+// documentation for more info.
+func (u *OfflineSessionUpsertBulk) Update(set func(*OfflineSessionUpsert)) *OfflineSessionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&OfflineSessionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUserID sets the "user_id" field.
+func (u *OfflineSessionUpsertBulk) SetUserID(v string) *OfflineSessionUpsertBulk {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *OfflineSessionUpsertBulk) UpdateUserID() *OfflineSessionUpsertBulk {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// SetConnID sets the "conn_id" field.
+func (u *OfflineSessionUpsertBulk) SetConnID(v string) *OfflineSessionUpsertBulk {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.SetConnID(v)
+	})
+}
+
+// UpdateConnID sets the "conn_id" field to the value that was provided on create.
+func (u *OfflineSessionUpsertBulk) UpdateConnID() *OfflineSessionUpsertBulk {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.UpdateConnID()
+	})
+}
+
+// SetRefresh sets the "refresh" field.
+func (u *OfflineSessionUpsertBulk) SetRefresh(v []byte) *OfflineSessionUpsertBulk {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.SetRefresh(v)
+	})
+}
+
+// UpdateRefresh sets the "refresh" field to the value that was provided on create.
+func (u *OfflineSessionUpsertBulk) UpdateRefresh() *OfflineSessionUpsertBulk {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.UpdateRefresh()
+	})
+}
+
+// SetConnectorData sets the "connector_data" field.
+func (u *OfflineSessionUpsertBulk) SetConnectorData(v []byte) *OfflineSessionUpsertBulk {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.SetConnectorData(v)
+	})
+}
+
+// UpdateConnectorData sets the "connector_data" field to the value that was provided on create.
+func (u *OfflineSessionUpsertBulk) UpdateConnectorData() *OfflineSessionUpsertBulk {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.UpdateConnectorData()
+	})
+}
+
+// ClearConnectorData clears the value of the "connector_data" field.
+func (u *OfflineSessionUpsertBulk) ClearConnectorData() *OfflineSessionUpsertBulk {
+	return u.Update(func(s *OfflineSessionUpsert) {
+		s.ClearConnectorData()
+	})
+}
+
+// Exec executes the query.
+func (u *OfflineSessionUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("db: OnConflict was set for builder %d. Set it on the OfflineSessionCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("db: missing options for OfflineSessionCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *OfflineSessionUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

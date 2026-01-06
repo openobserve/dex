@@ -146,6 +146,15 @@ func toStoragePassword(p *db.Password) storage.Password {
 	}
 }
 
+func toStorageSignupToken(t *db.SignupToken) storage.SignupToken {
+	return storage.SignupToken{
+		Email:           t.Email,
+		CsrfToken:       t.CsrfToken,
+		ValidationToken: t.ValidationToken,
+		Expiry:          t.Expiry,
+	}
+}
+
 func toStorageDeviceRequest(r *db.DeviceRequest) storage.DeviceRequest {
 	return storage.DeviceRequest{
 		UserCode:     strings.ToUpper(r.UserCode),

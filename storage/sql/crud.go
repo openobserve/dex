@@ -121,6 +121,14 @@ func (c *conn) GarbageCollect(ctc context.Context, now time.Time) (storage.GCRes
 		result.DeviceTokens = n
 	}
 
+	r, err = c.Exec(`delete from signup_tokens where expiry < $1`, now)
+	if err != nil {
+		return result, fmt.Errorf("gc signup_tokens: %v", err)
+	}
+	if n, err := r.RowsAffected(); err == nil {
+		result.SignupTokens = n
+	}
+
 	return result, err
 }
 
@@ -691,6 +699,55 @@ func scanPassword(s scanner) (p storage.Password, err error) {
 	return p, nil
 }
 
+func (c *conn) CreateSignupToken(ctx context.Context, t storage.SignupToken) error {
+	t.Email = strings.ToLower(t.Email)
+	_, err := c.Exec(`
+		insert into signup_tokens (
+			email, csrf_token, validation_token, expiry
+		)
+		values (
+			$1, $2, $3, $4
+		)
+		on conflict (email) do update
+		set csrf_token = EXCLUDED.csrf_token, validation_token= EXCLUDED.validation_token, expiry = EXCLUDED.expiry
+		;
+	`,
+		t.Email, t.CsrfToken, t.ValidationToken, t.Expiry,
+	)
+	if err != nil {
+		if c.alreadyExistsCheck(err) {
+			return storage.ErrAlreadyExists
+		}
+		return fmt.Errorf("insert signup token: %v", err)
+	}
+	return nil
+}
+
+func (c *conn) GetSignupToken(ctx context.Context, email string) (storage.SignupToken, error) {
+	return getSignupToken(ctx, c, email)
+}
+
+func getSignupToken(ctx context.Context, q querier, email string) (p storage.SignupToken, err error) {
+	return scanSignupToken(q.QueryRow(`
+		select
+			email, csrf_token, validation_token, expiry
+		from signup_tokens where email = $1;
+	`, strings.ToLower(email)))
+}
+
+func scanSignupToken(s scanner) (p storage.SignupToken, err error) {
+	err = s.Scan(
+		&p.Email, &p.CsrfToken, &p.ValidationToken, &p.Expiry,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return p, storage.ErrNotFound
+		}
+		return p, fmt.Errorf("select signup_tokens: %v", err)
+	}
+	return p, nil
+}
+
 func (c *conn) CreateOfflineSessions(ctx context.Context, s storage.OfflineSessions) error {
 	_, err := c.Exec(`
 		insert into offline_session (
@@ -886,6 +943,10 @@ func (c *conn) DeletePassword(ctx context.Context, email string) error {
 
 func (c *conn) DeleteConnector(ctx context.Context, id string) error {
 	return c.delete("connector", "id", id)
+}
+
+func (c *conn) DeleteSignupToken(ctx context.Context, email string) error {
+	return c.delete("signup_tokens", "email", email)
 }
 
 func (c *conn) DeleteOfflineSessions(ctx context.Context, userID string, connID string) error {

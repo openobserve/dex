@@ -3,9 +3,11 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/mail"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -17,6 +19,12 @@ type signupRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 	Username string `json:"username"`
+	Token    string `json:"token"`
+	Csrf     string `json:"csrf"`
+}
+
+type signupTokenRequest struct {
+	Email string `json:"email"`
 }
 
 // signupResponse represents a user signup response
@@ -25,6 +33,12 @@ type signupResponse struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
 	Message  string `json:"message"`
+}
+
+type signupTokenResponse struct {
+	Email     string    `json:"email"`
+	CsrfToken string    `json:"csrfToken"`
+	Expiry    time.Time `json:"expiry"`
 }
 
 // signupErrorResponse represents an error response for signup
@@ -52,7 +66,8 @@ func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 		// Show signup form
 		backLink := r.URL.Query().Get("back")
 		if backLink == "" {
-			backLink = s.absPath("/auth")
+			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
+			backLink = s.absPath(backPath)
 		}
 		if err := s.templates.signup(r, w, r.URL.String(), "", "", "", false, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
@@ -72,6 +87,13 @@ func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 				req.Email = r.FormValue("email")
 				req.Password = r.FormValue("password")
 				req.Username = r.FormValue("username")
+				req.Token = r.FormValue("token")
+				req.Csrf = r.FormValue("csrf")
+
+				if req.Token == "" || req.Csrf == "" {
+					s.signupErrHelper(w, "invalid_request", "Missing Token", http.StatusBadRequest)
+					return
+				}
 			} else {
 				// True JSON request
 				r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1MB limit
@@ -92,6 +114,8 @@ func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 			req.Email = r.FormValue("email")
 			req.Password = r.FormValue("password")
 			req.Username = r.FormValue("username")
+			req.Token = r.FormValue("token")
+			req.Csrf = r.FormValue("csrf")
 		}
 
 		s.processSignup(w, r, ctx, req, isJSONRequest)
@@ -111,8 +135,32 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 		return
 	}
 
+	token, err := s.storage.GetSignupToken(ctx, req.Email)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "validation token not found", "err", err)
+		s.handleSignupError(w, r, req, "OTP not found or expired. Please request a new OTP.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
+	if req.Csrf != token.CsrfToken {
+		s.handleSignupError(w, r, req, "Invalid session. Please request a new OTP.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
+	if req.Token != token.ValidationToken {
+		s.handleSignupError(w, r, req, "Invalid OTP. Please check and try again.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
+	if time.Now().After(token.Expiry) {
+		_ = s.storage.DeleteSignupToken(ctx, req.Email)
+		s.handleSignupError(w, r, req, "OTP Expired. Please try again.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
+	_ = s.storage.DeleteSignupToken(ctx, req.Email)
 	// Check if user already exists
-	_, err := s.storage.GetPassword(ctx, req.Email)
+	_, err = s.storage.GetPassword(ctx, req.Email)
 	if err == nil {
 		s.handleSignupError(w, r, req, "User with this email already exists", http.StatusConflict, isJSONRequest)
 		return
@@ -185,7 +233,8 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 		// Redirect to login page with success message
 		backLink := r.URL.Query().Get("back")
 		if backLink == "" {
-			backLink = s.absPath("/auth/local")
+			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
+			backLink = s.absPath(backPath)
 		}
 		http.Redirect(w, r, backLink, http.StatusSeeOther)
 	}
@@ -198,7 +247,8 @@ func (s *Server) handleSignupError(w http.ResponseWriter, r *http.Request, req s
 	} else {
 		backLink := r.URL.Query().Get("back")
 		if backLink == "" {
-			backLink = s.absPath("/auth")
+			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
+			backLink = s.absPath(backPath)
 		}
 		if err := s.templates.signup(r, w, r.URL.String(), req.Email, req.Username, errorMsg, true, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
@@ -218,6 +268,11 @@ func (s *Server) validateSignupRequest(req signupRequest) (string, int) {
 		return "Invalid email format", http.StatusBadRequest
 	}
 
+	// Validate username
+	if req.Username == "" {
+		return "Username is required", http.StatusBadRequest
+	}
+
 	// Validate password
 	if req.Password == "" {
 		return "Password is required", http.StatusBadRequest
@@ -226,11 +281,6 @@ func (s *Server) validateSignupRequest(req signupRequest) (string, int) {
 	// Validate password strength (minimum 8 characters)
 	if len(req.Password) < 8 {
 		return "Password must be at least 8 characters long", http.StatusBadRequest
-	}
-
-	// Validate username
-	if req.Username == "" {
-		return "Username is required", http.StatusBadRequest
 	}
 
 	return "", 0
@@ -248,5 +298,78 @@ func (s *Server) signupErrHelper(w http.ResponseWriter, errorType, description s
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		s.logger.Error("signup error response", "err", err)
+	}
+}
+
+// handleSignup allows users to sign up with email and password via UI or API
+func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Check if signup is enabled
+	if !s.enableSignup {
+		s.signupErrHelper(w, "access_denied", "User signup is disabled", http.StatusForbidden)
+		return
+	}
+	if r.Method != http.MethodPost || r.Header.Get("Content-Type") != "application/json" {
+		s.renderError(r, w, http.StatusBadRequest, "Invalid method or content type.")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodPost:
+		// Handle both HTML form and JSON submissions
+		var req signupTokenRequest
+
+		r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1MB limit
+		decoder := json.NewDecoder(r.Body)
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&req); err != nil {
+			s.signupErrHelper(w, "invalid_request", "Invalid JSON payload", http.StatusBadRequest)
+			return
+		}
+
+		if _, err := mail.ParseAddress(req.Email); err != nil {
+			s.signupErrHelper(w, "invalid_request", "Invalid Email format", http.StatusBadRequest)
+		}
+		csrf := getRandomCode(16)
+		token := getRandomCode(6)
+		exp := time.Now().Add(time.Duration(5) * time.Minute)
+		signupToken := storage.SignupToken{
+			Email:           req.Email,
+			CsrfToken:       csrf,
+			ValidationToken: token,
+			Expiry:          exp,
+		}
+		if err := s.storage.CreateSignupToken(ctx, signupToken); err != nil {
+			if err == storage.ErrAlreadyExists {
+				s.signupErrHelper(w, "Internal_server_error", "Error creating signup token", http.StatusInternalServerError)
+				return
+			}
+			s.logger.ErrorContext(ctx, "failed to create signup token", "err", err)
+			return
+		}
+
+		body := fmt.Sprintf("Hello,<br/>The email validation code for signup to openobserve cloud is<br/><h2>%s</h2><br/>Please enter it in the signup form before submitting.<br/>This code is valid for 5 minutes.<br/>Regards,<br/>Openobserve Team.", token)
+		err := sendEmail(s, req.Email, "Email validation Token for Openobserve Cloud", body)
+		if err != nil {
+			s.logger.ErrorContext(ctx, "failed to send token email", "err", err)
+			s.signupErrHelper(w, "invalid_request", "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		resp := signupTokenResponse{
+			Email:     req.Email,
+			CsrfToken: signupToken.CsrfToken,
+			Expiry:    signupToken.Expiry,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			s.logger.ErrorContext(ctx, "failed to encode signup token response", "err", err)
+		}
+		return
+	default:
+		s.signupErrHelper(w, "invalid_request", "Method not allowed", http.StatusMethodNotAllowed)
+		return
 	}
 }
