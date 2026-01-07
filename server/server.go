@@ -118,6 +118,10 @@ type Config struct {
 	SmtpUser     string
 	SmtpPassword string
 
+	// Nandi email validation
+	EnableEmailValidation    bool
+	EmailValidationServerUrl string
+
 	GCFrequency time.Duration // Defaults to 5 minutes
 
 	// RegistrationToken is an optional bearer token required for dynamic client registration.
@@ -213,6 +217,9 @@ type Server struct {
 	SmtpSender   string
 	SmtpUser     string
 	SmtpPassword string
+
+	EnableEmailValidation    bool
+	EmailValidationServerUrl string
 
 	// Optional bearer token for client registration endpoint
 	registrationToken string
@@ -333,29 +340,31 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 	}
 
 	s := &Server{
-		issuerURL:              *issuerURL,
-		connectors:             make(map[string]Connector),
-		storage:                newKeyCacher(c.Storage, now),
-		supportedResponseTypes: supportedRes,
-		supportedGrantTypes:    supportedGrants,
-		idTokensValidFor:       value(c.IDTokensValidFor, 24*time.Hour),
-		authRequestsValidFor:   value(c.AuthRequestsValidFor, 24*time.Hour),
-		deviceRequestsValidFor: value(c.DeviceRequestsValidFor, 5*time.Minute),
-		refreshTokenPolicy:     c.RefreshTokenPolicy,
-		skipApproval:           c.SkipApprovalScreen,
-		alwaysShowLogin:        c.AlwaysShowLoginScreen,
-		now:                    now,
-		templates:              tmpls,
-		passwordConnector:      c.PasswordConnector,
-		enableSignup:           c.EnableSignup,
-		SmtpHost:               c.SmtpHost,
-		SmtpPort:               c.SmtpPort,
-		SmtpSender:             c.SmtpSender,
-		SmtpUser:               c.SmtpUser,
-		SmtpPassword:           c.SmtpPassword,
-		registrationToken:      c.RegistrationToken,
-		logger:                 c.Logger,
-		hiddenConnectors:       c.HiddenConnectors,
+		issuerURL:                *issuerURL,
+		connectors:               make(map[string]Connector),
+		storage:                  newKeyCacher(c.Storage, now),
+		supportedResponseTypes:   supportedRes,
+		supportedGrantTypes:      supportedGrants,
+		idTokensValidFor:         value(c.IDTokensValidFor, 24*time.Hour),
+		authRequestsValidFor:     value(c.AuthRequestsValidFor, 24*time.Hour),
+		deviceRequestsValidFor:   value(c.DeviceRequestsValidFor, 5*time.Minute),
+		refreshTokenPolicy:       c.RefreshTokenPolicy,
+		skipApproval:             c.SkipApprovalScreen,
+		alwaysShowLogin:          c.AlwaysShowLoginScreen,
+		now:                      now,
+		templates:                tmpls,
+		passwordConnector:        c.PasswordConnector,
+		enableSignup:             c.EnableSignup,
+		SmtpHost:                 c.SmtpHost,
+		SmtpPort:                 c.SmtpPort,
+		SmtpSender:               c.SmtpSender,
+		SmtpUser:                 c.SmtpUser,
+		SmtpPassword:             c.SmtpPassword,
+		EnableEmailValidation:    c.EnableEmailValidation,
+		EmailValidationServerUrl: c.EmailValidationServerUrl,
+		registrationToken:        c.RegistrationToken,
+		logger:                   c.Logger,
+		hiddenConnectors:         c.HiddenConnectors,
 	}
 
 	// Retrieves connector objects in backend storage. This list includes the static connectors

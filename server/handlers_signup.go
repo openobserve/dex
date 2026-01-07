@@ -47,6 +47,40 @@ type signupErrorResponse struct {
 	Description string `json:"error_description"`
 }
 
+type NandiResponse struct {
+	classification string
+}
+
+func (s *Server) isEmailAllowed(ctx context.Context, email string) bool {
+	if !s.EnableEmailValidation {
+		return true
+	}
+	nandiUrl := s.EmailValidationServerUrl
+	parts := strings.Split(email, "@")
+	if len(parts) != 2 {
+		return false
+	}
+	domain := parts[1]
+	url := fmt.Sprintf("%s/api/v1/calssify/%s", nandiUrl, domain)
+	res, err := http.Get(url)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "error checking email domain validity", "err", err)
+		return false
+	}
+	defer res.Body.Close()
+
+	var response NandiResponse
+
+	err = json.NewDecoder(res.Body).Decode(&response)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "error checking email domain validity", "err", err)
+		return false
+	}
+
+	return (response.classification == "allowlisted" || response.classification == "legitimate" || response.classification == "unknown")
+
+}
+
 // handleSignup allows users to sign up with email and password via UI or API
 func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -331,6 +365,18 @@ func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
 		if _, err := mail.ParseAddress(req.Email); err != nil {
 			s.signupErrHelper(w, "invalid_request", "Invalid Email format", http.StatusBadRequest)
 		}
+
+		_, err := s.storage.GetPassword(ctx, req.Email)
+		if err == nil {
+			s.signupErrHelper(w, "invalid_request", "Email already registered", http.StatusConflict)
+			return
+		}
+
+		if !s.isEmailAllowed(ctx, req.Email) {
+			s.signupErrHelper(w, "invalid_request", "Email domain not allowed", http.StatusBadRequest)
+			return
+		}
+
 		csrf := getRandomCode(16)
 		token := getRandomCode(6)
 		exp := time.Now().Add(time.Duration(5) * time.Minute)
@@ -349,8 +395,8 @@ func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		body := fmt.Sprintf("Hello,<br/>The email validation code for signup to openobserve cloud is<br/><h2>%s</h2><br/>Please enter it in the signup form before submitting.<br/>This code is valid for 5 minutes.<br/>Regards,<br/>Openobserve Team.", token)
-		err := sendEmail(s, req.Email, "Email validation Token for Openobserve Cloud", body)
+		body := fmt.Sprintf("Hello,<br/>The email validation code for signup to Openobserve is<br/><h2>%s</h2><br/>Please enter it in the signup form before submitting.<br/>This code is valid for 5 minutes.<br/>Regards,<br/>Openobserve Team.", token)
+		err = sendEmail(s, req.Email, "Email validation Token for Openobserve", body)
 		if err != nil {
 			s.logger.ErrorContext(ctx, "failed to send token email", "err", err)
 			s.signupErrHelper(w, "invalid_request", "Method not allowed", http.StatusMethodNotAllowed)
