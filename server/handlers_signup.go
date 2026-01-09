@@ -68,7 +68,7 @@ func (s *Server) isEmailAllowed(ctx context.Context, email string) bool {
 		return false
 	}
 	domain := parts[1]
-	url := fmt.Sprintf("%s/api/v1/calssify/%s", nandiUrl, domain)
+	url := fmt.Sprintf("%s/api/v1/classify/%s", nandiUrl, domain)
 	res, err := http.Get(url)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "error checking email domain validity", "err", err)
@@ -85,7 +85,6 @@ func (s *Server) isEmailAllowed(ctx context.Context, email string) bool {
 	}
 
 	return (response.classification == "allowlisted" || response.classification == "legitimate" || response.classification == "unknown")
-
 }
 
 // handleSignup allows users to sign up with email and password via UI or API
@@ -533,7 +532,6 @@ func (s *Server) handlePasswordReset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) processPasswordReset(w http.ResponseWriter, r *http.Request, ctx context.Context, req passwordResetRequest, isJSONRequest bool) {
-
 	token, err := s.storage.GetSignupToken(ctx, req.Email)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "password reset validation token not found", "err", err)
