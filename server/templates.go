@@ -291,31 +291,30 @@ func (t *templates) deviceSuccess(r *http.Request, w http.ResponseWriter, client
 	return renderTemplate(w, t.deviceSuccessTmpl, data)
 }
 
-func (t *templates) login(r *http.Request, w http.ResponseWriter, connectors []connectorInfo, enableSignup bool) error {
+func (t *templates) login(r *http.Request, w http.ResponseWriter, connectors []connectorInfo) error {
 	sort.Sort(byName(connectors))
 	data := struct {
-		Connectors        []connectorInfo
-		ReqPath           string
-		SignupPath        template.URL
-		ResetPasswordPath template.URL
-		EnableSignup      bool
-	}{connectors, r.URL.Path, template.URL(fmt.Sprintf("signup?%s", r.URL.Query().Encode())), template.URL(fmt.Sprintf("password_reset?%s", r.URL.Query().Encode())), enableSignup}
+		Connectors []connectorInfo
+		ReqPath    string
+	}{connectors, r.URL.Path}
 	return renderTemplate(w, t.loginTmpl, data)
 }
 
-func (t *templates) password(r *http.Request, w http.ResponseWriter, postURL, lastUsername, usernamePrompt string, lastWasInvalid bool, backLink string, enableSignup bool) error {
+func (t *templates) password(r *http.Request, w http.ResponseWriter, postURL, lastUsername, usernamePrompt string, lastWasInvalid bool, backLink string, signupPath string, resetPasswordPath string, enableSignup bool) error {
 	if lastWasInvalid {
 		w.WriteHeader(http.StatusUnauthorized)
 	}
 	data := struct {
-		PostURL        string
-		BackLink       string
-		Username       string
-		UsernamePrompt string
-		Invalid        bool
-		ReqPath        string
-		EnableSignup   bool
-	}{postURL, backLink, lastUsername, usernamePrompt, lastWasInvalid, r.URL.Path, enableSignup}
+		PostURL           string
+		BackLink          string
+		Username          string
+		UsernamePrompt    string
+		Invalid           bool
+		ReqPath           string
+		SignupPath        template.URL
+		ResetPasswordPath template.URL
+		EnableSignup      bool
+	}{postURL, backLink, lastUsername, usernamePrompt, lastWasInvalid, r.URL.Path, template.URL(signupPath), template.URL(resetPasswordPath), enableSignup}
 	return renderTemplate(w, t.passwordTmpl, data)
 }
 

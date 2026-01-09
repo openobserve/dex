@@ -214,7 +214,7 @@ func (s *Server) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := s.templates.login(r, w, connectorInfos, s.enableSignup); err != nil {
+	if err := s.templates.login(r, w, connectorInfos); err != nil {
 		s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 	}
 }
@@ -385,9 +385,12 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	signupPath := fmt.Sprintf("%s?%s", s.absPath("/signup"), r.URL.Query().Encode())
+	resetPasswordPath := fmt.Sprintf("%s?%s", s.absPath("/password_reset"), r.URL.Query().Encode())
+
 	switch r.Method {
 	case http.MethodGet:
-		if err := s.templates.password(r, w, r.URL.String(), "", usernamePrompt(pwConn), false, backLink, s.enableSignup); err != nil {
+		if err := s.templates.password(r, w, r.URL.String(), "", usernamePrompt(pwConn), false, backLink, signupPath, resetPasswordPath, s.enableSignup); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 	case http.MethodPost:
@@ -402,7 +405,7 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !ok {
-			if err := s.templates.password(r, w, r.URL.String(), username, usernamePrompt(pwConn), true, backLink, s.enableSignup); err != nil {
+			if err := s.templates.password(r, w, r.URL.String(), username, usernamePrompt(pwConn), true, backLink, signupPath, resetPasswordPath, s.enableSignup); err != nil {
 				s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 			}
 			s.logger.ErrorContext(r.Context(), "failed login attempt: Invalid credentials.", "user", username)

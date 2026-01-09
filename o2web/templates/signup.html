@@ -1316,6 +1316,12 @@
     })
     .then((r) => r.json())
     .then((v) => {
+      if(v.error){
+        tokenBtn.disabled = false;
+        tokenBtn.textContent = 'Get OTP';
+        showToast(v.error_description || 'Error in sending OTP', 'error');
+        return;
+      }
       document.querySelector("#csrf").value = v.csrfToken;
       tokenBtn.textContent = '✓ OTP Sent';
       tokenBtn.style.background = 'rgba(34, 197, 94, 0.1)';
