@@ -54,10 +54,6 @@ type signupErrorResponse struct {
 	Description string `json:"error_description"`
 }
 
-type NandiResponse struct {
-	classification string
-}
-
 func (s *Server) isEmailAllowed(ctx context.Context, email string) bool {
 	if !s.EnableEmailValidation {
 		return true
@@ -76,15 +72,21 @@ func (s *Server) isEmailAllowed(ctx context.Context, email string) bool {
 	}
 	defer res.Body.Close()
 
-	var response NandiResponse
-
+	// for some reason trying to create a type for this didn't work,
+	// so used this method, as the response structure is pretty fixed
+	var response map[string]interface{}
 	err = json.NewDecoder(res.Body).Decode(&response)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "error checking email domain validity", "err", err)
 		return false
 	}
 
-	return (response.classification == "allowlisted" || response.classification == "legitimate" || response.classification == "unknown")
+	classification, ok := response["classification"].(string)
+	if !ok {
+		s.logger.ErrorContext(ctx, "unexpected response from email validation server", "response", response)
+		return false
+	}
+	return (classification == "allowlisted" || classification == "legitimate" || classification == "unknown")
 }
 
 // handleSignup allows users to sign up with email and password via UI or API
