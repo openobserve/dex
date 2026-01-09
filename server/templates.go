@@ -19,6 +19,7 @@ const (
 	tmplLogin         = "login.html"
 	tmplPassword      = "password.html"
 	tmplSignup        = "signup.html"
+	tmplPassowrdReset = "password_reset.html"
 	tmplOOB           = "oob.html"
 	tmplError         = "error.html"
 	tmplDevice        = "device.html"
@@ -30,6 +31,7 @@ var requiredTmpls = []string{
 	tmplLogin,
 	tmplPassword,
 	tmplSignup,
+	tmplPassowrdReset,
 	tmplOOB,
 	tmplError,
 	tmplDevice,
@@ -41,6 +43,7 @@ type templates struct {
 	approvalTmpl      *template.Template
 	passwordTmpl      *template.Template
 	signupTmpl        *template.Template
+	passwordResetTmpl *template.Template
 	oobTmpl           *template.Template
 	errorTmpl         *template.Template
 	deviceTmpl        *template.Template
@@ -169,6 +172,7 @@ func loadTemplates(c webConfig, templatesDir string) (*templates, error) {
 		approvalTmpl:      tmpls.Lookup(tmplApproval),
 		passwordTmpl:      tmpls.Lookup(tmplPassword),
 		signupTmpl:        tmpls.Lookup(tmplSignup),
+		passwordResetTmpl: tmpls.Lookup(tmplPassowrdReset),
 		oobTmpl:           tmpls.Lookup(tmplOOB),
 		errorTmpl:         tmpls.Lookup(tmplError),
 		deviceTmpl:        tmpls.Lookup(tmplDevice),
@@ -290,11 +294,12 @@ func (t *templates) deviceSuccess(r *http.Request, w http.ResponseWriter, client
 func (t *templates) login(r *http.Request, w http.ResponseWriter, connectors []connectorInfo, enableSignup bool) error {
 	sort.Sort(byName(connectors))
 	data := struct {
-		Connectors   []connectorInfo
-		ReqPath      string
-		SignupPath   template.URL
-		EnableSignup bool
-	}{connectors, r.URL.Path, template.URL(fmt.Sprintf("signup?%s", r.URL.Query().Encode())), enableSignup}
+		Connectors        []connectorInfo
+		ReqPath           string
+		SignupPath        template.URL
+		ResetPasswordPath template.URL
+		EnableSignup      bool
+	}{connectors, r.URL.Path, template.URL(fmt.Sprintf("signup?%s", r.URL.Query().Encode())), template.URL(fmt.Sprintf("password_reset?%s", r.URL.Query().Encode())), enableSignup}
 	return renderTemplate(w, t.loginTmpl, data)
 }
 
@@ -328,6 +333,21 @@ func (t *templates) signup(r *http.Request, w http.ResponseWriter, postURL, last
 		ReqPath  string
 	}{postURL, backLink, lastEmail, lastUsername, lastWasInvalid, errorMsg, r.URL.Path}
 	return renderTemplate(w, t.signupTmpl, data)
+}
+
+func (t *templates) passwordReset(r *http.Request, w http.ResponseWriter, postURL, lastEmail, errorMsg string, lastWasInvalid bool, backLink string) error {
+	if lastWasInvalid {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	data := struct {
+		PostURL  string
+		BackLink string
+		Email    string
+		Invalid  bool
+		Error    string
+		ReqPath  string
+	}{postURL, backLink, lastEmail, lastWasInvalid, errorMsg, r.URL.Path}
+	return renderTemplate(w, t.passwordResetTmpl, data)
 }
 
 func (t *templates) approval(r *http.Request, w http.ResponseWriter, authReqID, username, clientName string, scopes []string) error {
