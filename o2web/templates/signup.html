@@ -1021,6 +1021,10 @@
   const usernameInput = document.getElementById('username');
   const tokenInput = document.getElementById('token');
 
+  // Handle OTP generation with 60-second cooldown
+  let otpCooldown = 0;
+  let cooldownInterval = null;
+
   togglePasswordBtn.addEventListener('click', function() {
     if (passwordInput.type === 'password') {
       passwordInput.type = 'text';
@@ -1067,6 +1071,16 @@
     return emailRegex.test(email);
   }
 
+  function resetTokenBtn(){
+    otpCooldown = 0
+    const tokenInput = document.querySelector("#token-btn");
+    tokenInput.disabled = false;
+    tokenInput.textContent = 'Get OTP';
+    tokenInput.style.background = 'rgba(14, 165, 233, 0.1)';
+    tokenInput.style.color = '#38BDF8';
+    tokenInput.style.borderColor = 'rgba(14, 165, 233, 0.3)';
+  }
+
   // Email validation
   emailInput.addEventListener('blur', function() {
     const value = this.value.trim();
@@ -1083,6 +1097,10 @@
     const value = this.value.trim();
     if (value && validateEmail(value)) {
       clearError('email');
+      if(cooldownInterval){
+        clearInterval(cooldownInterval);
+        resetTokenBtn();
+      }
     }
   });
 
@@ -1202,7 +1220,7 @@
     formData.append('username', username);
     formData.append('password', password);
     formData.append('token', token);
-    formData.append('csrf', csrf);
+    formData.append('csrf', csrf);    
 
     // Submit via fetch
     fetch(this.action, {
@@ -1247,10 +1265,6 @@
     });
   };
 
-  // Handle OTP generation with 60-second cooldown
-  let otpCooldown = 0;
-  let cooldownInterval = null;
-
   function startOtpCooldown(tokenBtn) {
     otpCooldown = 60;
     tokenBtn.disabled = true;
@@ -1261,11 +1275,7 @@
         tokenBtn.textContent = `Resend in ${otpCooldown}s`;
       } else {
         clearInterval(cooldownInterval);
-        tokenBtn.disabled = false;
-        tokenBtn.textContent = 'Get OTP';
-        tokenBtn.style.background = 'rgba(14, 165, 233, 0.1)';
-        tokenBtn.style.color = '#38BDF8';
-        tokenBtn.style.borderColor = 'rgba(14, 165, 233, 0.3)';
+        resetTokenBtn();
       }
     }, 1000);
   }
