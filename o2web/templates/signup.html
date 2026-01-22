@@ -915,6 +915,24 @@
             <span class="error-text" id="password-error" style="display: none;"></span>
           </div>
 
+
+          <div class="signup-form-group">
+            <label for="password-confirm" class="signup-form-label">Confirm Password</label>
+            <div class="password-input-wrapper">
+              <input
+                tabindex="3"
+                required
+                id="password-confirm"
+                name="password-confirm"
+                type="password"
+                class="signup-form-input"
+                placeholder="Minimum 8 characters"
+                minlength="8"
+                style="padding-right: 40px;"
+              />
+            </div>
+          </div>
+
           <div class="signup-form-group">
             <label for="token" class="signup-form-label">Verification OTP</label>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -1015,6 +1033,7 @@
   // Handle password visibility toggle
   const togglePasswordBtn = document.getElementById('toggle-password');
   const passwordInput = document.getElementById('password');
+  const passwordConfirmInput = document.getElementById('password-confirm');
   const eyeIcon = document.getElementById('eye-icon');
   const eyeSlashIcon = document.getElementById('eye-slash-icon');
   const emailInput = document.getElementById('email');
@@ -1135,6 +1154,16 @@
     }
   });
 
+  passwordConfirmInput.addEventListener('blur',function () {
+    const pwd = passwordInput.value;
+    const confirmed = this.value;
+    if (pwd !== confirmed){
+      showError('password', 'Two passwords do not match');
+    }else{
+      showSuccess('password');
+    }
+  })
+
   passwordInput.addEventListener('input', function() {
     const value = this.value;
     if (value && value.length >= 8) {
@@ -1169,6 +1198,7 @@
     const email = emailInput.value.trim();
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
+    const confirmedPassword = passwordConfirmInput.value;
     const token = tokenInput.value.trim();
     const csrf = document.querySelector('#csrf').value;
 
@@ -1196,6 +1226,9 @@
       isValid = false;
     } else if (password.length < 8) {
       showError('password', 'Password must be at least 8 characters');
+      isValid = false;
+    }else if( password !== confirmedPassword){
+      showError('password', 'Two passwords do not match');
       isValid = false;
     }
 
@@ -1284,6 +1317,9 @@
     e.preventDefault();
     const emailInput = document.querySelector("#email");
     const tokenInput = document.querySelector("#token");
+
+    const passwordInput = document.querySelector("#password");
+    const passwordConfirmInput = document.querySelector("#password-confirm");
     const tokenBtn = e.target;
 
     if (!emailInput.value) {
@@ -1296,6 +1332,12 @@
     if (!validateEmail(emailInput.value)) {
       showError('email', 'Please enter a valid email address');
       emailInput.focus();
+      return;
+    }
+
+    if (passwordInput.value !== passwordConfirmInput.value){
+      showError('password', 'Two passwords do not match');
+      passwordConfirmInput.focus();
       return;
     }
 
