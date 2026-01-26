@@ -217,6 +217,11 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 		return
 	}
 
+	if len([]byte(req.Password)) > 72 {
+		s.handleSignupError(w, r, req, "Password must not be longer than 72 characters/bytes.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
 	// Hash the password using bcrypt (cost 10 is the default)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -563,6 +568,11 @@ func (s *Server) processPasswordReset(w http.ResponseWriter, r *http.Request, ct
 	if err != nil {
 		s.logger.ErrorContext(ctx, "failed to check existing user", "err", err)
 		s.handlePasswordResetError(w, r, req, "User with this email does not exist", http.StatusConflict, isJSONRequest)
+		return
+	}
+
+	if len([]byte(req.Password)) > 72 {
+		s.handlePasswordResetError(w, r, req, "Password must not be longer than 72 characters/bytes.", http.StatusBadRequest, isJSONRequest)
 		return
 	}
 
