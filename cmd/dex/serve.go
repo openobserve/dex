@@ -302,6 +302,8 @@ func runServe(options serveOptions) error {
 		SmtpSender:                 c.SmtpSender,
 		SmtpUser:                   c.SmtpUser,
 		SmtpPassword:               c.SmtpPassword,
+		EnableEmailValidation:      c.EnableEmailValidation,
+		EmailValidationServerUrl:   c.EmailValidationServerUrl,
 		Headers:                    c.Web.Headers.ToHTTPHeader(),
 		AllowedOrigins:             c.Web.AllowedOrigins,
 		AllowedHeaders:             c.Web.AllowedHeaders,

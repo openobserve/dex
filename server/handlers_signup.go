@@ -23,6 +23,13 @@ type signupRequest struct {
 	Csrf     string `json:"csrf"`
 }
 
+type passwordResetRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Token    string `json:"token"`
+	Csrf     string `json:"csrf"`
+}
+
 type signupTokenRequest struct {
 	Email string `json:"email"`
 }
@@ -45,6 +52,41 @@ type signupTokenResponse struct {
 type signupErrorResponse struct {
 	Error       string `json:"error"`
 	Description string `json:"error_description"`
+}
+
+func (s *Server) isEmailAllowed(ctx context.Context, email string) bool {
+	if !s.EnableEmailValidation {
+		return true
+	}
+	nandiUrl := s.EmailValidationServerUrl
+	parts := strings.Split(email, "@")
+	if len(parts) != 2 {
+		return false
+	}
+	domain := parts[1]
+	url := fmt.Sprintf("%s/api/v1/classify/%s", nandiUrl, domain)
+	res, err := http.Get(url)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "error checking email domain validity", "err", err)
+		return false
+	}
+	defer res.Body.Close()
+
+	// for some reason trying to create a type for this didn't work,
+	// so used this method, as the response structure is pretty fixed
+	var response map[string]interface{}
+	err = json.NewDecoder(res.Body).Decode(&response)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "error checking email domain validity", "err", err)
+		return false
+	}
+
+	classification, ok := response["classification"].(string)
+	if !ok {
+		s.logger.ErrorContext(ctx, "unexpected response from email validation server", "response", response)
+		return false
+	}
+	return (classification == "allowlisted" || classification == "legitimate" || classification == "unknown")
 }
 
 // handleSignup allows users to sign up with email and password via UI or API
@@ -175,6 +217,11 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 		return
 	}
 
+	if len([]byte(req.Password)) > 72 {
+		s.handleSignupError(w, r, req, "Password must not be longer than 72 characters/bytes.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
 	// Hash the password using bcrypt (cost 10 is the default)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -256,6 +303,21 @@ func (s *Server) handleSignupError(w http.ResponseWriter, r *http.Request, req s
 	}
 }
 
+func (s *Server) handlePasswordResetError(w http.ResponseWriter, r *http.Request, req passwordResetRequest, errorMsg string, statusCode int, isJSONRequest bool) {
+	if isJSONRequest {
+		s.passwordResetErrHelper(w, "invalid_request", errorMsg, statusCode)
+	} else {
+		backLink := r.URL.Query().Get("back")
+		if backLink == "" {
+			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
+			backLink = s.absPath(backPath)
+		}
+		if err := s.templates.passwordReset(r, w, r.URL.String(), req.Email, errorMsg, true, backLink); err != nil {
+			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
+		}
+	}
+}
+
 // validateSignupRequest validates the signup request fields
 func (s *Server) validateSignupRequest(req signupRequest) (string, int) {
 	// Validate email
@@ -301,6 +363,20 @@ func (s *Server) signupErrHelper(w http.ResponseWriter, errorType, description s
 	}
 }
 
+func (s *Server) passwordResetErrHelper(w http.ResponseWriter, errorType, description string, statusCode int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+
+	resp := signupErrorResponse{
+		Error:       errorType,
+		Description: description,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		s.logger.Error("password reset error response", "err", err)
+	}
+}
+
 // handleSignup allows users to sign up with email and password via UI or API
 func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -331,6 +407,18 @@ func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
 		if _, err := mail.ParseAddress(req.Email); err != nil {
 			s.signupErrHelper(w, "invalid_request", "Invalid Email format", http.StatusBadRequest)
 		}
+
+		_, err := s.storage.GetPassword(ctx, req.Email)
+		if err == nil {
+			s.signupErrHelper(w, "invalid_request", "Email already registered", http.StatusConflict)
+			return
+		}
+
+		if !s.isEmailAllowed(ctx, req.Email) {
+			s.signupErrHelper(w, "invalid_request", "Email domain not allowed", http.StatusBadRequest)
+			return
+		}
+
 		csrf := getRandomCode(16)
 		token := getRandomCode(6)
 		exp := time.Now().Add(time.Duration(5) * time.Minute)
@@ -349,8 +437,8 @@ func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		body := fmt.Sprintf("Hello,<br/>The email validation code for signup to openobserve cloud is<br/><h2>%s</h2><br/>Please enter it in the signup form before submitting.<br/>This code is valid for 5 minutes.<br/>Regards,<br/>Openobserve Team.", token)
-		err := sendEmail(s, req.Email, "Email validation Token for Openobserve Cloud", body)
+		body := fmt.Sprintf("Hello,<br/>The email validation code for signup to Openobserve is<br/><h2>%s</h2><br/>Please enter it in the signup form before submitting.<br/>This code is valid for 5 minutes.<br/>Regards,<br/>Openobserve Team.", token)
+		err = sendEmail(s, req.Email, "Email validation Token for Openobserve", body)
 		if err != nil {
 			s.logger.ErrorContext(ctx, "failed to send token email", "err", err)
 			s.signupErrHelper(w, "invalid_request", "Method not allowed", http.StatusMethodNotAllowed)
@@ -370,6 +458,250 @@ func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
 		return
 	default:
 		s.signupErrHelper(w, "invalid_request", "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func (s *Server) handlePasswordReset(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Check if signup is enabled
+	if !s.enableSignup {
+		if r.Method == http.MethodGet || r.Header.Get("Content-Type") != "application/json" {
+			s.renderError(r, w, http.StatusForbidden, "User signup is disabled.")
+			return
+		}
+		s.signupErrHelper(w, "access_denied", "User signup is disabled", http.StatusForbidden)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		// Show signup form
+		backLink := r.URL.Query().Get("back")
+		if backLink == "" {
+			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
+			backLink = s.absPath(backPath)
+		}
+		if err := s.templates.passwordReset(r, w, r.URL.String(), "", "", false, backLink); err != nil {
+			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
+		}
+		return
+	case http.MethodPost:
+		// Handle both HTML form and JSON submissions
+		var req passwordResetRequest
+		contentType := r.Header.Get("Content-Type")
+		isJSONRequest := strings.Contains(contentType, "application/json")
+
+		if isJSONRequest {
+			// JSON API request
+			if err := r.ParseForm(); err == nil && r.FormValue("email") != "" {
+				// Actually a form submission with wrong content-type
+				isJSONRequest = false
+				req.Email = r.FormValue("email")
+				req.Password = r.FormValue("password")
+				req.Token = r.FormValue("token")
+				req.Csrf = r.FormValue("csrf")
+
+				if req.Token == "" || req.Csrf == "" {
+					s.signupErrHelper(w, "invalid_request", "Missing Token", http.StatusBadRequest)
+					return
+				}
+			} else {
+				// True JSON request
+				r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1MB limit
+				decoder := json.NewDecoder(r.Body)
+				decoder.DisallowUnknownFields()
+				if err := decoder.Decode(&req); err != nil {
+					s.signupErrHelper(w, "invalid_request", "Invalid JSON payload", http.StatusBadRequest)
+					return
+				}
+			}
+		} else {
+			// HTML form submission
+			if err := r.ParseForm(); err != nil {
+				s.logger.ErrorContext(r.Context(), "failed to parse form", "err", err)
+				s.renderError(r, w, http.StatusBadRequest, "Failed to parse form.")
+				return
+			}
+			req.Email = r.FormValue("email")
+			req.Password = r.FormValue("password")
+			req.Token = r.FormValue("token")
+			req.Csrf = r.FormValue("csrf")
+		}
+
+		s.processPasswordReset(w, r, ctx, req, isJSONRequest)
+		return
+	default:
+		s.signupErrHelper(w, "invalid_request", "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func (s *Server) processPasswordReset(w http.ResponseWriter, r *http.Request, ctx context.Context, req passwordResetRequest, isJSONRequest bool) {
+	token, err := s.storage.GetSignupToken(ctx, req.Email)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "password reset validation token not found", "err", err)
+		s.handlePasswordResetError(w, r, req, "OTP not found or expired. Please request a new OTP.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
+	if req.Csrf != token.CsrfToken {
+		s.handlePasswordResetError(w, r, req, "Invalid session. Please request a new OTP.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
+	if req.Token != token.ValidationToken {
+		s.handlePasswordResetError(w, r, req, "Invalid OTP. Please check and try again.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
+	if time.Now().After(token.Expiry) {
+		_ = s.storage.DeleteSignupToken(ctx, req.Email)
+		s.handlePasswordResetError(w, r, req, "OTP Expired. Please try again.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
+	_ = s.storage.DeleteSignupToken(ctx, req.Email)
+	// Check if user already exists
+	_, err = s.storage.GetPassword(ctx, req.Email)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "failed to check existing user", "err", err)
+		s.handlePasswordResetError(w, r, req, "User with this email does not exist", http.StatusConflict, isJSONRequest)
+		return
+	}
+
+	if len([]byte(req.Password)) > 72 {
+		s.handlePasswordResetError(w, r, req, "Password must not be longer than 72 characters/bytes.", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
+	// Hash the password using bcrypt (cost 10 is the default)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "failed to hash password", "err", err)
+		if isJSONRequest {
+			s.passwordResetErrHelper(w, "server_error", "Failed to process password", http.StatusInternalServerError)
+		} else {
+			s.renderError(r, w, http.StatusInternalServerError, "Failed to process password.")
+		}
+		return
+	}
+
+	updater := func(old storage.Password) (storage.Password, error) {
+		old.Hash = hashedPassword
+		return old, nil
+	}
+
+	// Store the password in the database
+	if err := s.storage.UpdatePassword(ctx, req.Email, updater); err != nil {
+		s.logger.ErrorContext(ctx, "failed to update password", "err", err)
+		if isJSONRequest {
+			s.passwordResetErrHelper(w, "server_error", "Failed to update password", http.StatusInternalServerError)
+		} else {
+			s.renderError(r, w, http.StatusInternalServerError, "Failed to update password.")
+		}
+		return
+	}
+
+	// Log successful reset
+	s.logger.InfoContext(ctx, "user password reset successfully", "email", req.Email)
+
+	// Return success response
+	if isJSONRequest {
+		w.WriteHeader(http.StatusNoContent)
+	} else {
+		// Redirect to login page with success message
+		backLink := r.URL.Query().Get("back")
+		if backLink == "" {
+			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
+			backLink = s.absPath(backPath)
+		}
+		http.Redirect(w, r, backLink, http.StatusSeeOther)
+	}
+}
+
+// handleSignup allows users to sign up with email and password via UI or API
+func (s *Server) handlePasswordResetToken(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Check if signup is enabled
+	if !s.enableSignup {
+		s.passwordResetErrHelper(w, "access_denied", "User signup is disabled", http.StatusForbidden)
+		return
+	}
+	if r.Method != http.MethodPost || r.Header.Get("Content-Type") != "application/json" {
+		s.renderError(r, w, http.StatusBadRequest, "Invalid method or content type.")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodPost:
+		// Handle both HTML form and JSON submissions
+		var req signupTokenRequest
+
+		r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1MB limit
+		decoder := json.NewDecoder(r.Body)
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&req); err != nil {
+			s.passwordResetErrHelper(w, "invalid_request", "Invalid JSON payload", http.StatusBadRequest)
+			return
+		}
+
+		if _, err := mail.ParseAddress(req.Email); err != nil {
+			s.passwordResetErrHelper(w, "invalid_request", "Invalid Email format", http.StatusBadRequest)
+		}
+
+		_, err := s.storage.GetPassword(ctx, req.Email)
+		if err != nil {
+			s.passwordResetErrHelper(w, "invalid_request", "Email not found", http.StatusConflict)
+			return
+		}
+
+		if !s.isEmailAllowed(ctx, req.Email) {
+			s.passwordResetErrHelper(w, "invalid_request", "Email domain not allowed", http.StatusBadRequest)
+			return
+		}
+
+		csrf := getRandomCode(16)
+		token := getRandomCode(6)
+		exp := time.Now().Add(time.Duration(5) * time.Minute)
+		signupToken := storage.SignupToken{
+			Email:           req.Email,
+			CsrfToken:       csrf,
+			ValidationToken: token,
+			Expiry:          exp,
+		}
+		if err := s.storage.CreateSignupToken(ctx, signupToken); err != nil {
+			if err == storage.ErrAlreadyExists {
+				s.passwordResetErrHelper(w, "Internal_server_error", "Error creating password reset token", http.StatusInternalServerError)
+				return
+			}
+			s.logger.ErrorContext(ctx, "failed to create password reset token", "err", err)
+			return
+		}
+
+		body := fmt.Sprintf("Hello,<br/>The email validation code for password reset to Openobserve is<br/><h2>%s</h2><br/>Please enter it in the password reset form before submitting.<br/>This code is valid for 5 minutes.<br/>Regards,<br/>Openobserve Team.", token)
+		err = sendEmail(s, req.Email, "Password reset Token for Openobserve", body)
+		if err != nil {
+			s.logger.ErrorContext(ctx, "failed to send password reset token email", "err", err)
+			s.passwordResetErrHelper(w, "invalid_request", "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		resp := signupTokenResponse{
+			Email:     req.Email,
+			CsrfToken: signupToken.CsrfToken,
+			Expiry:    signupToken.Expiry,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			s.logger.ErrorContext(ctx, "failed to encode password reset token response", "err", err)
+		}
+		return
+	default:
+		s.passwordResetErrHelper(w, "invalid_request", "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 }

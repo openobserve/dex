@@ -61,6 +61,9 @@ type Config struct {
 	SmtpUser     string `json:"smtpUser"`
 	SmtpPassword string `json:"smtpPassword"`
 
+	EnableEmailValidation    bool   `json:"enableEmailValidation"`
+	EmailValidationServerUrl string `json:"emailValidationServerUrl"`
+
 	HiddenConnectors []string `json:"hiddenConnectors"`
 }
 
@@ -75,6 +78,7 @@ func (c Config) Validate() error {
 		{!c.EnablePasswordDB && len(c.StaticPasswords) != 0, "cannot specify static passwords without enabling password db"},
 		{c.EnableSignup && !c.EnablePasswordDB, "cannot enable signup without enabling password db"},
 		{c.EnableSignup && (c.SmtpHost == "" || c.SmtpUser == "" || c.SmtpPassword == "" || c.SmtpSender == ""), "cannot enable signup with empty smtp credentials"},
+		{c.EnableEmailValidation && c.EmailValidationServerUrl == "", "cannot enable email validation without email validation url"},
 		{c.Storage.Config == nil, "no storage supplied in config file"},
 		{c.Web.HTTP == "" && c.Web.HTTPS == "", "must supply a HTTP/HTTPS  address to listen on"},
 		{c.Web.HTTPS != "" && c.Web.TLSCert == "", "no cert specified for HTTPS"},
