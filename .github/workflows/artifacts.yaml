@@ -165,7 +165,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          input: image
+          #input: image
           format: sarif
           output: trivy-results.sarif
           scan-type: "fs"
