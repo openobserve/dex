@@ -386,11 +386,12 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	signupPath := fmt.Sprintf("%s?%s", s.absPath("/signup"), r.URL.Query().Encode())
+	checkPath := fmt.Sprintf("%s?%s", s.absPath("/check-handler"), r.URL.Query().Encode())
 	resetPasswordPath := fmt.Sprintf("%s?%s", s.absPath("/password_reset"), r.URL.Query().Encode())
 
 	switch r.Method {
 	case http.MethodGet:
-		if err := s.templates.password(r, w, r.URL.String(), "", usernamePrompt(pwConn), false, backLink, signupPath, resetPasswordPath, s.enableSignup); err != nil {
+		if err := s.templates.password(r, w, checkPath, "", usernamePrompt(pwConn), false, backLink, signupPath, resetPasswordPath, s.enableSignup, true); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 	case http.MethodPost:
@@ -405,7 +406,7 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !ok {
-			if err := s.templates.password(r, w, r.URL.String(), username, usernamePrompt(pwConn), true, backLink, signupPath, resetPasswordPath, s.enableSignup); err != nil {
+			if err := s.templates.password(r, w, r.URL.String(), username, usernamePrompt(pwConn), true, backLink, signupPath, resetPasswordPath, s.enableSignup, false); err != nil {
 				s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 			}
 			s.logger.ErrorContext(r.Context(), "failed login attempt: Invalid credentials.", "user", username)
@@ -430,6 +431,108 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 		}
 
 		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+	default:
+		s.renderError(r, w, http.StatusBadRequest, "Unsupported request method.")
+	}
+}
+
+func (s *Server) checkHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	authID := r.URL.Query().Get("state")
+	if authID == "" {
+		s.renderError(r, w, http.StatusBadRequest, "User session error.")
+		return
+	}
+
+	backLink := r.URL.Query().Get("back")
+
+	authReq, err := s.storage.GetAuthRequest(ctx, authID)
+	if err != nil {
+		if err == storage.ErrNotFound {
+			s.logger.ErrorContext(r.Context(), "invalid 'state' parameter provided", "err", err)
+			s.renderError(r, w, http.StatusBadRequest, "Requested resource does not exist.")
+			return
+		}
+		s.logger.ErrorContext(r.Context(), "failed to get auth request", "err", err)
+		s.renderError(r, w, http.StatusInternalServerError, "Database error.")
+		return
+	}
+
+	username := r.FormValue("login")
+	signupPath := fmt.Sprintf("%s?%s", s.absPath("/signup"), r.URL.Query().Encode())
+	resetPasswordPath := fmt.Sprintf("%s?%s", s.absPath("/password_reset"), r.URL.Query().Encode())
+	loginPath := fmt.Sprintf("%s?%s", s.absPath("/auth/local/login"), r.URL.Query().Encode())
+
+	splits := strings.Split(username, "@")
+
+	if len(splits) != 2 {
+		if err := s.templates.password(r, w, loginPath, username, "email", true, backLink, signupPath, resetPasswordPath, s.enableSignup, true); err != nil {
+			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
+		}
+		return
+	}
+
+	domain := splits[1]
+	scopes := parseScopes(authReq.Scopes)
+
+	switch r.Method {
+	case http.MethodPost:
+		for _, domainConnector := range s.DomainConnectors {
+			if domainConnector.Domain == domain {
+				switch conn := domainConnector.Connector.(type) {
+				case connector.CallbackConnector:
+					callbackURL, err := conn.LoginURL(scopes, s.absURL("/callback"), authReq.ID)
+					if err != nil {
+						s.logger.ErrorContext(r.Context(), "connector returned error when creating callback", "connector_id", domainConnector, "err", err)
+						s.renderError(r, w, http.StatusInternalServerError, "Login error.")
+						return
+					}
+					http.Redirect(w, r, callbackURL, http.StatusFound)
+				case connector.PasswordConnector:
+					loginURL := url.URL{
+						Path: s.absPath("/auth", "local", "login"),
+					}
+					q := loginURL.Query()
+					q.Set("state", authReq.ID)
+					q.Set("back", backLink)
+					loginURL.RawQuery = q.Encode()
+
+					http.Redirect(w, r, loginURL.String(), http.StatusFound)
+				case connector.SAMLConnector:
+					action, value, err := conn.POSTData(scopes, authReq.ID)
+					if err != nil {
+						s.logger.ErrorContext(r.Context(), "creating SAML data", "err", err)
+						s.renderError(r, w, http.StatusInternalServerError, "Connector Login Error")
+						return
+					}
+
+					// TODO(ericchiang): Don't inline this.
+					fmt.Fprintf(w, `<!DOCTYPE html>
+			  <html lang="en">
+			  <head>
+			    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+			    <title>SAML login</title>
+			  </head>
+			  <body>
+			    <form method="post" action="%s" >
+				    <input type="hidden" name="SAMLRequest" value="%s" />
+				    <input type="hidden" name="RelayState" value="%s" />
+			    </form>
+				<script>
+				    document.forms[0].submit();
+				</script>
+			  </body>
+			  </html>`, action, value, authReq.ID)
+				default:
+					s.renderError(r, w, http.StatusBadRequest, "Requested resource does not exist.")
+				}
+			}
+
+		}
+		if err := s.templates.password(r, w, loginPath, username, "email", false, backLink, signupPath, resetPasswordPath, s.enableSignup, false); err != nil {
+			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
+		}
+		return
 	default:
 		s.renderError(r, w, http.StatusBadRequest, "Unsupported request method.")
 	}

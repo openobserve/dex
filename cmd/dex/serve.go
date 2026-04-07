@@ -258,6 +258,26 @@ func runServe(options serveOptions) error {
 		storageConnectors[i] = conn
 	}
 
+	domainConnectors := make([]storage.DomainConnector, len(c.DomainConnectors))
+	for i, c := range c.DomainConnectors {
+		if c.ID == "" || c.Name == "" || c.Type == "" {
+			return fmt.Errorf("invalid config: ID, Type and Name fields are required for a connector")
+		}
+		if c.Config == nil {
+			return fmt.Errorf("invalid config: no config field for connector %q", c.ID)
+		}
+		logger.Info("config connector", "connector_id", c.ID)
+
+		conn, err := DomainToStorageConnector(c)
+		if err != nil {
+			return fmt.Errorf("failed to initialize storage connectors: %v", err)
+		}
+		domainConnectors[i] = storage.DomainConnector{
+			Domain: c.Domain,
+			Conn:   conn,
+		}
+	}
+
 	if c.EnablePasswordDB {
 		storageConnectors = append(storageConnectors, storage.Connector{
 			ID:   server.LocalConnector,
@@ -316,6 +336,7 @@ func runServe(options serveOptions) error {
 		HealthChecker:              healthChecker,
 		HiddenConnectors:           c.HiddenConnectors,
 		ContinueOnConnectorFailure: featureflags.ContinueOnConnectorFailure.Enabled(),
+		DomainConnectors:           domainConnectors,
 	}
 	if c.Expiry.SigningKeys != "" {
 		signingKeys, err := time.ParseDuration(c.Expiry.SigningKeys)

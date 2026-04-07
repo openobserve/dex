@@ -60,6 +60,12 @@ type Connector struct {
 	Connector       connector.Connector
 }
 
+type DomainSpecificConnector struct {
+	ResourceVersion string
+	Domain          string
+	Connector       connector.Connector
+}
+
 // Config holds the server's configuration options.
 //
 // Multiple servers using the same storage are expected to be configured identically.
@@ -145,6 +151,8 @@ type Config struct {
 	// If enabled, the server will continue starting even if some connectors fail to initialize.
 	// This allows the server to operate with a subset of connectors if some are misconfigured.
 	ContinueOnConnectorFailure bool
+
+	DomainConnectors []storage.DomainConnector
 }
 
 // WebConfig holds the server's frontend templates and asset configuration.
@@ -239,6 +247,8 @@ type Server struct {
 	logger *slog.Logger
 
 	hiddenConnectors []string
+
+	DomainConnectors []DomainSpecificConnector
 }
 
 // NewServer constructs a server from the provided config.
@@ -390,6 +400,22 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		}
 	}
 
+	var domainConnectors []DomainSpecificConnector
+	for _, conn := range c.DomainConnectors {
+		var err error
+		var c connector.Connector
+		c, err = openConnector(s.logger, conn.Conn)
+		if err != nil {
+			return nil, fmt.Errorf("server: Failed to open connector %s: %v", conn.Conn.ID, err)
+		}
+		domainConnectors = append(domainConnectors, DomainSpecificConnector{
+			ResourceVersion: conn.Conn.ResourceVersion,
+			Domain:          conn.Domain,
+			Connector:       c,
+		})
+	}
+	s.DomainConnectors = domainConnectors
+
 	if c.ContinueOnConnectorFailure && failedCount == len(storageConnectors) {
 		return nil, fmt.Errorf("server: failed to open all connectors (%d/%d)", failedCount, len(storageConnectors))
 	}
@@ -527,6 +553,7 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 	handleWithCORS("/userinfo", s.handleUserInfo)
 	handleWithCORS("/token/introspect", s.handleIntrospect)
 	handleWithCORS("/register", s.handleClientRegistration)
+	handleWithCORS("/check-handler", s.checkHandler)
 	handleWithCORS("/signup", s.handleSignup)
 	handleWithCORS("/password_reset", s.handlePasswordReset)
 	handleWithCORS("/signup-token", s.handleSignupToken)
