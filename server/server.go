@@ -401,7 +401,7 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		}
 	}
 
-	var domainConnectors []DomainSpecificConnector
+	domainConnectors := make([]DomainSpecificConnector, len(c.DomainConnectors))
 	for _, conn := range c.DomainConnectors {
 		var err error
 		var c connector.Connector

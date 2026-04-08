@@ -535,7 +535,6 @@ func (s *Server) checkHandler(w http.ResponseWriter, r *http.Request) {
 					s.renderError(r, w, http.StatusBadRequest, "Requested resource does not exist.")
 				}
 			}
-
 		}
 		if err := s.templates.password(r, w, loginPath, username, "email", false, backLink, signupPath, resetPasswordPath, s.enableSignup, false); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
