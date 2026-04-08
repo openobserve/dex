@@ -479,6 +479,14 @@ func (s *Server) checkHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		for _, domainConnector := range s.DomainConnectors {
 			if domainConnector.Domain == domain {
+				// by default at this point, we would have the connector id set to "local"
+				// because check-handler itself is part of the local login flow
+				// so we reset it to actual id, so that in the callback flow
+				// we can detect the correct one
+				s.storage.UpdateAuthRequest(ctx, authReq.ID, func(old storage.AuthRequest) (storage.AuthRequest, error) {
+					old.ConnectorID = domainConnector.Id
+					return old, nil
+				})
 				switch conn := domainConnector.Connector.(type) {
 				case connector.CallbackConnector:
 					callbackURL, err := conn.LoginURL(scopes, s.absURL("/callback"), authReq.ID)
@@ -604,6 +612,7 @@ func (s *Server) handleConnectorCallback(w http.ResponseWriter, r *http.Request)
 		}
 		identity, err = conn.HandlePOST(parseScopes(authReq.Scopes), r.PostFormValue("SAMLResponse"), authReq.ID)
 	default:
+		s.logger.ErrorContext(r.Context(), "no connector type matched", "connector_id", authReq.ConnectorID, "err", "no connector type matched")
 		s.renderError(r, w, http.StatusInternalServerError, "Requested resource does not exist.")
 		return
 	}

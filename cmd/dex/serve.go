@@ -275,6 +275,7 @@ func runServe(options serveOptions) error {
 		domainConnectors[i] = storage.DomainConnector{
 			Domain: c.Domain,
 			Conn:   conn,
+			Id:     c.ID,
 		}
 	}
 

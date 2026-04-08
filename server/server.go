@@ -63,6 +63,7 @@ type Connector struct {
 type DomainSpecificConnector struct {
 	ResourceVersion string
 	Domain          string
+	Id              string
 	Connector       connector.Connector
 }
 
@@ -411,6 +412,7 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		domainConnectors = append(domainConnectors, DomainSpecificConnector{
 			ResourceVersion: conn.Conn.ResourceVersion,
 			Domain:          conn.Domain,
+			Id:              conn.Id,
 			Connector:       c,
 		})
 	}
@@ -818,6 +820,14 @@ func (s *Server) OpenConnector(conn storage.Connector) (Connector, error) {
 func (s *Server) getConnector(ctx context.Context, id string) (Connector, error) {
 	storageConnector, err := s.storage.GetConnector(ctx, id)
 	if err != nil {
+		for _, domainConnector := range s.DomainConnectors {
+			if domainConnector.Id == id {
+				return Connector{
+					ResourceVersion: domainConnector.ResourceVersion,
+					Connector:       domainConnector.Connector,
+				}, nil
+			}
+		}
 		return Connector{}, fmt.Errorf("failed to get connector object from storage: %v", err)
 	}
 

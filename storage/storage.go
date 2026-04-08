@@ -405,6 +405,7 @@ type Connector struct {
 // Connector is an object that contains the metadata about connectors used to login to Dex.
 type DomainConnector struct {
 	Domain string    `json:"domain"`
+	Id     string    `json:"id"`
 	Conn   Connector `json:"connector"`
 }
 
