@@ -11,229 +11,65 @@
     overflow: hidden;
   }
 
-  .dex-login-container{
+  .dex-login-container {
     position: relative;
     height: 100%;
     display: flex;
     flex-direction: row;
     font-family: sans-serif;
     overflow: hidden;
-  }
-
-  /* Left brand section */
-  .login-brand-section {
-    flex: 1;
-    display: flex;
-    align-items: center;
     justify-content: center;
-    padding: 2rem;
-    position: relative;
-    z-index: 10;
-  }
-
-  .brand-container {
-    max-width: 500px;
-    color: white;
-  }
-
-  .brand-logo {
-    margin-left: -0.5rem;
-  }
-
-  .brand-logo img {
-    height: 60px;
-    width: 224.6px;
-  }
-
-  .brand-title {
-    font-size: 3rem;
-    font-weight: 800;
-    margin-bottom: 1rem;
-    background: linear-gradient(135deg, #0BA5E9 0%, #38BDF8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .brand-subtitle {
-    font-size: 1.2rem;
-    color: #cbd5e1;
-    margin-bottom: 2rem;
-    line-height: 1.6;
-  }
-
-  .brand-features {
-    margin-top: 1rem;
-  }
-
-  .feature-item {
-    display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    font-size: 1rem;
-    color: #e2e8f0;
   }
 
-  .feature-icon {
-    font-size: 1.5rem;
-  }
-
+  /* Blurred background */
   .bg-container {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #0a0f1e 0%, #151b2e 25%, #1a2332 50%, #0f1624 75%, #0a0f1e 100%);
+    background-image: url('{{ url .ReqPath "/theme/bg-logs.png" }}');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(4px) brightness(0.5);
+    transform: scale(1.1);
     z-index: 1;
   }
 
-  /* Animated 3D grid */
-  .grid-bg {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-image:
-      linear-gradient(rgba(14, 165, 233, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(14, 165, 233, 0.1) 1px, transparent 1px);
-    background-size: 50px 50px;
-    animation: gridMove 20s linear infinite;
-    transform: perspective(500px) rotateX(60deg);
-    transform-origin: center;
-    z-index: 2;
-  }
-
-  @keyframes gridMove {
-    0% {background-position: 0 0;}
-    100% {background-position: 50px 50px;}
-  }
-
-
-
-  /* Metrics Graph Lines */
-  .metrics-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 4;
-    opacity: 0.08;
-  }
-
-  .metric-line {
-    position: absolute;
-    width: 100%;
-    height: 200px;
-    background: repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 40px,
-      rgba(14, 165, 233, 0.1) 40px,
-      rgba(14, 165, 233, 0.1) 41px
-    );
-  }
-
-  .metric-line-1 { top: 20%; }
-  .metric-line-2 { top: 50%; }
-  .metric-line-3 { top: 80%; }
-
-  /* Grid with coordinates feel */
-  .grid-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image:
-      linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
-    background-size: 60px 60px;
-    z-index: 5;
-  }
-
-  /* Glowing orbs for depth */
-  .gradient-orbs {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 6;
-    overflow: hidden;
-  }
-
-  .orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(100px);
-    opacity: 0.3;
-    animation: drift 30s infinite ease-in-out;
-  }
-
-  .orb-1 {
-    width: 600px;
-    height: 600px;
-    top: -200px;
-    left: -200px;
-    background: radial-gradient(circle, rgba(14, 165, 233, 0.4) 0%, transparent 70%);
-    animation-delay: 0s;
-  }
-
-  .orb-2 {
-    width: 500px;
-    height: 500px;
-    top: 20%;
-    right: -150px;
-    background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%);
-    animation-delay: 10s;
-  }
-
-  .orb-3 {
-    width: 550px;
-    height: 550px;
-    bottom: -200px;
-    left: 30%;
-    background: radial-gradient(circle, rgba(34, 211, 238, 0.25) 0%, transparent 70%);
-    animation-delay: 20s;
-  }
-
-  @keyframes drift {
-    0%, 100% { transform: translate(0, 0); }
-    33% { transform: translate(60px, 60px); }
-    66% { transform: translate(-40px, 100px); }
-  }
-
-
-  .login-form-section{
-    flex: 1;
-    background-color: transparent;
-    height: 100%;
+  /* Form section - centered */
+  .login-form-section {
+    flex: none;
+    width: auto;
+    max-width: 800px;
+    height: auto;
+    margin: 0 auto;
+    padding: 2rem;
     display: flex;
     flex-direction: column;
-    padding: 2rem;
     position: relative;
     z-index: 10;
     overflow-y: auto;
     overflow-x: hidden;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
+    max-height: 100vh;
   }
 
   .login-content-container {
-    width: 100%;
-    max-width: 400px;
-    margin-top: 40px;
+    width: 380px;
+    max-width: 380px;
+    margin-top: 0;
   }
 
-  .theme-panel{
+  .theme-panel {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100%;
-    max-width: 500px;
+    max-width: 560px;
   }
 
   /* Form header */
@@ -247,25 +83,25 @@
   .form-title {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: #1e293b;
     margin-bottom: 0.25rem;
   }
 
   .form-subtitle {
-    color: #cbd5e1;
+    color: #475569;
     font-size: 0.9rem;
     margin: 0;
   }
 
-  /* Modern bordered panel */
+  /* Light blue bordered panel */
   .modern-bordered-panel {
     position: relative;
-    border: 1px solid rgba(14, 165, 233, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.3);
     border-radius: 16px;
     padding: 1.5rem 1rem;
-    background: rgba(15, 23, 42, 0.9);
+    background: rgba(219, 234, 254, 0.95);
     backdrop-filter: blur(20px);
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5), 0 0 1px rgba(14, 165, 233, 0.3);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3), 0 0 1px rgba(59, 130, 246, 0.4);
     width: 100%;
     box-sizing: border-box;
   }
@@ -277,143 +113,8 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.6), transparent);
   }
-
-  /* Logo that cuts through the border */
-  .logo-border-cut {
-    position: absolute;
-    top: -32px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0 1rem;
-    z-index: 10;
-  }
-
-  .logo-border-cut img {
-    height: clamp(48px, 8vw, 64px);
-    display: block;
-  }
-
-  /* Page title above the form */
-  .page-title {
-    background: linear-gradient(135deg, #0BA5E9 0%, #38BDF8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: 700;
-    font-size: clamp(24px, 4vw, 32px);
-    line-height: 1.4;
-    text-align: center;
-    margin-bottom: 1.5rem;
-    margin-top: 100px;
-    letter-spacing: -0.5px;
-  }
-
-  /* Footer at bottom of page */
-  .page-footer {
-    text-align: center;
-    padding: 0.75rem;
-    margin-top: 1.5rem;
-    flex-shrink: 0;
-    position: relative;
-    z-index: 1;
-  }
-
-  .page-footer > div {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 4px;
-  }
-
-  .theme-heading{
-    color: #525252;
-    font-weight: 500;
-    font-size: 28px;
-    line-height: 40px;
-    text-align: center;
-    margin-top: 24px;
-    margin-bottom: 32px;
-  }
-  .dex-btn-text{
-    color: #cbd5e1;
-  }
-
-  .dex-btn-icon--github {
-    filter: brightness(0) invert(1);
-    opacity: 0.8;
-  }
-  .modern-link {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    font-size: 16px;
-    font-weight: 500;
-    background: linear-gradient(135deg, #0BA5E9 0%, #38BDF8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    transition: all 0.3s ease;
-  }
-
-  .modern-link:hover {
-    background: linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .modern-link img {
-    filter: brightness(0) saturate(100%) invert(64%) sepia(88%) saturate(3316%) hue-rotate(169deg) brightness(101%) contrast(101%);
-  }
-
-  .modern-btn {
-    width: 325px;
-    border: 1px solid rgba(232, 232, 232, 0.3);
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 4px;
-    text-decoration: none;
-    padding: 2px 16px;
-    border-radius: 8px;
-    background: transparent;
-    transition: all 0.3s ease;
-  }
-
-  .modern-btn:hover {
-    border-color: rgba(14, 165, 233, 0.4);
-    background: rgba(15, 23, 42, 0.4);
-    box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.3), 0 0 20px rgba(14, 165, 233, 0.2);
-  }
-
-  .official-email-note{
-    background: rgba(11, 165, 233, 0.1);
-    color: #0BA5E9;
-    padding: 0.75rem;
-    border: 1px solid rgba(11, 165, 233, 0.3);
-    border-radius: 6px;
-    margin-bottom: 1rem;
-    margin-top: 0.5rem;
-    text-align: center;
-    font-size: clamp(12px, 2.5vw, 14px);
-  }
-
-  #login-buttons{
-    text-align: -webkit-center;
-  }
-
-  .copyright-text {
-    background: linear-gradient(135deg, #0BA5E9 0%, #38BDF8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: 14px;
-    font-weight: 500;
-  }
-
 
   /* Signup form styles */
   .signup-form-group {
@@ -427,7 +128,7 @@
 
   .signup-form-label {
     display: block;
-    color: #cbd5e1;
+    color: #334155;
     font-size: 13px;
     font-weight: 500;
     margin-bottom: 0.4rem;
@@ -437,10 +138,10 @@
     width: 100%;
     max-width: 100%;
     padding: 10px 14px;
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(14, 165, 233, 0.2);
+    background: rgba(239, 246, 255, 0.8);
+    border: 1px solid rgba(59, 130, 246, 0.25);
     border-radius: 8px;
-    color: #f1f5f9;
+    color: #1e293b;
     font-size: 14px;
     transition: all 0.3s ease;
     box-sizing: border-box;
@@ -449,9 +150,9 @@
 
   .signup-form-input:focus {
     outline: none;
-    border-color: rgba(14, 165, 233, 0.5);
-    background: rgba(15, 23, 42, 0.8);
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(219, 234, 254, 0.9);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
   }
 
   .signup-form-input.input-error:focus {
@@ -460,13 +161,13 @@
   }
 
   .signup-form-input::placeholder {
-    color: #64748b;
+    color: #94a3b8;
   }
 
   .signup-btn-primary {
     width: 100%;
     padding: 11px 24px;
-    background: linear-gradient(135deg, #0BA5E9 0%, #38BDF8 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
     color: white;
     border: none;
     border-radius: 8px;
@@ -474,14 +175,14 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 14px rgba(11, 165, 233, 0.25);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
     margin-top: 0.5rem;
   }
 
   .signup-btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(11, 165, 233, 0.4);
-    background: linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+    background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
   }
 
   .signup-btn-primary:active:not(:disabled) {
@@ -495,9 +196,9 @@
 
   .token-btn {
     padding: 8px 16px;
-    background: rgba(14, 165, 233, 0.1);
-    color: #38BDF8;
-    border: 1px solid rgba(14, 165, 233, 0.3);
+    background: rgba(59, 130, 246, 0.1);
+    color: #1e40af;
+    border: 1px solid rgba(59, 130, 246, 0.3);
     border-radius: 6px;
     font-size: 13px;
     font-weight: 500;
@@ -506,13 +207,13 @@
   }
 
   .token-btn:hover {
-    background: rgba(14, 165, 233, 0.2);
-    border-color: rgba(14, 165, 233, 0.5);
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
   }
 
   .error-message {
     background: rgba(239, 68, 68, 0.1);
-    color: #fca5a5;
+    color: #dc2626;
     padding: 10px 14px;
     border: 1px solid rgba(239, 68, 68, 0.3);
     border-radius: 6px;
@@ -523,28 +224,28 @@
   .login-link-section {
     margin-top: 1.25rem;
     padding-top: 1.25rem;
-    border-top: 1px solid rgba(14, 165, 233, 0.15);
+    border-top: 1px solid rgba(59, 130, 246, 0.2);
     text-align: center;
   }
 
   .login-link-text {
-    color: #cbd5e1;
+    color: #475569;
     font-size: 13px;
     margin-bottom: 0.5rem;
   }
 
   .login-link {
-    color: #38BDF8;
+    color: #2563eb;
     text-decoration: none;
     font-weight: 500;
     transition: color 0.3s ease;
   }
 
   .login-link:hover {
-    color: #0EA5E9;
+    color: #1d4ed8;
   }
 
-  /* Password toggle styles */
+  /* Password toggle */
   .password-input-wrapper {
     position: relative;
     display: flex;
@@ -561,12 +262,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #94a3b8;
+    color: #64748b;
     transition: color 0.3s ease;
   }
 
   .password-toggle-btn:hover {
-    color: #38BDF8;
+    color: #2563eb;
   }
 
   .password-toggle-btn svg {
@@ -601,34 +302,11 @@
   }
 
   @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-5px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  .input-icon {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
-  }
-
-  .input-icon.error {
-    color: #ef4444;
-  }
-
-  .input-icon.success {
-    color: #22c55e;
-  }
-
-  /* Toast notification styles */
+  /* Toast styles */
   .toast-container {
     position: fixed;
     top: 20px;
@@ -646,7 +324,7 @@
     background: rgba(15, 23, 42, 0.95);
     border: 1px solid rgba(239, 68, 68, 0.5);
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), 0 0 1px rgba(239, 68, 68, 0.5);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(20px);
     display: flex;
     align-items: flex-start;
@@ -656,84 +334,77 @@
 
   .toast.success {
     border-color: rgba(34, 197, 94, 0.5);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), 0 0 1px rgba(34, 197, 94, 0.5);
   }
 
-  .toast-icon {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .toast-icon.error {
-    color: #ef4444;
-  }
-
-  .toast-icon.success {
-    color: #22c55e;
-  }
-
-  .toast-content {
-    flex: 1;
-  }
-
-  .toast-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #f1f5f9;
-    margin-bottom: 4px;
-  }
-
-  .toast-message {
-    font-size: 13px;
-    color: #cbd5e1;
-    line-height: 1.5;
-  }
-
+  .toast-icon { width: 24px; height: 24px; flex-shrink: 0; margin-top: 2px; }
+  .toast-icon.error { color: #ef4444; }
+  .toast-icon.success { color: #22c55e; }
+  .toast-content { flex: 1; }
+  .toast-title { font-size: 14px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+  .toast-message { font-size: 13px; color: #cbd5e1; line-height: 1.5; }
   .toast-close {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-    background: none;
-    border: none;
-    color: #94a3b8;
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 20px; height: 20px; flex-shrink: 0;
+    background: none; border: none; color: #94a3b8;
+    cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
     transition: color 0.2s;
   }
-
-  .toast-close:hover {
-    color: #f1f5f9;
-  }
+  .toast-close:hover { color: #f1f5f9; }
 
   @keyframes slideIn {
-    from {
-      transform: translateX(400px);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
   }
 
   @keyframes slideOut {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(400px);
-      opacity: 0;
-    }
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(400px); opacity: 0; }
   }
 
-  .toast.closing {
-    animation: slideOut 0.3s ease-out forwards;
+  .toast.closing { animation: slideOut 0.3s ease-out forwards; }
+
+  /* Footer */
+  .page-footer {
+    text-align: center;
+    padding: 1rem;
+    margin-top: 1rem;
+    flex-shrink: 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 10;
+  }
+
+  .page-footer > div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+
+  .modern-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    color: #ffffff;
+    transition: all 0.3s ease;
+  }
+
+  .modern-link:hover { color: #cbd5e1; }
+
+  .modern-link img {
+    filter: brightness(0) invert(1);
+  }
+
+  .copyright-text {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
   }
 
   @media (max-width: 768px) {
@@ -742,107 +413,32 @@
       min-height: 100vh;
     }
 
-    .login-brand-section {
-      flex: none;
-      padding: 1.5rem;
-      min-height: 40vh;
-    }
-
-    .brand-title {
-      font-size: 2rem;
-    }
-
-    .brand-subtitle {
-      font-size: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .brand-features {
-      display: none;
-    }
-
     .login-form-section {
       flex: none;
-      min-height: 60vh;
       padding: 1rem;
+      width: 100%;
     }
 
-    .login-content-container {
-      max-width: 100%;
-    }
+    .login-content-container { max-width: 100%; }
 
     .modern-bordered-panel {
       padding: 1.5rem 1rem;
       border-radius: 12px;
     }
 
-    .form-title {
-      font-size: 1.5rem;
-    }
-
-    .modern-btn {
-      width: 100% !important;
-      max-width: 300px;
-    }
+    .form-title { font-size: 1.5rem; }
 
     .page-footer {
       padding: 0.75rem;
-    }
-
-    .page-footer div[style*="display: flex"] {
-      flex-direction: column;
-      gap: 8px !important;
+      position: relative;
     }
   }
 </style>
 
 <div class="dex-login-container">
-  <!-- Toast notification container -->
   <div class="toast-container" id="toast-container"></div>
-
   <div class="bg-container"></div>
 
-  <div class="metrics-overlay">
-    <div class="metric-line metric-line-1"></div>
-    <div class="metric-line metric-line-2"></div>
-    <div class="metric-line metric-line-3"></div>
-  </div>
-
-  <div class="grid-bg"></div>
-
-  <div class="gradient-orbs">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-  </div>
-
-  <!-- Left side with logo and text -->
-  <div class="login-brand-section">
-    <div class="brand-container">
-      <div class="brand-logo">
-        <img src="{{ url .ReqPath "/theme/openobserve_logo_light.svg" }}" alt="OpenObserve Logo" />
-      </div>
-      <div class="brand-content">
-        <p class="brand-subtitle">The complete observability platform for modern applications</p>
-        <div class="brand-features">
-          <div class="feature-item">
-            <span class="feature-icon">📊</span>
-            <span>Real-time monitoring and analytics</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">🔍</span>
-            <span>Advanced search and visualization</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">⚡</span>
-            <span>High performance and scalability</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Right side with form -->
   <div class="login-form-section">
     <div class="login-content-container">
       <div class="theme-panel modern-bordered-panel">
@@ -860,48 +456,26 @@
 
           <div class="signup-form-group">
             <label for="email" class="signup-form-label">Email Address</label>
-            <input
-              tabindex="1"
-              required
-              id="email"
-              name="email"
-              type="email"
-              class="signup-form-input"
-              placeholder="you@company.com"
-              {{ if .Email }} value="{{ .Email }}" {{ end }}
-            />
+            <input tabindex="1" required id="email" name="email" type="email"
+              class="signup-form-input" placeholder="you@company.com"
+              {{ if .Email }} value="{{ .Email }}" {{ end }} />
             <span class="error-text" id="email-error" style="display: none;"></span>
           </div>
 
           <div class="signup-form-group">
             <label for="username" class="signup-form-label">Username</label>
-            <input
-              tabindex="2"
-              required
-              id="username"
-              name="username"
-              type="text"
-              class="signup-form-input"
-              placeholder="Choose a username"
-              {{ if .Username }} value="{{ .Username }}" {{ end }}
-            />
+            <input tabindex="2" required id="username" name="username" type="text"
+              class="signup-form-input" placeholder="Choose a username"
+              {{ if .Username }} value="{{ .Username }}" {{ end }} />
             <span class="error-text" id="username-error" style="display: none;"></span>
           </div>
 
           <div class="signup-form-group">
             <label for="password" class="signup-form-label">Password</label>
             <div class="password-input-wrapper">
-              <input
-                tabindex="3"
-                required
-                id="password"
-                name="password"
-                type="password"
-                class="signup-form-input"
-                placeholder="Minimum 8 characters"
-                minlength="8"
-                style="padding-right: 40px;"
-              />
+              <input tabindex="3" required id="password" name="password" type="password"
+                class="signup-form-input" placeholder="Minimum 8 characters"
+                minlength="8" style="padding-right: 40px;" />
               <button type="button" class="password-toggle-btn" id="toggle-password" aria-label="Toggle password visibility">
                 <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -915,46 +489,29 @@
             <span class="error-text" id="password-error" style="display: none;"></span>
           </div>
 
-
           <div class="signup-form-group">
             <label for="password-confirm" class="signup-form-label">Confirm Password</label>
             <div class="password-input-wrapper">
-              <input
-                tabindex="3"
-                required
-                id="password-confirm"
-                name="password-confirm"
-                type="password"
-                class="signup-form-input"
-                placeholder="Minimum 8 characters"
-                minlength="8"
-                style="padding-right: 40px;"
-              />
+              <input tabindex="4" required id="password-confirm" name="password-confirm"
+                type="password" class="signup-form-input" placeholder="Minimum 8 characters"
+                minlength="8" style="padding-right: 40px;" />
             </div>
           </div>
 
           <div class="signup-form-group">
             <label for="token" class="signup-form-label">Verification OTP</label>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <input
-                tabindex="4"
-                readonly
-                required
-                id="token"
-                name="token"
-                type="text"
-                class="signup-form-input"
-                placeholder="Click 'Get OTP' to receive via email"
-                style="flex: 1;"
-              />
+              <input tabindex="5" readonly required id="token" name="token" type="text"
+                class="signup-form-input" placeholder="Click 'Get OTP' to receive via email"
+                style="flex: 1;" />
               <button type="button" id="token-btn" class="token-btn" style="white-space: nowrap;">Get OTP</button>
             </div>
             <span class="error-text" id="token-error" style="display: none;"></span>
           </div>
 
-          <input tabindex="5" readonly hidden id="csrf" name="csrf" type="text" style="display: none;"/>
+          <input tabindex="6" readonly hidden id="csrf" name="csrf" type="text" style="display: none;" />
 
-          <button tabindex="6" id="submit-signup" type="submit" class="signup-btn-primary">
+          <button tabindex="7" id="submit-signup" type="submit" class="signup-btn-primary">
             Create Account
           </button>
         </form>
@@ -967,12 +524,10 @@
       <!-- Footer -->
       <div class="page-footer">
         <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
-          <a class="dex-link modern-link" href="{{ "terms_of_use" | extra }}" target="_blank">
-            Terms of Use
+          <a class="dex-link modern-link" href="{{ "terms_of_use" | extra }}" target="_blank">Terms of Use
             <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" />
           </a>
-          <a class="dex-link modern-link" href="{{ "privacy_policy" | extra }}" target="_blank">
-            Privacy Policy
+          <a class="dex-link modern-link" href="{{ "privacy_policy" | extra }}" target="_blank">Privacy Policy
             <img src="{{ url .ReqPath "/theme/arrow_right.svg" }}" alt="right arrow" />
           </a>
         </div>
@@ -984,26 +539,18 @@
   </div>
 </div>
 
-
 <script type="text/javascript">
-  // Set current year
-  const year = new Date().getFullYear();
-  document.getElementById('year').innerHTML = year;
+  document.getElementById('year').innerHTML = new Date().getFullYear();
 
-  // Toast notification function
   function showToast(message, type = 'error', duration = 5000) {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-
     const iconSVG = type === 'error'
       ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
       : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
-
     toast.innerHTML = `
-      <div class="toast-icon ${type}">
-        ${iconSVG}
-      </div>
+      <div class="toast-icon ${type}">${iconSVG}</div>
       <div class="toast-content">
         <div class="toast-title">${type === 'error' ? 'Error' : 'Success'}</div>
         <div class="toast-message">${message}</div>
@@ -1012,25 +559,19 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
-      </button>
-    `;
-
+      </button>`;
     container.appendChild(toast);
-
-    // Auto remove after duration
     setTimeout(() => {
       toast.classList.add('closing');
       setTimeout(() => toast.remove(), 300);
     }, duration);
   }
 
-  // Show server error as toast if present
   const serverError = document.getElementById('server-error');
   if (serverError && serverError.textContent.trim()) {
     showToast(serverError.textContent.trim(), 'error');
   }
 
-  // Handle password visibility toggle
   const togglePasswordBtn = document.getElementById('toggle-password');
   const passwordInput = document.getElementById('password');
   const passwordConfirmInput = document.getElementById('password-confirm');
@@ -1040,7 +581,6 @@
   const usernameInput = document.getElementById('username');
   const tokenInput = document.getElementById('token');
 
-  // Handle OTP generation with 60-second cooldown
   let otpCooldown = 0;
   let cooldownInterval = null;
 
@@ -1056,11 +596,9 @@
     }
   });
 
-  // Validation helper functions
   function showError(inputId, message) {
     const input = document.getElementById(inputId);
     const errorSpan = document.getElementById(inputId + '-error');
-
     input.classList.add('input-error');
     input.classList.remove('input-success');
     errorSpan.textContent = message;
@@ -1070,7 +608,6 @@
   function clearError(inputId) {
     const input = document.getElementById(inputId);
     const errorSpan = document.getElementById(inputId + '-error');
-
     input.classList.remove('input-error');
     input.classList.remove('input-success');
     errorSpan.style.display = 'none';
@@ -1079,122 +616,78 @@
   function showSuccess(inputId) {
     const input = document.getElementById(inputId);
     const errorSpan = document.getElementById(inputId + '-error');
-
     input.classList.add('input-success');
     input.classList.remove('input-error');
     errorSpan.style.display = 'none';
   }
 
   function validateEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  function resetTokenBtn(){
-    otpCooldown = 0
-    const tokenInput = document.querySelector("#token-btn");
-    tokenInput.disabled = false;
-    tokenInput.textContent = 'Get OTP';
-    tokenInput.style.background = 'rgba(14, 165, 233, 0.1)';
-    tokenInput.style.color = '#38BDF8';
-    tokenInput.style.borderColor = 'rgba(14, 165, 233, 0.3)';
+  function resetTokenBtn() {
+    otpCooldown = 0;
+    const btn = document.querySelector("#token-btn");
+    btn.disabled = false;
+    btn.textContent = 'Get OTP';
+    btn.style.background = 'rgba(59, 130, 246, 0.1)';
+    btn.style.color = '#1e40af';
+    btn.style.borderColor = 'rgba(59, 130, 246, 0.3)';
   }
 
-  // Email validation
   emailInput.addEventListener('blur', function() {
     const value = this.value.trim();
-    if (!value) {
-      showError('email', 'Email is required');
-    } else if (!validateEmail(value)) {
-      showError('email', 'Please enter a valid email address');
-    } else {
-      showSuccess('email');
-    }
+    if (!value) showError('email', 'Email is required');
+    else if (!validateEmail(value)) showError('email', 'Please enter a valid email address');
+    else showSuccess('email');
   });
 
   emailInput.addEventListener('input', function() {
-    const value = this.value.trim();
-    if (value && validateEmail(value)) {
+    if (this.value.trim() && validateEmail(this.value.trim())) {
       clearError('email');
-      if(cooldownInterval){
-        clearInterval(cooldownInterval);
-        resetTokenBtn();
-      }
+      if (cooldownInterval) { clearInterval(cooldownInterval); resetTokenBtn(); }
     }
   });
 
-  // Username validation
   usernameInput.addEventListener('blur', function() {
     const value = this.value.trim();
-    if (!value) {
-      showError('username', 'Username is required');
-    } else if (value.length < 3) {
-      showError('username', 'Username must be at least 3 characters');
-    } else {
-      showSuccess('username');
-    }
+    if (!value) showError('username', 'Username is required');
+    else if (value.length < 3) showError('username', 'Username must be at least 3 characters');
+    else showSuccess('username');
   });
 
   usernameInput.addEventListener('input', function() {
-    const value = this.value.trim();
-    if (value && value.length >= 3) {
-      clearError('username');
-    }
+    if (this.value.trim().length >= 3) clearError('username');
   });
 
-  // Password validation
   passwordInput.addEventListener('blur', function() {
     const value = this.value;
-    if (!value) {
-      showError('password', 'Password is required');
-    } else if (value.length < 8) {
-      showError('password', 'Password must be at least 8 characters');
-    } else {
-      showSuccess('password');
-    }
+    if (!value) showError('password', 'Password is required');
+    else if (value.length < 8) showError('password', 'Password must be at least 8 characters');
+    else showSuccess('password');
   });
 
-  passwordConfirmInput.addEventListener('blur',function () {
-    const pwd = passwordInput.value;
-    const confirmed = this.value;
-    if (pwd !== confirmed){
-      showError('password', 'Two passwords do not match');
-    }else{
-      showSuccess('password');
-    }
-  })
+  passwordConfirmInput.addEventListener('blur', function() {
+    if (passwordInput.value !== this.value) showError('password', 'Two passwords do not match');
+    else showSuccess('password');
+  });
 
   passwordInput.addEventListener('input', function() {
-    const value = this.value;
-    if (value && value.length >= 8) {
-      clearError('password');
-    }
+    if (this.value.length >= 8) clearError('password');
   });
 
-  // OTP validation
   tokenInput.addEventListener('blur', function() {
-    const value = this.value.trim();
-    if (!value) {
-      showError('token', 'Verification OTP is required');
-    } else {
-      showSuccess('token');
-    }
+    if (!this.value.trim()) showError('token', 'Verification OTP is required');
+    else showSuccess('token');
   });
 
   tokenInput.addEventListener('input', function() {
-    const value = this.value.trim();
-    if (value) {
-      clearError('token');
-    }
+    if (this.value.trim()) clearError('token');
   });
 
-  // Handle form submission with validation
   document.querySelector('form').onsubmit = function(e) {
-    e.preventDefault(); // Prevent default form submission
-
+    e.preventDefault();
     let isValid = true;
-
-    // Validate all fields
     const email = emailInput.value.trim();
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
@@ -1202,90 +695,46 @@
     const token = tokenInput.value.trim();
     const csrf = document.querySelector('#csrf').value;
 
-    // Email validation
-    if (!email) {
-      showError('email', 'Email is required');
-      isValid = false;
-    } else if (!validateEmail(email)) {
-      showError('email', 'Please enter a valid email address');
-      isValid = false;
-    }
+    if (!email) { showError('email', 'Email is required'); isValid = false; }
+    else if (!validateEmail(email)) { showError('email', 'Please enter a valid email address'); isValid = false; }
 
-    // Username validation
-    if (!username) {
-      showError('username', 'Username is required');
-      isValid = false;
-    } else if (username.length < 3) {
-      showError('username', 'Username must be at least 3 characters');
-      isValid = false;
-    }
+    if (!username) { showError('username', 'Username is required'); isValid = false; }
+    else if (username.length < 3) { showError('username', 'Username must be at least 3 characters'); isValid = false; }
 
-    // Password validation
-    if (!password) {
-      showError('password', 'Password is required');
-      isValid = false;
-    } else if (password.length < 8) {
-      showError('password', 'Password must be at least 8 characters');
-      isValid = false;
-    }else if( password !== confirmedPassword){
-      showError('password', 'Two passwords do not match');
-      isValid = false;
-    }
+    if (!password) { showError('password', 'Password is required'); isValid = false; }
+    else if (password.length < 8) { showError('password', 'Password must be at least 8 characters'); isValid = false; }
+    else if (password !== confirmedPassword) { showError('password', 'Two passwords do not match'); isValid = false; }
 
-    // OTP validation
-    if (!token) {
-      showError('token', 'Verification OTP is required');
-      isValid = false;
-    }
+    if (!token) { showError('token', 'Verification OTP is required'); isValid = false; }
 
-    if (!isValid) {
-      return false;
-    }
+    if (!isValid) return false;
 
-    // All valid, submit via AJAX
     const submitBtn = document.querySelector('#submit-signup');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating Account...';
 
-    // Create form data
     const formData = new URLSearchParams();
     formData.append('email', email);
     formData.append('username', username);
     formData.append('password', password);
     formData.append('token', token);
-    formData.append('csrf', csrf);    
+    formData.append('csrf', csrf);
 
-    // Submit via fetch
     fetch(this.action, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formData.toString()
     })
     .then(response => {
-      if (response.redirected) {
-        // Success - redirect to login or callback
-        window.location.href = response.url;
-        return;
-      }
+      if (response.redirected) { window.location.href = response.url; return; }
       return response.text();
     })
     .then(html => {
       if (html) {
-        // Parse HTML response to extract error message
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         const errorDiv = doc.querySelector('.error-message');
-
-        if (errorDiv) {
-          const errorMessage = errorDiv.textContent.trim();
-          showToast(errorMessage, 'error');
-        } else {
-          showToast('An error occurred. Please try again.', 'error');
-        }
-
-        // Re-enable submit button
+        showToast(errorDiv ? errorDiv.textContent.trim() : 'An error occurred. Please try again.', 'error');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Account';
       }
@@ -1301,7 +750,6 @@
   function startOtpCooldown(tokenBtn) {
     otpCooldown = 60;
     tokenBtn.disabled = true;
-
     cooldownInterval = setInterval(() => {
       otpCooldown--;
       if (otpCooldown > 0) {
@@ -1317,48 +765,27 @@
     e.preventDefault();
     const emailInput = document.querySelector("#email");
     const tokenInput = document.querySelector("#token");
-
     const passwordInput = document.querySelector("#password");
     const passwordConfirmInput = document.querySelector("#password-confirm");
     const tokenBtn = e.target;
 
-    if (!emailInput.value) {
-      showError('email', 'Please enter your email address first');
-      emailInput.focus();
-      return;
-    }
+    if (!emailInput.value) { showError('email', 'Please enter your email address first'); emailInput.focus(); return; }
+    if (!validateEmail(emailInput.value)) { showError('email', 'Please enter a valid email address'); emailInput.focus(); return; }
+    if (passwordInput.value !== passwordConfirmInput.value) { showError('password', 'Two passwords do not match'); passwordConfirmInput.focus(); return; }
 
-    // Validate email format before sending
-    if (!validateEmail(emailInput.value)) {
-      showError('email', 'Please enter a valid email address');
-      emailInput.focus();
-      return;
-    }
-
-    if (passwordInput.value !== passwordConfirmInput.value){
-      showError('password', 'Two passwords do not match');
-      passwordConfirmInput.focus();
-      return;
-    }
-
-    // Disable button and show loading
     tokenBtn.disabled = true;
     tokenBtn.textContent = 'Sending...';
-
     tokenInput.readonly = false;
     tokenInput.readOnly = false;
 
     fetch("signup-token", {
       method: "POST",
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: emailInput.value })
     })
     .then((r) => r.json())
     .then((v) => {
-      if(v.error){
+      if (v.error) {
         tokenBtn.disabled = false;
         tokenBtn.textContent = 'Get OTP';
         showToast(v.error_description || 'Error in sending OTP', 'error');
@@ -1367,14 +794,10 @@
       document.querySelector("#csrf").value = v.csrfToken;
       tokenBtn.textContent = '✓ OTP Sent';
       tokenBtn.style.background = 'rgba(34, 197, 94, 0.1)';
-      tokenBtn.style.color = '#4ade80';
+      tokenBtn.style.color = '#16a34a';
       tokenBtn.style.borderColor = 'rgba(34, 197, 94, 0.3)';
       tokenInput.focus();
-
-      // Start 60-second cooldown
-      setTimeout(() => {
-        startOtpCooldown(tokenBtn);
-      }, 2000); // Show success message for 2 seconds first
+      setTimeout(() => startOtpCooldown(tokenBtn), 2000);
     })
     .catch((err) => {
       tokenBtn.disabled = false;
