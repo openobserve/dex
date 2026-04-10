@@ -64,7 +64,8 @@ type Config struct {
 	EnableEmailValidation    bool   `json:"enableEmailValidation"`
 	EmailValidationServerUrl string `json:"emailValidationServerUrl"`
 
-	HiddenConnectors []string `json:"hiddenConnectors"`
+	HiddenConnectors []string                  `json:"hiddenConnectors"`
+	DomainConnectors []DomainSpecificConnector `json:"domainConnectors"`
 }
 
 // Validate the configuration
@@ -389,6 +390,15 @@ type Connector struct {
 	Config server.ConnectorConfig `json:"config"`
 }
 
+type DomainSpecificConnector struct {
+	Domain string `json:"domain"`
+	Type   string `json:"type"`
+	Name   string `json:"name"`
+	ID     string `json:"id"`
+
+	Config server.ConnectorConfig `json:"config"`
+}
+
 // UnmarshalJSON allows Connector to implement the unmarshaler interface to
 // dynamically determine the type of the connector config.
 func (c *Connector) UnmarshalJSON(b []byte) error {
@@ -443,8 +453,76 @@ func (c *Connector) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (c *DomainSpecificConnector) UnmarshalJSON(b []byte) error {
+	var conn struct {
+		Domain string `json:"domain"`
+		Type   string `json:"type"`
+		Name   string `json:"name"`
+		ID     string `json:"id"`
+
+		Config json.RawMessage `json:"config"`
+	}
+	if err := json.Unmarshal(b, &conn); err != nil {
+		return fmt.Errorf("parse connector: %v", err)
+	}
+	f, ok := server.ConnectorsConfig[conn.Type]
+	if !ok {
+		return fmt.Errorf("unknown connector type %q", conn.Type)
+	}
+
+	connConfig := f()
+	if len(conn.Config) != 0 {
+		data := []byte(conn.Config)
+		if featureflags.ExpandEnv.Enabled() {
+			var rawMap map[string]interface{}
+			if err := json.Unmarshal(conn.Config, &rawMap); err != nil {
+				return fmt.Errorf("unmarshal config for env expansion: %v", err)
+			}
+
+			// Recursively expand environment variables in the map to avoid
+			// issues with JSON special characters and escapes
+			expandEnvInMap(rawMap)
+
+			// Marshal the expanded map back to JSON
+			expandedData, err := json.Marshal(rawMap)
+			if err != nil {
+				return fmt.Errorf("marshal expanded config: %v", err)
+			}
+
+			data = expandedData
+		}
+
+		if err := json.Unmarshal(data, connConfig); err != nil {
+			return fmt.Errorf("parse connector config: %v", err)
+		}
+	}
+
+	*c = DomainSpecificConnector{
+		Domain: conn.Domain,
+		Type:   conn.Type,
+		Name:   conn.Name,
+		ID:     conn.ID,
+		Config: connConfig,
+	}
+	return nil
+}
+
 // ToStorageConnector converts an object to storage connector type.
 func ToStorageConnector(c Connector) (storage.Connector, error) {
+	data, err := json.Marshal(c.Config)
+	if err != nil {
+		return storage.Connector{}, fmt.Errorf("failed to marshal connector config: %v", err)
+	}
+
+	return storage.Connector{
+		ID:     c.ID,
+		Type:   c.Type,
+		Name:   c.Name,
+		Config: data,
+	}, nil
+}
+
+func DomainToStorageConnector(c DomainSpecificConnector) (storage.Connector, error) {
 	data, err := json.Marshal(c.Config)
 	if err != nil {
 		return storage.Connector{}, fmt.Errorf("failed to marshal connector config: %v", err)

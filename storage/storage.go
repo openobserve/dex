@@ -402,6 +402,13 @@ type Connector struct {
 	Hidden bool `json:"hidden,omitempty"`
 }
 
+// Connector is an object that contains the metadata about connectors used to login to Dex.
+type DomainConnector struct {
+	Domain string    `json:"domain"`
+	Id     string    `json:"id"`
+	Conn   Connector `json:"connector"`
+}
+
 // VerificationKey is a rotated signing key which can still be used to verify
 // signatures.
 type VerificationKey struct {
