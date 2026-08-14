@@ -111,7 +111,7 @@ func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
 			backLink = s.absPath(backPath)
 		}
-		if err := s.templates.signup(r, w, r.URL.String(), "", "", "", false, backLink); err != nil {
+		if err := s.templates.signup(r, w, r.URL.String(), "", "", false, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 		return
@@ -128,7 +128,6 @@ func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 				isJSONRequest = false
 				req.Email = r.FormValue("email")
 				req.Password = r.FormValue("password")
-				req.Username = r.FormValue("username")
 				req.Token = r.FormValue("token")
 				req.Csrf = r.FormValue("csrf")
 
@@ -155,7 +154,6 @@ func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 			}
 			req.Email = r.FormValue("email")
 			req.Password = r.FormValue("password")
-			req.Username = r.FormValue("username")
 			req.Token = r.FormValue("token")
 			req.Csrf = r.FormValue("csrf")
 		}
@@ -237,11 +235,15 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 	// Generate a unique user ID
 	userID := storage.NewID()
 
+	// Store email in lowercase for consistency. The signup form no longer asks for a
+	// username, so it always mirrors the email.
+	email := strings.ToLower(req.Email)
+
 	// Create the password entry
 	password := storage.Password{
-		Email:    strings.ToLower(req.Email), // Store email in lowercase for consistency
+		Email:    email,
 		Hash:     hashedPassword,
-		Username: req.Username,
+		Username: email,
 		UserID:   userID,
 	}
 
@@ -268,7 +270,7 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 		resp := signupResponse{
 			UserID:   userID,
 			Email:    req.Email,
-			Username: req.Username,
+			Username: email,
 			Message:  "User created successfully",
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -297,7 +299,7 @@ func (s *Server) handleSignupError(w http.ResponseWriter, r *http.Request, req s
 			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
 			backLink = s.absPath(backPath)
 		}
-		if err := s.templates.signup(r, w, r.URL.String(), req.Email, req.Username, errorMsg, true, backLink); err != nil {
+		if err := s.templates.signup(r, w, r.URL.String(), req.Email, errorMsg, true, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 	}
@@ -328,11 +330,6 @@ func (s *Server) validateSignupRequest(req signupRequest) (string, int) {
 	// Validate email format
 	if _, err := mail.ParseAddress(req.Email); err != nil {
 		return "Invalid email format", http.StatusBadRequest
-	}
-
-	// Validate username
-	if req.Username == "" {
-		return "Username is required", http.StatusBadRequest
 	}
 
 	// Validate password

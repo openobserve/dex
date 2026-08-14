@@ -319,7 +319,7 @@ func (t *templates) password(r *http.Request, w http.ResponseWriter, postURL, la
 	return renderTemplate(w, t.passwordTmpl, data)
 }
 
-func (t *templates) signup(r *http.Request, w http.ResponseWriter, postURL, lastEmail, lastUsername, errorMsg string, lastWasInvalid bool, backLink string) error {
+func (t *templates) signup(r *http.Request, w http.ResponseWriter, postURL, lastEmail, errorMsg string, lastWasInvalid bool, backLink string) error {
 	if lastWasInvalid {
 		w.WriteHeader(http.StatusBadRequest)
 	}
@@ -327,11 +327,10 @@ func (t *templates) signup(r *http.Request, w http.ResponseWriter, postURL, last
 		PostURL  string
 		BackLink string
 		Email    string
-		Username string
 		Invalid  bool
 		Error    string
 		ReqPath  string
-	}{postURL, backLink, lastEmail, lastUsername, lastWasInvalid, errorMsg, r.URL.Path}
+	}{postURL, backLink, lastEmail, lastWasInvalid, errorMsg, r.URL.Path}
 	return renderTemplate(w, t.signupTmpl, data)
 }
 
