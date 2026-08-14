@@ -463,17 +463,9 @@
           </div>
 
           <div class="signup-form-group">
-            <label for="username" class="signup-form-label">Username</label>
-            <input tabindex="2" required id="username" name="username" type="text"
-              class="signup-form-input" placeholder="Choose a username"
-              {{ if .Username }} value="{{ .Username }}" {{ end }} />
-            <span class="error-text" id="username-error" style="display: none;"></span>
-          </div>
-
-          <div class="signup-form-group">
             <label for="password" class="signup-form-label">Password</label>
             <div class="password-input-wrapper">
-              <input tabindex="3" required id="password" name="password" type="password"
+              <input tabindex="2" required id="password" name="password" type="password"
                 class="signup-form-input" placeholder="Minimum 8 characters"
                 minlength="8" style="padding-right: 40px;" />
               <button type="button" class="password-toggle-btn" id="toggle-password" aria-label="Toggle password visibility">
@@ -492,7 +484,7 @@
           <div class="signup-form-group">
             <label for="password-confirm" class="signup-form-label">Confirm Password</label>
             <div class="password-input-wrapper">
-              <input tabindex="4" required id="password-confirm" name="password-confirm"
+              <input tabindex="3" required id="password-confirm" name="password-confirm"
                 type="password" class="signup-form-input" placeholder="Minimum 8 characters"
                 minlength="8" style="padding-right: 40px;" />
             </div>
@@ -501,7 +493,7 @@
           <div class="signup-form-group">
             <label for="token" class="signup-form-label">Verification OTP</label>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <input tabindex="5" readonly required id="token" name="token" type="text"
+              <input tabindex="4" readonly required id="token" name="token" type="text"
                 class="signup-form-input" placeholder="Click 'Get OTP' to receive via email"
                 style="flex: 1;" />
               <button type="button" id="token-btn" class="token-btn" style="white-space: nowrap;">Get OTP</button>
@@ -509,9 +501,9 @@
             <span class="error-text" id="token-error" style="display: none;"></span>
           </div>
 
-          <input tabindex="6" readonly hidden id="csrf" name="csrf" type="text" style="display: none;" />
+          <input tabindex="5" readonly hidden id="csrf" name="csrf" type="text" style="display: none;" />
 
-          <button tabindex="7" id="submit-signup" type="submit" class="signup-btn-primary">
+          <button tabindex="6" id="submit-signup" type="submit" class="signup-btn-primary">
             Create Account
           </button>
         </form>
@@ -578,7 +570,6 @@
   const eyeIcon = document.getElementById('eye-icon');
   const eyeSlashIcon = document.getElementById('eye-slash-icon');
   const emailInput = document.getElementById('email');
-  const usernameInput = document.getElementById('username');
   const tokenInput = document.getElementById('token');
 
   let otpCooldown = 0;
@@ -649,17 +640,6 @@
     }
   });
 
-  usernameInput.addEventListener('blur', function() {
-    const value = this.value.trim();
-    if (!value) showError('username', 'Username is required');
-    else if (value.length < 3) showError('username', 'Username must be at least 3 characters');
-    else showSuccess('username');
-  });
-
-  usernameInput.addEventListener('input', function() {
-    if (this.value.trim().length >= 3) clearError('username');
-  });
-
   passwordInput.addEventListener('blur', function() {
     const value = this.value;
     if (!value) showError('password', 'Password is required');
@@ -689,7 +669,6 @@
     e.preventDefault();
     let isValid = true;
     const email = emailInput.value.trim();
-    const username = usernameInput.value.trim();
     const password = passwordInput.value;
     const confirmedPassword = passwordConfirmInput.value;
     const token = tokenInput.value.trim();
@@ -697,9 +676,6 @@
 
     if (!email) { showError('email', 'Email is required'); isValid = false; }
     else if (!validateEmail(email)) { showError('email', 'Please enter a valid email address'); isValid = false; }
-
-    if (!username) { showError('username', 'Username is required'); isValid = false; }
-    else if (username.length < 3) { showError('username', 'Username must be at least 3 characters'); isValid = false; }
 
     if (!password) { showError('password', 'Password is required'); isValid = false; }
     else if (password.length < 8) { showError('password', 'Password must be at least 8 characters'); isValid = false; }
@@ -715,7 +691,6 @@
 
     const formData = new URLSearchParams();
     formData.append('email', email);
-    formData.append('username', username);
     formData.append('password', password);
     formData.append('token', token);
     formData.append('csrf', csrf);

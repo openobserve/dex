@@ -1068,7 +1068,6 @@ func TestHandleSignup(t *testing.T) {
 			requestBody: map[string]string{
 				"email":    "test@example.com",
 				"password": "password123",
-				"username": "testuser",
 				"csrf":     "1234",
 				"token":    "5678",
 			},
@@ -1080,7 +1079,6 @@ func TestHandleSignup(t *testing.T) {
 			requestBody: map[string]string{
 				"email":    "test@example.com",
 				"password": "password123",
-				"username": "testuser",
 				"csrf":     "1234",
 				"token":    "5678",
 			},
@@ -1092,7 +1090,6 @@ func TestHandleSignup(t *testing.T) {
 			enableSignup: true,
 			requestBody: map[string]string{
 				"password": "password123",
-				"username": "testuser",
 				"csrf":     "1234",
 				"token":    "5678",
 			},
@@ -1105,7 +1102,6 @@ func TestHandleSignup(t *testing.T) {
 			requestBody: map[string]string{
 				"email":    "invalid-email",
 				"password": "password123",
-				"username": "testuser",
 				"csrf":     "1234",
 				"token":    "5678",
 			},
@@ -1116,10 +1112,9 @@ func TestHandleSignup(t *testing.T) {
 			name:         "missing password",
 			enableSignup: true,
 			requestBody: map[string]string{
-				"email":    "test@example.com",
-				"username": "testuser",
-				"csrf":     "1234",
-				"token":    "5678",
+				"email": "test@example.com",
+				"csrf":  "1234",
+				"token": "5678",
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedError:      "invalid_request",
@@ -1130,7 +1125,6 @@ func TestHandleSignup(t *testing.T) {
 			requestBody: map[string]string{
 				"email":    "test@example.com",
 				"password": "short",
-				"username": "testuser",
 				"csrf":     "1234",
 				"token":    "5678",
 			},
@@ -1138,16 +1132,19 @@ func TestHandleSignup(t *testing.T) {
 			expectedError:      "invalid_request",
 		},
 		{
-			name:         "missing username",
+			// The signup form no longer collects a username, but older JSON
+			// clients may still send one. It must be accepted and ignored, not
+			// rejected, and the stored username still mirrors the email.
+			name:         "username in payload is ignored",
 			enableSignup: true,
 			requestBody: map[string]string{
 				"email":    "test@example.com",
 				"password": "password123",
+				"username": "testuser",
 				"csrf":     "1234",
 				"token":    "5678",
 			},
-			expectedStatusCode: http.StatusBadRequest,
-			expectedError:      "invalid_request",
+			expectedStatusCode: http.StatusCreated,
 		},
 		{
 			name:         "duplicate email",
@@ -1155,7 +1152,6 @@ func TestHandleSignup(t *testing.T) {
 			requestBody: map[string]string{
 				"email":    "admin@example.com", // This email is already in the test storage
 				"password": "password123",
-				"username": "testuser",
 				"csrf":     "1234",
 				"token":    "5678",
 			},
@@ -1175,7 +1171,6 @@ func TestHandleSignup(t *testing.T) {
 			requestBody: map[string]string{
 				"email":    "test@example.com",
 				"password": "password123",
-				"username": "testuser",
 				"csrf":     "1234",
 				"token":    "1234",
 			},
@@ -1188,7 +1183,6 @@ func TestHandleSignup(t *testing.T) {
 			requestBody: map[string]string{
 				"email":    "test@example.com",
 				"password": "password123",
-				"username": "testuser",
 				"csrf":     "5678",
 				"token":    "5678",
 			},
@@ -1256,13 +1250,14 @@ func TestHandleSignup(t *testing.T) {
 				require.NoError(t, err)
 				require.NotEmpty(t, resp.UserID)
 				require.Equal(t, "test@example.com", resp.Email)
-				require.Equal(t, "testuser", resp.Username)
+				require.Equal(t, "test@example.com", resp.Username)
 
-				// Verify the user was created in storage
+				// Verify the user was created in storage with the username
+				// mirroring the email.
 				password, err := server.storage.GetPassword(ctx, "test@example.com")
 				require.NoError(t, err)
 				require.Equal(t, "test@example.com", password.Email)
-				require.Equal(t, "testuser", password.Username)
+				require.Equal(t, "test@example.com", password.Username)
 			}
 		})
 	}
