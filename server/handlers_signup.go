@@ -576,6 +576,23 @@ func (s *Server) processPasswordReset(w http.ResponseWriter, r *http.Request, ct
 		return
 	}
 
+	splits := strings.Split(req.Email, "@")
+
+	if len(splits) != 2 {
+		s.logger.ErrorContext(r.Context(), "failed password reset attempt: Invalid email.", "user", req.Email)
+		s.handlePasswordResetError(w, r, req, "Invalid email", http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
+	domain := splits[1]
+
+	for _, domainConnector := range s.DomainConnectors {
+		if domainConnector.Domain == domain {
+			s.handlePasswordResetError(w, r, req, "Custom SSO domain connector is enabled for this domain", http.StatusBadRequest, isJSONRequest)
+			return
+		}
+	}
+
 	// Hash the password using bcrypt (cost 10 is the default)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
