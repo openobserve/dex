@@ -398,6 +398,27 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 		username := r.FormValue("login")
 		password := r.FormValue("password")
 		scopes := parseScopes(authReq.Scopes)
+		splits := strings.Split(username, "@")
+
+		if len(splits) != 2 {
+			s.logger.ErrorContext(r.Context(), "failed login attempt: Invalid email.", "user", username)
+			if err := s.templates.password(r, w, r.URL.String(), username, usernamePrompt(pwConn), true, backLink, signupPath, resetPasswordPath, s.enableSignup, false); err != nil {
+				s.logger.ErrorContext(r.Context(), "server template error", "err", err)
+			}
+			return
+		}
+
+		domain := splits[1]
+
+		for _, domainConnector := range s.DomainConnectors {
+			if domainConnector.Domain == domain {
+				s.logger.ErrorContext(r.Context(), "Blocking email password login as custom domain is configured for this email", "user", username)
+				if err := s.templates.password(r, w, r.URL.String(), username, usernamePrompt(pwConn), true, backLink, signupPath, resetPasswordPath, s.enableSignup, false); err != nil {
+					s.logger.ErrorContext(r.Context(), "server template error", "err", err)
+				}
+				return
+			}
+		}
 
 		identity, ok, err := pwConn.Login(r.Context(), scopes, username, password)
 		if err != nil {
