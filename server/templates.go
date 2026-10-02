@@ -313,10 +313,11 @@ func (t *templates) login(r *http.Request, w http.ResponseWriter, connectors []c
 
 // authNotice is the inline message on the sign-in page: no account for the email, a success note, or an error.
 type authNotice struct {
-	SignupURL     string
-	PersonalEmail bool
-	Success       string
-	Error         string
+	SignupURL       string
+	PersonalEmail   bool
+	ExistingAccount bool
+	Success         string
+	Error           string
 }
 
 func (t *templates) password(r *http.Request, w http.ResponseWriter, postURL, lastUsername, usernamePrompt string, lastWasInvalid bool, backLink string, signupPath string, resetPasswordPath string, enableSignup bool, initialStage bool, tabs authTabs, notice authNotice) error {
@@ -339,9 +340,10 @@ func (t *templates) password(r *http.Request, w http.ResponseWriter, postURL, la
 		NoAccount          bool
 		NoAccountSignupURL template.URL
 		PersonalEmail      bool
+		ExistingAccount    bool
 		Success            string
 		Error              string
-	}{postURL, backLink, lastUsername, usernamePrompt, lastWasInvalid, r.URL.Path, template.URL(signupPath), template.URL(resetPasswordPath), enableSignup, initialStage, tabs, tabs.SignupMode, notice.SignupURL != "" || notice.PersonalEmail, template.URL(notice.SignupURL), notice.PersonalEmail, notice.Success, notice.Error}
+	}{postURL, backLink, lastUsername, usernamePrompt, lastWasInvalid, r.URL.Path, template.URL(signupPath), template.URL(resetPasswordPath), enableSignup, initialStage, tabs, tabs.SignupMode, notice.SignupURL != "" || notice.PersonalEmail, template.URL(notice.SignupURL), notice.PersonalEmail, notice.ExistingAccount, notice.Success, notice.Error}
 	return renderTemplate(w, t.passwordTmpl, data)
 }
 

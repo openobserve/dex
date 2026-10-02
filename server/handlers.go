@@ -591,9 +591,15 @@ func (s *Server) checkHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		_, err := s.storage.GetPassword(ctx, username)
 		if err == storage.ErrNotFound {
+			signupURL := signupURLWithEmail(signupPath, username)
+			personal := s.enableSignup && !s.isEmailAllowed(ctx, username)
+			if tabs.SignupMode && !personal {
+				http.Redirect(w, r, signupURL, http.StatusSeeOther)
+				return
+			}
 			// No password account: stay on the email step instead of offering a sign-in that can only fail.
-			notice := authNotice{SignupURL: fmt.Sprintf("%s&email=%s", signupPath, url.QueryEscape(username))}
-			if s.enableSignup && !s.isEmailAllowed(ctx, username) {
+			notice := authNotice{SignupURL: signupURL}
+			if personal {
 				notice = authNotice{PersonalEmail: true}
 			}
 			if err := s.templates.password(r, w, checkPath, username, "email", false, backLink, signupPath, resetPasswordPath, s.enableSignup, true, tabs, notice); err != nil {
@@ -601,10 +607,26 @@ func (s *Server) checkHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
+		notice := authNotice{}
 		if err != nil {
 			s.logger.ErrorContext(r.Context(), "failed to look up password account", "err", err)
+		} else if tabs.SignupMode {
+			notice = authNotice{ExistingAccount: true}
 		}
-		if err := s.templates.password(r, w, loginPath, username, "email", false, backLink, signupPath, resetPasswordPath, s.enableSignup, false, tabs, authNotice{}); err != nil {
+		if tabs.SignupMode {
+			// A returning user who chose Create account continues as a plain sign-in.
+			signInQuery := r.URL.Query()
+			signInQuery.Del(screenHintParam)
+			if back := signInQuery.Get("back"); back != "" {
+				signInQuery.Set("back", withoutScreenHint(back))
+			}
+			backLink = withoutScreenHint(backLink)
+			signupPath = fmt.Sprintf("%s?%s", s.absPath("/signup"), signInQuery.Encode())
+			resetPasswordPath = fmt.Sprintf("%s?%s", s.absPath("/password_reset"), signInQuery.Encode())
+			loginPath = fmt.Sprintf("%s?%s", s.absPath("/auth/local/login"), signInQuery.Encode())
+			tabs = s.authTabs(s.absPath("/auth/local/login"), signInQuery)
+		}
+		if err := s.templates.password(r, w, loginPath, username, "email", false, backLink, signupPath, resetPasswordPath, s.enableSignup, false, tabs, notice); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 		return
@@ -628,6 +650,11 @@ func (s *Server) authTabs(path string, query url.Values) authTabs {
 		SignInURL:  template.URL(path + "?" + signIn.Encode()),
 		SignupURL:  template.URL(path + "?" + signup.Encode()),
 	}
+}
+
+// signupURLWithEmail is the sign-up page for email, keeping signupPath's query.
+func signupURLWithEmail(signupPath, email string) string {
+	return fmt.Sprintf("%s&email=%s", signupPath, url.QueryEscape(email))
 }
 
 // withoutScreenHint drops the sign-up intent so links meant for signing in open on the Sign in tab.
