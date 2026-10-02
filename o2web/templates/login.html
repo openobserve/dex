@@ -80,7 +80,7 @@
   }
 
   .form-title {
-    font-size: 2rem;
+    font-size: 1.6rem;
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 0.5rem;
@@ -113,6 +113,41 @@
     right: 0;
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.6), transparent);
+  }
+
+  .auth-tabs {
+    display: flex;
+    align-self: stretch;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 10px;
+    background: rgba(239, 246, 255, 0.6);
+  }
+
+  .auth-tab {
+    flex: 1;
+    white-space: nowrap;
+    padding: 8px 12px;
+    border-radius: 7px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+    transition: all 0.2s ease;
+  }
+
+  .auth-tab:hover {
+    color: #1e293b;
+  }
+
+  .auth-tab.active {
+    background: #ffffff;
+    color: #1e293b;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(59, 130, 246, 0.25);
   }
 
   /* Email note */
@@ -258,13 +293,26 @@
   <div class="login-form-section">
     <div class="login-content-container">
       <div class="theme-panel modern-bordered-panel">
+        {{ if .EnableSignup }}
+        <nav class="auth-tabs" aria-label="Sign in or create an account">
+          <a class="auth-tab{{ if not .SignupMode }} active{{ end }}" href="{{ .Tabs.SignInURL }}"{{ if not .SignupMode }} aria-current="page"{{ end }}>Sign in</a>
+          <a class="auth-tab{{ if .SignupMode }} active{{ end }}" href="{{ .Tabs.SignupURL }}"{{ if .SignupMode }} aria-current="page"{{ end }}>Create account</a>
+        </nav>
+        {{ end }}
         <div class="form-header">
-          <h2 class="form-title">Welcome Back</h2>
-          <p class="form-subtitle">Sign in to your OpenObserve account</p>
+          {{ if .SignupMode }}
+          <h2 class="form-title">Create your OpenObserve account</h2>
+          {{ else }}
+          <h2 class="form-title">Sign in to OpenObserve</h2>
+          {{ end }}
         </div>
         <div id="login-buttons">
           <div class="official-email-note">
+            {{ if .SignupMode }}
+            Email sign-up needs a <strong>work email</strong> address.
+            {{ else }}
             Only <strong>work emails</strong> are supported.
+            {{ end }}
           </div>
           {{ range $c := .Connectors }}
             <div class="theme-form-row">

@@ -250,6 +250,8 @@ type Server struct {
 	hiddenConnectors []string
 
 	DomainConnectors []DomainSpecificConnector
+
+	limits *authLimits
 }
 
 // NewServer constructs a server from the provided config.
@@ -376,6 +378,7 @@ func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy)
 		registrationToken:        c.RegistrationToken,
 		logger:                   c.Logger,
 		hiddenConnectors:         c.HiddenConnectors,
+		limits:                   newAuthLimits(now),
 	}
 
 	// Retrieves connector objects in backend storage. This list includes the static connectors

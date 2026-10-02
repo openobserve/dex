@@ -81,7 +81,7 @@
   }
 
   .form-title {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 0.25rem;
@@ -243,6 +243,83 @@
 
   .login-link:hover {
     color: #1d4ed8;
+  }
+
+  .readonly-email-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .signup-form-input[readonly] {
+    background: rgba(226, 232, 240, 0.6);
+    color: #475569;
+    cursor: default;
+  }
+
+  .change-link,
+  .consent-text a {
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .change-link:hover,
+  .consent-text a:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+  }
+
+  .name-row {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .name-row > .signup-form-group {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .optional-text {
+    color: #94a3b8;
+    font-weight: 400;
+  }
+
+  .token-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .token-row .signup-form-input {
+    flex: 1;
+    letter-spacing: 0.2em;
+  }
+
+  .token-row .token-btn {
+    white-space: nowrap;
+  }
+
+  .token-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .consent-text {
+    color: #475569;
+    font-size: 12px;
+    text-align: center;
+    margin: 0.75rem 0 0;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 420px) {
+    .name-row {
+      flex-direction: column;
+      gap: 0;
+    }
   }
 
   /* Password toggle */
@@ -443,38 +520,51 @@
     <div class="login-content-container">
       <div class="theme-panel modern-bordered-panel">
         <div class="form-header">
-          <h2 class="form-title">Create Your Account</h2>
-          <p class="form-subtitle">Get started with OpenObserve</p>
+          <h2 class="form-title">Create your OpenObserve account</h2>
         </div>
 
-        <form method="post" action="{{ .PostURL }}" novalidate id="signup-form">
+        <form method="post" action="{{ .PostURL }}" novalidate id="signup-form"{{ if and .Email (not .Invalid) }} data-autosend="true"{{ end }}>
           {{ if .Invalid }}
-            <div class="error-message" id="server-error" style="display: none;">
-              {{ .Error }}
-            </div>
+            <div class="error-message" id="server-error" role="alert">{{ .Error }}</div>
           {{ end }}
 
           <div class="signup-form-group">
-            <label for="email" class="signup-form-label">Email Address</label>
-            <input tabindex="1" required id="email" name="email" type="email"
-              class="signup-form-input" placeholder="you@company.com"
-              {{ if .Email }} value="{{ .Email }}" {{ end }} />
+            <label for="email" class="signup-form-label">Work email</label>
+            {{ if .Email }}
+            <div class="readonly-email-row">
+              <input tabindex="1" required readonly aria-readonly="true" id="email" name="email" type="email" autocomplete="username"
+                class="signup-form-input" value="{{ .Email }}" />
+              <a class="change-link" href="{{ .BackLink }}">Change</a>
+            </div>
+            {{ else }}
+            <input tabindex="1" required id="email" name="email" type="email" autocomplete="username"
+              class="signup-form-input" placeholder="you@company.com" />
+            {{ end }}
             <span class="error-text" id="email-error" style="display: none;"></span>
           </div>
 
-          <div class="signup-form-group">
-            <label for="username" class="signup-form-label">Username</label>
-            <input tabindex="2" required id="username" name="username" type="text"
-              class="signup-form-input" placeholder="Choose a username"
-              {{ if .Username }} value="{{ .Username }}" {{ end }} />
-            <span class="error-text" id="username-error" style="display: none;"></span>
+          <div class="name-row">
+            <div class="signup-form-group">
+              <label for="first-name" class="signup-form-label">First name</label>
+              <input tabindex="2" required id="first-name" type="text" autocomplete="given-name"
+                class="signup-form-input" placeholder="Jane"
+                {{ if .FirstName }} value="{{ .FirstName }}" {{ end }} />
+              <span class="error-text" id="first-name-error" style="display: none;"></span>
+            </div>
+            <div class="signup-form-group">
+              <label for="last-name" class="signup-form-label">Last name <span class="optional-text">(optional)</span></label>
+              <input tabindex="3" id="last-name" type="text" autocomplete="family-name"
+                class="signup-form-input" placeholder="Smith"
+                {{ if .LastName }} value="{{ .LastName }}" {{ end }} />
+            </div>
           </div>
+          <input id="username" name="username" type="hidden" {{ if .Username }} value="{{ .Username }}" {{ end }} />
 
           <div class="signup-form-group">
             <label for="password" class="signup-form-label">Password</label>
             <div class="password-input-wrapper">
-              <input tabindex="3" required id="password" name="password" type="password"
-                class="signup-form-input" placeholder="Minimum 8 characters"
+              <input tabindex="4" required id="password" name="password" type="password" autocomplete="new-password"
+                class="signup-form-input" placeholder="At least 8 characters"
                 minlength="8" style="padding-right: 40px;" />
               <button type="button" class="password-toggle-btn" id="toggle-password" aria-label="Toggle password visibility">
                 <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -490,34 +580,31 @@
           </div>
 
           <div class="signup-form-group">
-            <label for="password-confirm" class="signup-form-label">Confirm Password</label>
-            <div class="password-input-wrapper">
-              <input tabindex="4" required id="password-confirm" name="password-confirm"
-                type="password" class="signup-form-input" placeholder="Minimum 8 characters"
-                minlength="8" style="padding-right: 40px;" />
+            <label for="token" class="signup-form-label">Verification code</label>
+            <div class="token-row">
+              <input tabindex="5" required id="token" name="token" type="text"
+                inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+                class="signup-form-input" placeholder="6-digit code" />
+              <button type="button" id="token-btn" class="token-btn">Send code</button>
             </div>
-          </div>
-
-          <div class="signup-form-group">
-            <label for="token" class="signup-form-label">Verification OTP</label>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <input tabindex="5" readonly required id="token" name="token" type="text"
-                class="signup-form-input" placeholder="Click 'Get OTP' to receive via email"
-                style="flex: 1;" />
-              <button type="button" id="token-btn" class="token-btn" style="white-space: nowrap;">Get OTP</button>
-            </div>
+            <span class="success-text" id="token-status" style="display: none;"></span>
             <span class="error-text" id="token-error" style="display: none;"></span>
           </div>
 
-          <input tabindex="6" readonly hidden id="csrf" name="csrf" type="text" style="display: none;" />
+          <input tabindex="6" readonly hidden id="csrf" name="csrf" type="text" style="display: none;"{{ if .Csrf }} value="{{ .Csrf }}"{{ end }} />
 
           <button tabindex="7" id="submit-signup" type="submit" class="signup-btn-primary">
-            Create Account
+            Create account
           </button>
+          <p class="consent-text">
+            By creating an account you agree to the
+            <a href="{{ "terms_of_use" | extra }}" target="_blank" rel="noopener">Terms of Use</a> and
+            <a href="{{ "privacy_policy" | extra }}" target="_blank" rel="noopener">Privacy Policy</a>.
+          </p>
         </form>
 
         <div class="login-link-section">
-          <p class="login-link-text">Already have an account? <a class="login-link" href="{{ .BackLink }}">Log in</a></p>
+          <p class="login-link-text">Already have an account? <a class="login-link" href="{{ .SignInLink }}">Sign in</a></p>
         </div>
       </div>
 
@@ -542,47 +629,23 @@
 <script type="text/javascript">
   document.getElementById('year').innerHTML = new Date().getFullYear();
 
-  function showToast(message, type = 'error', duration = 5000) {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    const iconSVG = type === 'error'
-      ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
-      : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
-    toast.innerHTML = `
-      <div class="toast-icon ${type}">${iconSVG}</div>
-      <div class="toast-content">
-        <div class="toast-title">${type === 'error' ? 'Error' : 'Success'}</div>
-        <div class="toast-message">${message}</div>
-      </div>
-      <button class="toast-close" onclick="this.parentElement.remove()">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>`;
-    container.appendChild(toast);
-    setTimeout(() => {
-      toast.classList.add('closing');
-      setTimeout(() => toast.remove(), 300);
-    }, duration);
-  }
-
-  const serverError = document.getElementById('server-error');
-  if (serverError && serverError.textContent.trim()) {
-    showToast(serverError.textContent.trim(), 'error');
-  }
-
+  const signupForm = document.getElementById('signup-form');
   const togglePasswordBtn = document.getElementById('toggle-password');
   const passwordInput = document.getElementById('password');
-  const passwordConfirmInput = document.getElementById('password-confirm');
   const eyeIcon = document.getElementById('eye-icon');
   const eyeSlashIcon = document.getElementById('eye-slash-icon');
   const emailInput = document.getElementById('email');
+  const firstNameInput = document.getElementById('first-name');
+  const lastNameInput = document.getElementById('last-name');
   const usernameInput = document.getElementById('username');
   const tokenInput = document.getElementById('token');
+  const tokenBtn = document.getElementById('token-btn');
+  const tokenStatus = document.getElementById('token-status');
+  const csrfInput = document.getElementById('csrf');
 
-  let otpCooldown = 0;
+  const RESEND_COOLDOWN_SECONDS = 30;
   let cooldownInterval = null;
+  let codeSent = false;
 
   togglePasswordBtn.addEventListener('click', function() {
     if (passwordInput.type === 'password') {
@@ -625,17 +688,89 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  function resetTokenBtn() {
-    otpCooldown = 0;
-    const btn = document.querySelector("#token-btn");
-    btn.disabled = false;
-    btn.textContent = 'Get OTP';
-    btn.style.background = 'rgba(59, 130, 246, 0.1)';
-    btn.style.color = '#1e40af';
-    btn.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+  function joinedName() {
+    const first = firstNameInput.value.trim();
+    const last = lastNameInput.value.trim();
+    return (first + (last ? ' ' + last : '')).trim();
   }
 
+  function setTokenStatus(message) {
+    tokenStatus.textContent = message;
+    tokenStatus.style.display = message ? 'block' : 'none';
+  }
+
+  function resetTokenBtn() {
+    if (cooldownInterval) { clearInterval(cooldownInterval); cooldownInterval = null; }
+    tokenBtn.disabled = false;
+    tokenBtn.textContent = codeSent ? 'Resend code' : 'Send code';
+  }
+
+  function startResendCooldown() {
+    let remaining = RESEND_COOLDOWN_SECONDS;
+    tokenBtn.disabled = true;
+    tokenBtn.textContent = `Resend code (${remaining}s)`;
+    cooldownInterval = setInterval(() => {
+      remaining--;
+      if (remaining > 0) {
+        tokenBtn.textContent = `Resend code (${remaining}s)`;
+      } else {
+        resetTokenBtn();
+      }
+    }, 1000);
+  }
+
+  // Errors about the address belong under the email; delivery failures belong under the code.
+  function showSendError(status, body) {
+    const message = (body && body.error_description) || "We couldn't send the code. Try again in a minute.";
+    if (status === 400 || status === 409) {
+      showError('email', message);
+      if (!emailInput.readOnly) emailInput.focus();
+    } else {
+      showError('token', message);
+    }
+  }
+
+  function sendCode() {
+    const email = emailInput.value.trim();
+    if (!email) { showError('email', 'Please enter your email address first'); emailInput.focus(); return; }
+    if (!validateEmail(email)) { showError('email', 'Please enter a valid email address'); emailInput.focus(); return; }
+
+    clearError('email');
+    clearError('token');
+    setTokenStatus('');
+    tokenBtn.disabled = true;
+    tokenBtn.textContent = 'Sending...';
+
+    fetch("signup-token", {
+      method: "POST",
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    })
+    .then((r) => r.json().catch(() => ({})).then((body) => ({ status: r.status, ok: r.ok, body: body })))
+    .then(({ status, ok, body }) => {
+      if (!ok || body.error || !body.csrfToken) {
+        resetTokenBtn();
+        showSendError(status, body);
+        return;
+      }
+      csrfInput.value = body.csrfToken;
+      codeSent = true;
+      setTokenStatus(`We sent a 6-digit code to ${email}.`);
+      startResendCooldown();
+    })
+    .catch(() => {
+      resetTokenBtn();
+      showError('token', "We couldn't send the code. Try again in a minute.");
+    });
+  }
+
+  tokenBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    sendCode();
+  });
+
   emailInput.addEventListener('blur', function() {
+    if (this.readOnly) return;
     const value = this.value.trim();
     if (!value) showError('email', 'Email is required');
     else if (!validateEmail(value)) showError('email', 'Please enter a valid email address');
@@ -645,19 +780,17 @@
   emailInput.addEventListener('input', function() {
     if (this.value.trim() && validateEmail(this.value.trim())) {
       clearError('email');
-      if (cooldownInterval) { clearInterval(cooldownInterval); resetTokenBtn(); }
+      if (cooldownInterval) resetTokenBtn();
     }
   });
 
-  usernameInput.addEventListener('blur', function() {
-    const value = this.value.trim();
-    if (!value) showError('username', 'Username is required');
-    else if (value.length < 3) showError('username', 'Username must be at least 3 characters');
-    else showSuccess('username');
+  firstNameInput.addEventListener('blur', function() {
+    if (!this.value.trim()) showError('first-name', 'First name is required');
+    else showSuccess('first-name');
   });
 
-  usernameInput.addEventListener('input', function() {
-    if (this.value.trim().length >= 3) clearError('username');
+  firstNameInput.addEventListener('input', function() {
+    if (this.value.trim()) clearError('first-name');
   });
 
   passwordInput.addEventListener('blur', function() {
@@ -667,17 +800,12 @@
     else showSuccess('password');
   });
 
-  passwordConfirmInput.addEventListener('blur', function() {
-    if (passwordInput.value !== this.value) showError('password', 'Two passwords do not match');
-    else showSuccess('password');
-  });
-
   passwordInput.addEventListener('input', function() {
     if (this.value.length >= 8) clearError('password');
   });
 
   tokenInput.addEventListener('blur', function() {
-    if (!this.value.trim()) showError('token', 'Verification OTP is required');
+    if (!this.value.trim()) showError('token', 'Verification code is required');
     else showSuccess('token');
   });
 
@@ -685,126 +813,47 @@
     if (this.value.trim()) clearError('token');
   });
 
-  document.querySelector('form').onsubmit = function(e) {
+  signupForm.onsubmit = function(e) {
     e.preventDefault();
     let isValid = true;
     const email = emailInput.value.trim();
-    const username = usernameInput.value.trim();
+    const username = joinedName();
     const password = passwordInput.value;
-    const confirmedPassword = passwordConfirmInput.value;
     const token = tokenInput.value.trim();
-    const csrf = document.querySelector('#csrf').value;
+    const csrf = csrfInput.value;
+    usernameInput.value = username;
 
     if (!email) { showError('email', 'Email is required'); isValid = false; }
     else if (!validateEmail(email)) { showError('email', 'Please enter a valid email address'); isValid = false; }
 
-    if (!username) { showError('username', 'Username is required'); isValid = false; }
-    else if (username.length < 3) { showError('username', 'Username must be at least 3 characters'); isValid = false; }
+    if (!firstNameInput.value.trim()) { showError('first-name', 'First name is required'); isValid = false; }
 
     if (!password) { showError('password', 'Password is required'); isValid = false; }
     else if (password.length < 8) { showError('password', 'Password must be at least 8 characters'); isValid = false; }
-    else if (password !== confirmedPassword) { showError('password', 'Two passwords do not match'); isValid = false; }
 
-    if (!token) { showError('token', 'Verification OTP is required'); isValid = false; }
+    if (!token) { showError('token', 'Verification code is required'); isValid = false; }
+    else if (!csrf) { showError('token', 'Send a code to your email first'); isValid = false; }
 
     if (!isValid) return false;
 
     const submitBtn = document.querySelector('#submit-signup');
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating Account...';
+    submitBtn.textContent = 'Creating account...';
 
-    const formData = new URLSearchParams();
-    formData.append('email', email);
-    formData.append('username', username);
-    formData.append('password', password);
-    formData.append('token', token);
-    formData.append('csrf', csrf);
-
-    fetch(this.action, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString()
-    })
-    .then(response => {
-      if (response.redirected) { window.location.href = response.url; return; }
-      return response.text();
-    })
-    .then(html => {
-      if (html) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const errorDiv = doc.querySelector('.error-message');
-        showToast(errorDiv ? errorDiv.textContent.trim() : 'An error occurred. Please try again.', 'error');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account';
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showToast('Network error. Please check your connection.', 'error');
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Create Account';
-    });
+    emailInput.value = email;
+    tokenInput.value = token;
+    // A real navigation is needed: success redirects across origins to the app with an OAuth code, which fetch cannot follow.
+    this.submit();
   };
 
-  function startOtpCooldown(tokenBtn) {
-    otpCooldown = 60;
-    tokenBtn.disabled = true;
-    cooldownInterval = setInterval(() => {
-      otpCooldown--;
-      if (otpCooldown > 0) {
-        tokenBtn.textContent = `Resend in ${otpCooldown}s`;
-      } else {
-        clearInterval(cooldownInterval);
-        resetTokenBtn();
-      }
-    }, 1000);
+  if (csrfInput.value) {
+    codeSent = true;
+    resetTokenBtn();
   }
 
-  document.querySelector('#token-btn').onclick = (e) => {
-    e.preventDefault();
-    const emailInput = document.querySelector("#email");
-    const tokenInput = document.querySelector("#token");
-    const passwordInput = document.querySelector("#password");
-    const passwordConfirmInput = document.querySelector("#password-confirm");
-    const tokenBtn = e.target;
-
-    if (!emailInput.value) { showError('email', 'Please enter your email address first'); emailInput.focus(); return; }
-    if (!validateEmail(emailInput.value)) { showError('email', 'Please enter a valid email address'); emailInput.focus(); return; }
-    if (passwordInput.value !== passwordConfirmInput.value) { showError('password', 'Two passwords do not match'); passwordConfirmInput.focus(); return; }
-
-    tokenBtn.disabled = true;
-    tokenBtn.textContent = 'Sending...';
-    tokenInput.readonly = false;
-    tokenInput.readOnly = false;
-
-    fetch("signup-token", {
-      method: "POST",
-      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: emailInput.value })
-    })
-    .then((r) => r.json())
-    .then((v) => {
-      if (v.error) {
-        tokenBtn.disabled = false;
-        tokenBtn.textContent = 'Get OTP';
-        showToast(v.error_description || 'Error in sending OTP', 'error');
-        return;
-      }
-      document.querySelector("#csrf").value = v.csrfToken;
-      tokenBtn.textContent = '✓ OTP Sent';
-      tokenBtn.style.background = 'rgba(34, 197, 94, 0.1)';
-      tokenBtn.style.color = '#16a34a';
-      tokenBtn.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-      tokenInput.focus();
-      setTimeout(() => startOtpCooldown(tokenBtn), 2000);
-    })
-    .catch((err) => {
-      tokenBtn.disabled = false;
-      tokenBtn.textContent = 'Get OTP';
-      showError('token', 'Failed to send OTP. Please try again.');
-    });
-  };
+  if (signupForm.dataset.autosend === 'true' && validateEmail(emailInput.value.trim())) {
+    sendCode();
+  }
 </script>
 
 {{ template "footer.html" . }}

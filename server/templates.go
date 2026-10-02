@@ -291,53 +291,88 @@ func (t *templates) deviceSuccess(r *http.Request, w http.ResponseWriter, client
 	return renderTemplate(w, t.deviceSuccessTmpl, data)
 }
 
-func (t *templates) login(r *http.Request, w http.ResponseWriter, connectors []connectorInfo) error {
+// authTabs drives the "Sign in | Create account" switch on the chooser and the email step.
+type authTabs struct {
+	SignupMode bool
+	SignInURL  template.URL
+	SignupURL  template.URL
+}
+
+func (t *templates) login(r *http.Request, w http.ResponseWriter, connectors []connectorInfo, tabs authTabs, signupPath string, enableSignup bool) error {
 	sort.Sort(byName(connectors))
 	data := struct {
-		Connectors []connectorInfo
-		ReqPath    string
-	}{connectors, r.URL.Path}
+		Connectors   []connectorInfo
+		ReqPath      string
+		Tabs         authTabs
+		SignupMode   bool
+		SignupPath   template.URL
+		EnableSignup bool
+	}{connectors, r.URL.Path, tabs, tabs.SignupMode, template.URL(signupPath), enableSignup}
 	return renderTemplate(w, t.loginTmpl, data)
 }
 
-func (t *templates) password(r *http.Request, w http.ResponseWriter, postURL, lastUsername, usernamePrompt string, lastWasInvalid bool, backLink string, signupPath string, resetPasswordPath string, enableSignup bool, initialStage bool) error {
+// authNotice is the inline message on the sign-in page: no account for the email, a success note, or an error.
+type authNotice struct {
+	SignupURL     string
+	PersonalEmail bool
+	Success       string
+	Error         string
+}
+
+func (t *templates) password(r *http.Request, w http.ResponseWriter, postURL, lastUsername, usernamePrompt string, lastWasInvalid bool, backLink string, signupPath string, resetPasswordPath string, enableSignup bool, initialStage bool, tabs authTabs, notice authNotice) error {
 	if lastWasInvalid {
 		w.WriteHeader(http.StatusUnauthorized)
 	}
 	data := struct {
-		PostURL           string
-		BackLink          string
-		Username          string
-		UsernamePrompt    string
-		Invalid           bool
-		ReqPath           string
-		SignupPath        template.URL
-		ResetPasswordPath template.URL
-		EnableSignup      bool
-		InitialStage      bool
-	}{postURL, backLink, lastUsername, usernamePrompt, lastWasInvalid, r.URL.Path, template.URL(signupPath), template.URL(resetPasswordPath), enableSignup, initialStage}
+		PostURL            string
+		BackLink           string
+		Username           string
+		UsernamePrompt     string
+		Invalid            bool
+		ReqPath            string
+		SignupPath         template.URL
+		ResetPasswordPath  template.URL
+		EnableSignup       bool
+		InitialStage       bool
+		Tabs               authTabs
+		SignupMode         bool
+		NoAccount          bool
+		NoAccountSignupURL template.URL
+		PersonalEmail      bool
+		Success            string
+		Error              string
+	}{postURL, backLink, lastUsername, usernamePrompt, lastWasInvalid, r.URL.Path, template.URL(signupPath), template.URL(resetPasswordPath), enableSignup, initialStage, tabs, tabs.SignupMode, notice.SignupURL != "" || notice.PersonalEmail, template.URL(notice.SignupURL), notice.PersonalEmail, notice.Success, notice.Error}
 	return renderTemplate(w, t.passwordTmpl, data)
 }
 
-func (t *templates) signup(r *http.Request, w http.ResponseWriter, postURL, lastEmail, lastUsername, errorMsg string, lastWasInvalid bool, backLink string) error {
+// signup renders the sign-up page; a non-zero status marks a re-render after a failed submission.
+func (t *templates) signup(r *http.Request, w http.ResponseWriter, postURL, lastEmail, lastUsername, csrf, errorMsg string, status int, backLink string) error {
+	lastWasInvalid := status != 0
 	if lastWasInvalid {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(status)
 	}
+	// Re-renders split the joined username back so the first/last name inputs keep what was typed.
+	firstName, lastName, _ := strings.Cut(lastUsername, " ")
 	data := struct {
-		PostURL  string
-		BackLink string
-		Email    string
-		Username string
-		Invalid  bool
-		Error    string
-		ReqPath  string
-	}{postURL, backLink, lastEmail, lastUsername, lastWasInvalid, errorMsg, r.URL.Path}
+		PostURL    string
+		BackLink   string
+		SignInLink string
+		Email      string
+		Username   string
+		FirstName  string
+		LastName   string
+		Csrf       string
+		Invalid    bool
+		Error      string
+		ReqPath    string
+	}{postURL, backLink, withoutScreenHint(backLink), lastEmail, lastUsername, firstName, lastName, csrf, lastWasInvalid, errorMsg, r.URL.Path}
 	return renderTemplate(w, t.signupTmpl, data)
 }
 
-func (t *templates) passwordReset(r *http.Request, w http.ResponseWriter, postURL, lastEmail, errorMsg string, lastWasInvalid bool, backLink string) error {
+func (t *templates) passwordReset(r *http.Request, w http.ResponseWriter, postURL, lastEmail, errorMsg string, status int, backLink string) error {
+	lastWasInvalid := status != 0
 	if lastWasInvalid {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(status)
 	}
 	data := struct {
 		PostURL  string
