@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 
+	"github.com/dexidp/dex/connector/mock"
 	"github.com/dexidp/dex/storage"
 )
 
@@ -1290,4 +1291,377 @@ func TestHandleSignupMethodNotAllowed(t *testing.T) {
 	server.ServeHTTP(rr, req)
 
 	require.Equal(t, http.StatusMethodNotAllowed, rr.Code)
+}
+
+func newO2WebSignupServer(t *testing.T) (*httptest.Server, *Server) {
+	httpServer, s := newTestServer(t, func(c *Config) {
+		c.EnableSignup = true
+		c.Web.Dir = "../o2web"
+	})
+	ctx := t.Context()
+	require.NoError(t, s.storage.CreatePassword(ctx, storage.Password{
+		Email:    "known@example.com",
+		Hash:     []byte("$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"),
+		Username: "known",
+		UserID:   "known-id",
+	}))
+	require.NoError(t, s.storage.CreateAuthRequest(ctx, storage.AuthRequest{
+		ID:            "test",
+		ConnectorID:   "local",
+		RedirectURI:   "cb",
+		Expiry:        time.Now().Add(100 * time.Second),
+		ResponseTypes: []string{responseTypeCode},
+	}))
+	return httpServer, s
+}
+
+func TestCheckHandlerAccountLookup(t *testing.T) {
+	tests := []struct {
+		name         string
+		query        string
+		login        string
+		wantNotice   bool
+		wantPassword bool
+		wantHeading  string
+	}{
+		{
+			name:        "unknown email stays on the email step with a notice",
+			query:       "state=test&back=",
+			login:       "new.person@example.com",
+			wantNotice:  true,
+			wantHeading: "Sign in to OpenObserve",
+		},
+		{
+			name:         "known email goes to the password step",
+			query:        "state=test&back=",
+			login:        "known@example.com",
+			wantPassword: true,
+			wantHeading:  "Sign in to OpenObserve",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			httpServer, s := newO2WebSignupServer(t)
+			defer httpServer.Close()
+
+			form := url.Values{"login": {tc.login}}
+			req := httptest.NewRequest(http.MethodPost, "/check-handler?"+tc.query, strings.NewReader(form.Encode()))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			rr := httptest.NewRecorder()
+			s.ServeHTTP(rr, req)
+
+			require.Equal(t, http.StatusOK, rr.Code)
+			body := rr.Body.String()
+			require.Contains(t, body, tc.wantHeading)
+			require.Equal(t, tc.wantNotice, strings.Contains(body, "There's no password account for"))
+			require.Equal(t, tc.wantPassword, strings.Contains(body, `name="password"`))
+			if tc.wantNotice {
+				require.Contains(t, body, "email="+url.QueryEscape(tc.login))
+				require.Contains(t, body, `action="/check-handler?`)
+				require.Contains(t, body, "Create account</a>")
+			} else {
+				require.Contains(t, body, "Forgot password?")
+				require.Contains(t, body, "New here?")
+			}
+		})
+	}
+}
+
+func TestHandleSignupPrefillsEmail(t *testing.T) {
+	httpServer, s := newO2WebSignupServer(t)
+	defer httpServer.Close()
+
+	req := httptest.NewRequest(http.MethodGet, "/signup?state=test&email="+url.QueryEscape("jane@acme.com"), nil)
+	rr := httptest.NewRecorder()
+	s.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusOK, rr.Code)
+	body := rr.Body.String()
+	require.Contains(t, body, `value="jane@acme.com"`)
+	require.Contains(t, body, `data-autosend="true"`)
+	require.Contains(t, body, ">Change</a>")
+	for _, name := range []string{"email", "username", "password", "token", "csrf"} {
+		require.Contains(t, body, `name="`+name+`"`, "signup form must still post %q", name)
+	}
+	require.NotContains(t, body, "password-confirm")
+}
+
+func TestHandleSignupRerenderKeepsName(t *testing.T) {
+	httpServer, s := newO2WebSignupServer(t)
+	defer httpServer.Close()
+
+	form := url.Values{
+		"email":    {"jane@acme.com"},
+		"username": {"Jane van Smith"},
+		"password": {"short"},
+		"token":    {"123456"},
+		"csrf":     {"abc"},
+	}
+	req := httptest.NewRequest(http.MethodPost, "/signup", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rr := httptest.NewRecorder()
+	s.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+	body := rr.Body.String()
+	require.Contains(t, body, `value="Jane"`)
+	require.Contains(t, body, `value="van Smith"`)
+	require.Contains(t, body, `value="Jane van Smith"`)
+	require.NotContains(t, body, `data-autosend="true"`)
+}
+
+func TestHandleSignupTokenErrors(t *testing.T) {
+	tests := []struct {
+		name            string
+		email           string
+		wantStatus      int
+		wantError       string
+		wantDescription string
+	}{
+		{
+			name:            "SSO domain is rejected",
+			email:           "jane@SSO.example.com",
+			wantStatus:      http.StatusBadRequest,
+			wantError:       "sso_required",
+			wantDescription: ssoRequiredDescription,
+		},
+		{
+			name:       "invalid email stops after one error",
+			email:      "not-an-email",
+			wantStatus: http.StatusBadRequest,
+			wantError:  "invalid_request",
+		},
+		{
+			name:            "email send failure is a 502",
+			email:           "jane@acme.com",
+			wantStatus:      http.StatusBadGateway,
+			wantError:       "server_error",
+			wantDescription: "We couldn't send the code. Try again in a minute.",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			httpServer, s := newO2WebSignupServer(t)
+			defer httpServer.Close()
+			s.DomainConnectors = []DomainSpecificConnector{{}, {Domain: "sso.example.com", Id: "sso"}}
+
+			body, err := json.Marshal(signupTokenRequest{Email: tc.email})
+			require.NoError(t, err)
+			req := httptest.NewRequest(http.MethodPost, "/signup-token", bytes.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+			s.ServeHTTP(rr, req)
+
+			require.Equal(t, tc.wantStatus, rr.Code)
+			require.Equal(t, 1, strings.Count(rr.Body.String(), "error_description"), "exactly one error response must be written")
+			var errResp signupErrorResponse
+			require.NoError(t, json.NewDecoder(rr.Body).Decode(&errResp))
+			require.Equal(t, tc.wantError, errResp.Error)
+			if tc.wantDescription != "" {
+				require.Equal(t, tc.wantDescription, errResp.Description)
+			}
+		})
+	}
+}
+
+func TestHandleSignupRejectsSSODomain(t *testing.T) {
+	httpServer, s := newO2WebSignupServer(t)
+	defer httpServer.Close()
+	s.DomainConnectors = []DomainSpecificConnector{{Domain: "sso.example.com", Id: "sso"}}
+
+	ctx := t.Context()
+	require.NoError(t, s.storage.CreateSignupToken(ctx, storage.SignupToken{
+		Email:           "jane@sso.example.com",
+		CsrfToken:       "1234",
+		ValidationToken: "5678",
+		Expiry:          time.Now().Add(5 * time.Minute),
+	}))
+
+	body, err := json.Marshal(map[string]string{
+		"email":    "jane@sso.example.com",
+		"password": "password123",
+		"username": "Jane Smith",
+		"csrf":     "1234",
+		"token":    "5678",
+	})
+	require.NoError(t, err)
+	req := httptest.NewRequest(http.MethodPost, "/signup", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	s.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+	var errResp signupErrorResponse
+	require.NoError(t, json.NewDecoder(rr.Body).Decode(&errResp))
+	require.Equal(t, "sso_required", errResp.Error)
+	_, err = s.storage.GetPassword(ctx, "jane@sso.example.com")
+	require.ErrorIs(t, err, storage.ErrNotFound)
+}
+
+func TestHandleAuthorizationSignupTab(t *testing.T) {
+	httpServer, s := newO2WebSignupServer(t)
+	defer httpServer.Close()
+	require.NoError(t, s.storage.CreateConnector(t.Context(), storage.Connector{ID: "local", Type: LocalConnector, Name: "Email"}))
+
+	render := func(query string) string {
+		rr := httptest.NewRecorder()
+		s.ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/auth?"+query, nil))
+		require.Equal(t, http.StatusOK, rr.Code)
+		return rr.Body.String()
+	}
+
+	signIn := render("client_id=x&state=abc")
+	require.Contains(t, signIn, "Sign in to OpenObserve")
+	require.Contains(t, signIn, `href="/auth/local?client_id=x&amp;state=abc"`)
+
+	signup := render("client_id=x&state=abc&screen_hint=signup")
+	require.Contains(t, signup, "Create your OpenObserve account")
+	require.Contains(t, signup, "Email sign-up needs a")
+	require.Contains(t, signup, `href="/auth/local?client_id=x&amp;screen_hint=signup&amp;state=abc"`, "sign-up by email must go through the local connector so a dex auth request exists")
+	require.Contains(t, signup, `href="/auth/mock?client_id=x&amp;screen_hint=signup&amp;state=abc"`)
+}
+
+func TestCheckHandlerPersonalEmail(t *testing.T) {
+	classifier := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		classification := "legitimate"
+		if strings.HasSuffix(r.URL.Path, "/gmail.com") {
+			classification = "free"
+		}
+		_, _ = w.Write([]byte(`{"classification":"` + classification + `"}`))
+	}))
+	defer classifier.Close()
+
+	httpServer, s := newTestServer(t, func(c *Config) {
+		c.EnableSignup = true
+		c.Web.Dir = "../o2web"
+		c.EnableEmailValidation = true
+		c.EmailValidationServerUrl = classifier.URL
+	})
+	defer httpServer.Close()
+	require.NoError(t, s.storage.CreateAuthRequest(t.Context(), storage.AuthRequest{
+		ID:            "test",
+		ConnectorID:   "local",
+		RedirectURI:   "cb",
+		Expiry:        time.Now().Add(100 * time.Second),
+		ResponseTypes: []string{responseTypeCode},
+	}))
+
+	post := func(login string) string {
+		form := url.Values{"login": {login}}
+		req := httptest.NewRequest(http.MethodPost, "/check-handler?state=test&back=", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rr := httptest.NewRecorder()
+		s.ServeHTTP(rr, req)
+		require.Equal(t, http.StatusOK, rr.Code)
+		return rr.Body.String()
+	}
+
+	personal := post("jane@gmail.com")
+	require.Contains(t, personal, "Personal email addresses like")
+	require.NotContains(t, personal, "Create an account</a>")
+
+	work := post("jane@acme.example")
+	require.Contains(t, work, "There's no password account for")
+	require.Contains(t, work, "email="+url.QueryEscape("jane@acme.example"))
+
+	postSignup := func(login string) *httptest.ResponseRecorder {
+		form := url.Values{"login": {login}}
+		req := httptest.NewRequest(http.MethodPost, "/check-handler?state=test&back=&screen_hint=signup", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rr := httptest.NewRecorder()
+		s.ServeHTTP(rr, req)
+		return rr
+	}
+
+	personalSignup := postSignup("jane@gmail.com")
+	require.Equal(t, http.StatusOK, personalSignup.Code)
+	require.Contains(t, personalSignup.Body.String(), "Personal email addresses like")
+	require.Contains(t, personalSignup.Body.String(), "Create your OpenObserve account")
+	require.NotContains(t, personalSignup.Body.String(), `name="password"`)
+
+	workSignup := postSignup("jane@acme.example")
+	require.Equal(t, http.StatusSeeOther, workSignup.Code)
+	require.Equal(t, "/signup?back=&screen_hint=signup&state=test&email="+url.QueryEscape("jane@acme.example"), workSignup.Header().Get("Location"))
+}
+
+func TestCheckHandlerSignupIntent(t *testing.T) {
+	const query = "state=test&back=&screen_hint=signup&org=acme"
+	post := func(t *testing.T, s *Server, login string) *httptest.ResponseRecorder {
+		form := url.Values{"login": {login}}
+		req := httptest.NewRequest(http.MethodPost, "/check-handler?"+query, strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rr := httptest.NewRecorder()
+		s.ServeHTTP(rr, req)
+		return rr
+	}
+
+	t.Run("existing account goes to the sign-in password step", func(t *testing.T) {
+		httpServer, s := newO2WebSignupServer(t)
+		defer httpServer.Close()
+		require.NoError(t, s.storage.CreatePassword(t.Context(), storage.Password{
+			Email:    "returning@acme.example",
+			Hash:     []byte("$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"),
+			Username: "returning",
+			UserID:   "returning-id",
+		}))
+
+		form := url.Values{"login": {"returning@acme.example"}}
+		back := url.QueryEscape("/auth?client_id=acme-app&screen_hint=signup&state=test")
+		req := httptest.NewRequest(http.MethodPost, "/check-handler?state=test&screen_hint=signup&back="+back, strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		backRR := httptest.NewRecorder()
+		s.ServeHTTP(backRR, req)
+		require.Equal(t, http.StatusOK, backRR.Code)
+		require.Contains(t, backRR.Body.String(), `href="/auth?client_id=acme-app&amp;state=test"`, "the back link must open the chooser on Sign in")
+		require.NotContains(t, backRR.Body.String(), "screen_hint")
+
+		rr := post(t, s, "returning@acme.example")
+		require.Equal(t, http.StatusOK, rr.Code)
+		body := rr.Body.String()
+		require.Contains(t, body, `name="password"`)
+		require.Contains(t, body, `value="returning@acme.example"`)
+		require.Contains(t, body, "You already have an account with <strong>returning@acme.example</strong>. Enter your password to sign in.")
+		require.Contains(t, body, "Sign in to OpenObserve")
+		require.NotContains(t, body, "Create your OpenObserve account")
+		require.Contains(t, body, `action="/auth/local/login?back=&amp;org=acme&amp;state=test"`, "the password step must post as a plain sign-in")
+		require.NotContains(t, body, "There's no password account for")
+	})
+
+	t.Run("unknown work email goes to the sign-up page", func(t *testing.T) {
+		httpServer, s := newO2WebSignupServer(t)
+		defer httpServer.Close()
+
+		rr := post(t, s, "new.person@acme.example")
+		require.Equal(t, http.StatusSeeOther, rr.Code)
+		require.Equal(t, "/signup?back=&org=acme&screen_hint=signup&state=test&email="+url.QueryEscape("new.person@acme.example"), rr.Header().Get("Location"))
+	})
+
+	t.Run("SSO domain keeps the connector redirect", func(t *testing.T) {
+		httpServer, s := newO2WebSignupServer(t)
+		defer httpServer.Close()
+		s.DomainConnectors = []DomainSpecificConnector{{Domain: "sso.acme.example", Id: "sso", Connector: mock.NewCallbackConnector(s.logger)}}
+
+		rr := post(t, s, "jane@sso.acme.example")
+		require.Equal(t, http.StatusFound, rr.Code)
+		require.Contains(t, rr.Header().Get("Location"), "/callback?state=test")
+		authReq, err := s.storage.GetAuthRequest(t.Context(), "test")
+		require.NoError(t, err)
+		require.Equal(t, "sso", authReq.ConnectorID)
+	})
+}
+
+func TestPasswordSignupTabPostsToAccountCheck(t *testing.T) {
+	httpServer, s := newO2WebSignupServer(t)
+	defer httpServer.Close()
+	require.NoError(t, s.storage.CreateConnector(t.Context(), storage.Connector{ID: "local", Type: LocalConnector, Name: "Email"}))
+
+	rr := httptest.NewRecorder()
+	s.ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/auth/local/login?state=test&back=&screen_hint=signup", nil))
+	require.Equal(t, http.StatusOK, rr.Code)
+	body := rr.Body.String()
+	require.Contains(t, body, "Create your OpenObserve account")
+	require.Contains(t, body, `action="/check-handler?back=&amp;screen_hint=signup&amp;state=test"`)
+	require.NotContains(t, body, "data-signup-url")
+	require.NotContains(t, body, "dataset.signupUrl")
+	require.NotContains(t, body, "window.location.href")
 }

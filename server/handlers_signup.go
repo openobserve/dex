@@ -2,17 +2,32 @@ package server
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/mail"
+	"net/url"
 	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/dexidp/dex/connector"
 	"github.com/dexidp/dex/storage"
 )
+
+const (
+	ssoRequiredDescription = "Your company signs in with single sign-on. Use “Sign in” with your work email."
+
+	// accountCreatedParam and loginHintParam carry a finished sign-up to the password step when auto sign-in is not possible.
+	accountCreatedParam  = "account_created"
+	loginHintParam       = "login_hint"
+	accountCreatedNotice = "Account created. Sign in to continue."
+)
+
+// oauthAuthorizeParams restart a client's authorization request at /auth/local.
+var oauthAuthorizeParams = []string{"client_id", "redirect_uri", "response_type", "scope", "state", "nonce", "code_challenge", "code_challenge_method", "approval_prompt"}
 
 // signupRequest represents a user signup request
 type signupRequest struct {
@@ -89,6 +104,27 @@ func (s *Server) isEmailAllowed(ctx context.Context, email string) bool {
 	return (classification == "allowlisted" || classification == "legitimate" || classification == "unknown")
 }
 
+// isSSODomain reports whether email belongs to a domain that must sign in through its domain connector.
+func (s *Server) isSSODomain(email string) bool {
+	if addr, err := mail.ParseAddress(email); err == nil {
+		email = addr.Address
+	}
+	at := strings.LastIndex(email, "@")
+	if at < 0 {
+		return false
+	}
+	domain := email[at+1:]
+	if domain == "" {
+		return false
+	}
+	for _, domainConnector := range s.DomainConnectors {
+		if strings.EqualFold(domainConnector.Domain, domain) {
+			return true
+		}
+	}
+	return false
+}
+
 // handleSignup allows users to sign up with email and password via UI or API
 func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -105,13 +141,9 @@ func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		// Show signup form
-		backLink := r.URL.Query().Get("back")
-		if backLink == "" {
-			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
-			backLink = s.absPath(backPath)
-		}
-		if err := s.templates.signup(r, w, r.URL.String(), "", "", "", false, backLink); err != nil {
+		backLink := s.backLinkOr(r, s.defaultBackLink(r))
+		email := strings.TrimSpace(r.URL.Query().Get("email"))
+		if err := s.templates.signup(r, w, r.URL.String(), email, "", "", "", 0, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 		return
@@ -170,6 +202,17 @@ func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 
 // processSignup handles the actual signup logic
 func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx context.Context, req signupRequest, isJSONRequest bool) {
+	if wait, ok := s.limits.allowCodeVerify(r, req.Email); !ok {
+		s.logger.WarnContext(ctx, "signup rate limited", "email", req.Email, "client_ip", clientIP(r))
+		setRetryAfter(w, wait)
+		if isJSONRequest {
+			s.signupErrHelper(w, rateLimitedError, tooManyAttemptsMessage(wait), http.StatusTooManyRequests)
+			return
+		}
+		s.handleSignupError(w, r, req, tooManyAttemptsMessage(wait), http.StatusTooManyRequests, false)
+		return
+	}
+
 	// Validate and process signup
 	errorMsg, statusCode := s.validateSignupRequest(req)
 	if errorMsg != "" {
@@ -177,26 +220,29 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 		return
 	}
 
+	// A password account for an SSO domain would bypass the company IdP's offboarding and MFA.
+	if s.isSSODomain(req.Email) {
+		if isJSONRequest {
+			s.signupErrHelper(w, "sso_required", ssoRequiredDescription, http.StatusBadRequest)
+		} else {
+			s.handleSignupError(w, r, req, ssoRequiredDescription, http.StatusBadRequest, isJSONRequest)
+		}
+		return
+	}
+
 	token, err := s.storage.GetSignupToken(ctx, req.Email)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "validation token not found", "err", err)
+		req.Csrf = ""
 		s.handleSignupError(w, r, req, "OTP not found or expired. Please request a new OTP.", http.StatusBadRequest, isJSONRequest)
 		return
 	}
 
-	if req.Csrf != token.CsrfToken {
-		s.handleSignupError(w, r, req, "Invalid session. Please request a new OTP.", http.StatusBadRequest, isJSONRequest)
-		return
-	}
-
-	if req.Token != token.ValidationToken {
-		s.handleSignupError(w, r, req, "Invalid OTP. Please check and try again.", http.StatusBadRequest, isJSONRequest)
-		return
-	}
-
-	if time.Now().After(token.Expiry) {
-		_ = s.storage.DeleteSignupToken(ctx, req.Email)
-		s.handleSignupError(w, r, req, "OTP Expired. Please try again.", http.StatusBadRequest, isJSONRequest)
+	if msg, codeStillValid := s.verifyCode(ctx, req.Email, req.Csrf, req.Token, token); msg != "" {
+		if !codeStillValid {
+			req.Csrf = ""
+		}
+		s.handleSignupError(w, r, req, msg, http.StatusBadRequest, isJSONRequest)
 		return
 	}
 
@@ -276,15 +322,175 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			s.logger.ErrorContext(ctx, "failed to encode signup response", "err", err)
 		}
-	} else {
-		// Redirect to login page with success message
-		backLink := r.URL.Query().Get("back")
-		if backLink == "" {
-			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
-			backLink = s.absPath(backPath)
-		}
-		http.Redirect(w, r, backLink, http.StatusSeeOther)
+		return
 	}
+	s.signInAfterSignup(w, r, password)
+}
+
+// verifyCode checks a submitted csrf and code against token; it returns an error message, and whether the code is still usable.
+func (s *Server) verifyCode(ctx context.Context, email, csrf, code string, token storage.SignupToken) (string, bool) {
+	if subtle.ConstantTimeCompare([]byte(csrf), []byte(token.CsrfToken)) != 1 {
+		return "Invalid session. Please request a new OTP.", false
+	}
+
+	if s.now().After(token.Expiry) {
+		_ = s.storage.DeleteSignupToken(ctx, email)
+		return "OTP Expired. Please try again.", false
+	}
+
+	key := limitKey(email)
+	if subtle.ConstantTimeCompare([]byte(code), []byte(token.ValidationToken)) != 1 {
+		if s.limits.wrongCodes.fail(key) < maxWrongCodes {
+			return "Invalid OTP. Please check and try again.", true
+		}
+		s.limits.wrongCodes.reset(key)
+		if err := s.storage.DeleteSignupToken(ctx, email); err != nil && err != storage.ErrNotFound {
+			s.logger.ErrorContext(ctx, "failed to revoke verification code", "err", err)
+		}
+		s.logger.WarnContext(ctx, "verification code revoked after too many wrong attempts", "email", email)
+		return tooManyWrongCodeMsg, false
+	}
+	s.limits.wrongCodes.reset(key)
+	return "", true
+}
+
+// signInAfterSignup signs a new user into the dex auth request they signed up from, or sends them to its password step.
+func (s *Server) signInAfterSignup(w http.ResponseWriter, r *http.Request, password storage.Password) {
+	ctx := r.Context()
+	authReq, conn, reason := s.signupAuthRequest(ctx, r.URL.Query().Get("state"))
+	if reason != "" {
+		s.logger.InfoContext(ctx, "signup sign-in", "signup_auto_login", false, "reason", reason, "email", password.Email)
+		s.signupFallback(w, r, authReq, password.Email)
+		return
+	}
+
+	s.logger.InfoContext(ctx, "signup sign-in", "signup_auto_login", true, "email", password.Email, "auth_request", authReq.ID)
+	identity := connector.Identity{
+		UserID:        password.UserID,
+		Username:      password.Username,
+		Email:         password.Email,
+		EmailVerified: true,
+	}
+	s.completeLogin(w, r, identity, authReq, conn)
+}
+
+// signupAuthRequest returns the live local-connector auth request for authID, or the reason it cannot be used.
+func (s *Server) signupAuthRequest(ctx context.Context, authID string) (storage.AuthRequest, connector.Connector, string) {
+	if authID == "" {
+		return storage.AuthRequest{}, nil, "missing_state"
+	}
+	authReq, err := s.storage.GetAuthRequest(ctx, authID)
+	if err != nil {
+		if err != storage.ErrNotFound {
+			s.logger.ErrorContext(ctx, "failed to get auth request", "err", err)
+		}
+		return storage.AuthRequest{}, nil, "auth_request_not_found"
+	}
+	if s.now().After(authReq.Expiry) {
+		return authReq, nil, "auth_request_expired"
+	}
+	if authReq.LoggedIn {
+		return authReq, nil, "already_logged_in"
+	}
+	conn, err := s.getConnector(ctx, authReq.ConnectorID)
+	if err != nil {
+		return authReq, nil, "connector_unavailable"
+	}
+	_, isPassword := conn.Connector.(connector.PasswordConnector)
+	// Only the local password DB holds the account just created; another password connector (LDAP) must not vouch for it.
+	_, isLocal := conn.Connector.(passwordDB)
+	if !isPassword || !isLocal {
+		return authReq, nil, "non_local_connector"
+	}
+	return authReq, conn.Connector, ""
+}
+
+// signupFallback restarts the client's authorization at the local password step with the new email filled in.
+func (s *Server) signupFallback(w http.ResponseWriter, r *http.Request, authReq storage.AuthRequest, email string) {
+	params := authorizeParamsFromAuthRequest(authReq)
+	if params == nil {
+		params = authorizeParamsFromQuery(r.URL.Query())
+	}
+	if params != nil {
+		params.Set(loginHintParam, email)
+		params.Set(accountCreatedParam, "1")
+		http.Redirect(w, r, s.absPath("/auth", LocalConnector)+"?"+params.Encode(), http.StatusSeeOther)
+		return
+	}
+
+	// No client to resume: the page still confirms the account and offers the password step.
+	query := r.URL.Query()
+	query.Del("back")
+	query.Del("email")
+	loginPath := s.absPath("/auth", LocalConnector, "login") + "?" + query.Encode()
+	signupPath := s.absPath("/signup") + "?" + query.Encode()
+	resetPasswordPath := s.absPath("/password_reset") + "?" + query.Encode()
+	if err := s.templates.password(r, w, loginPath, email, "email", false, "", signupPath, resetPasswordPath, s.enableSignup, false, authTabs{}, authNotice{Success: accountCreatedNotice}); err != nil {
+		s.logger.ErrorContext(r.Context(), "server template error", "err", err)
+	}
+}
+
+// authorizeParamsFromAuthRequest rebuilds the client's /auth parameters, or nil when there is no client.
+func authorizeParamsFromAuthRequest(a storage.AuthRequest) url.Values {
+	if a.ClientID == "" || a.RedirectURI == "" {
+		return nil
+	}
+	v := url.Values{}
+	v.Set("client_id", a.ClientID)
+	v.Set("redirect_uri", a.RedirectURI)
+	v.Set("response_type", strings.Join(a.ResponseTypes, " "))
+	v.Set("scope", strings.Join(a.Scopes, " "))
+	if a.State != "" {
+		v.Set("state", a.State)
+	}
+	if a.Nonce != "" {
+		v.Set("nonce", a.Nonce)
+	}
+	if a.PKCE.CodeChallenge != "" {
+		v.Set("code_challenge", a.PKCE.CodeChallenge)
+		v.Set("code_challenge_method", a.PKCE.CodeChallengeMethod)
+	}
+	if a.ForceApprovalPrompt {
+		v.Set("approval_prompt", "force")
+	}
+	return v
+}
+
+// authorizeParamsFromQuery keeps the client's own /auth parameters from a sign-up URL, or nil when it has none.
+func authorizeParamsFromQuery(q url.Values) url.Values {
+	if q.Get("client_id") == "" {
+		return nil
+	}
+	v := url.Values{}
+	for _, k := range oauthAuthorizeParams {
+		if val := q.Get(k); val != "" {
+			v.Set(k, val)
+		}
+	}
+	return v
+}
+
+// accountCreatedEmail returns the email a finished sign-up handed to the password step.
+func accountCreatedEmail(q url.Values) (string, bool) {
+	if q.Get(accountCreatedParam) != "1" {
+		return "", false
+	}
+	hint := strings.TrimSpace(q.Get(loginHintParam))
+	if addr, err := mail.ParseAddress(hint); err != nil || addr.Address != hint {
+		return "", false
+	}
+	return hint, true
+}
+
+// withoutAccountCreated drops the one-shot sign-up hand-off so it does not leak into other links.
+func withoutAccountCreated(q url.Values) url.Values {
+	out := url.Values{}
+	for k, v := range q {
+		out[k] = v
+	}
+	out.Del(accountCreatedParam)
+	out.Del(loginHintParam)
+	return out
 }
 
 // handleSignupError handles error responses for signup
@@ -292,12 +498,8 @@ func (s *Server) handleSignupError(w http.ResponseWriter, r *http.Request, req s
 	if isJSONRequest {
 		s.signupErrHelper(w, "invalid_request", errorMsg, statusCode)
 	} else {
-		backLink := r.URL.Query().Get("back")
-		if backLink == "" {
-			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
-			backLink = s.absPath(backPath)
-		}
-		if err := s.templates.signup(r, w, r.URL.String(), req.Email, req.Username, errorMsg, true, backLink); err != nil {
+		backLink := s.backLinkOr(r, s.defaultBackLink(r))
+		if err := s.templates.signup(r, w, r.URL.String(), req.Email, req.Username, req.Csrf, errorMsg, statusCode, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 	}
@@ -307,12 +509,8 @@ func (s *Server) handlePasswordResetError(w http.ResponseWriter, r *http.Request
 	if isJSONRequest {
 		s.passwordResetErrHelper(w, "invalid_request", errorMsg, statusCode)
 	} else {
-		backLink := r.URL.Query().Get("back")
-		if backLink == "" {
-			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
-			backLink = s.absPath(backPath)
-		}
-		if err := s.templates.passwordReset(r, w, r.URL.String(), req.Email, errorMsg, true, backLink); err != nil {
+		backLink := s.backLinkOr(r, s.defaultBackLink(r))
+		if err := s.templates.passwordReset(r, w, r.URL.String(), req.Email, errorMsg, statusCode, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 	}
@@ -406,6 +604,19 @@ func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
 
 		if _, err := mail.ParseAddress(req.Email); err != nil {
 			s.signupErrHelper(w, "invalid_request", "Invalid Email format", http.StatusBadRequest)
+			return
+		}
+
+		if wait, ok := s.limits.allowCodeSend(r, req.Email); !ok {
+			s.logger.WarnContext(ctx, "signup code rate limited", "email", req.Email, "client_ip", clientIP(r))
+			setRetryAfter(w, wait)
+			s.signupErrHelper(w, rateLimitedError, tooManyAttemptsMessage(wait), http.StatusTooManyRequests)
+			return
+		}
+
+		if s.isSSODomain(req.Email) {
+			s.signupErrHelper(w, "sso_required", ssoRequiredDescription, http.StatusBadRequest)
+			return
 		}
 
 		_, err := s.storage.GetPassword(ctx, req.Email)
@@ -415,7 +626,7 @@ func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !s.isEmailAllowed(ctx, req.Email) {
-			s.signupErrHelper(w, "invalid_request", "Email domain not allowed", http.StatusBadRequest)
+			s.signupErrHelper(w, "invalid_request", "Personal email addresses aren't supported. Use your work email.", http.StatusBadRequest)
 			return
 		}
 
@@ -436,12 +647,13 @@ func (s *Server) handleSignupToken(w http.ResponseWriter, r *http.Request) {
 			s.logger.ErrorContext(ctx, "failed to create signup token", "err", err)
 			return
 		}
+		s.limits.wrongCodes.reset(limitKey(req.Email))
 
 		body := fmt.Sprintf("Hello,<br/>The email validation code for signup to Openobserve is<br/><h2>%s</h2><br/>Please enter it in the signup form before submitting.<br/>This code is valid for 5 minutes.<br/>Regards,<br/>Openobserve Team.", token)
 		err = sendEmail(s, req.Email, "Email validation Token for Openobserve", body)
 		if err != nil {
 			s.logger.ErrorContext(ctx, "failed to send token email", "err", err)
-			s.signupErrHelper(w, "invalid_request", "Method not allowed", http.StatusMethodNotAllowed)
+			s.signupErrHelper(w, "server_error", "We couldn't send the code. Try again in a minute.", http.StatusBadGateway)
 			return
 		}
 
@@ -477,13 +689,8 @@ func (s *Server) handlePasswordReset(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		// Show signup form
-		backLink := r.URL.Query().Get("back")
-		if backLink == "" {
-			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
-			backLink = s.absPath(backPath)
-		}
-		if err := s.templates.passwordReset(r, w, r.URL.String(), "", "", false, backLink); err != nil {
+		backLink := s.backLinkOr(r, s.defaultBackLink(r))
+		if err := s.templates.passwordReset(r, w, r.URL.String(), "", "", 0, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 		return
@@ -539,6 +746,17 @@ func (s *Server) handlePasswordReset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) processPasswordReset(w http.ResponseWriter, r *http.Request, ctx context.Context, req passwordResetRequest, isJSONRequest bool) {
+	if wait, ok := s.limits.allowCodeVerify(r, req.Email); !ok {
+		s.logger.WarnContext(ctx, "password reset rate limited", "email", req.Email, "client_ip", clientIP(r))
+		setRetryAfter(w, wait)
+		if isJSONRequest {
+			s.passwordResetErrHelper(w, rateLimitedError, tooManyAttemptsMessage(wait), http.StatusTooManyRequests)
+			return
+		}
+		s.handlePasswordResetError(w, r, req, tooManyAttemptsMessage(wait), http.StatusTooManyRequests, false)
+		return
+	}
+
 	token, err := s.storage.GetSignupToken(ctx, req.Email)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "password reset validation token not found", "err", err)
@@ -546,19 +764,8 @@ func (s *Server) processPasswordReset(w http.ResponseWriter, r *http.Request, ct
 		return
 	}
 
-	if req.Csrf != token.CsrfToken {
-		s.handlePasswordResetError(w, r, req, "Invalid session. Please request a new OTP.", http.StatusBadRequest, isJSONRequest)
-		return
-	}
-
-	if req.Token != token.ValidationToken {
-		s.handlePasswordResetError(w, r, req, "Invalid OTP. Please check and try again.", http.StatusBadRequest, isJSONRequest)
-		return
-	}
-
-	if time.Now().After(token.Expiry) {
-		_ = s.storage.DeleteSignupToken(ctx, req.Email)
-		s.handlePasswordResetError(w, r, req, "OTP Expired. Please try again.", http.StatusBadRequest, isJSONRequest)
+	if msg, _ := s.verifyCode(ctx, req.Email, req.Csrf, req.Token, token); msg != "" {
+		s.handlePasswordResetError(w, r, req, msg, http.StatusBadRequest, isJSONRequest)
 		return
 	}
 
@@ -611,13 +818,7 @@ func (s *Server) processPasswordReset(w http.ResponseWriter, r *http.Request, ct
 	if isJSONRequest {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
-		// Redirect to login page with success message
-		backLink := r.URL.Query().Get("back")
-		if backLink == "" {
-			backPath := fmt.Sprintf("/auth?%s", r.URL.Query().Encode())
-			backLink = s.absPath(backPath)
-		}
-		http.Redirect(w, r, backLink, http.StatusSeeOther)
+		http.Redirect(w, r, s.backLinkOr(r, s.defaultBackLink(r)), http.StatusSeeOther)
 	}
 }
 
@@ -650,6 +851,14 @@ func (s *Server) handlePasswordResetToken(w http.ResponseWriter, r *http.Request
 
 		if _, err := mail.ParseAddress(req.Email); err != nil {
 			s.passwordResetErrHelper(w, "invalid_request", "Invalid Email format", http.StatusBadRequest)
+			return
+		}
+
+		if wait, ok := s.limits.allowCodeSend(r, req.Email); !ok {
+			s.logger.WarnContext(ctx, "password reset code rate limited", "email", req.Email, "client_ip", clientIP(r))
+			setRetryAfter(w, wait)
+			s.passwordResetErrHelper(w, rateLimitedError, tooManyAttemptsMessage(wait), http.StatusTooManyRequests)
+			return
 		}
 
 		_, err := s.storage.GetPassword(ctx, req.Email)
@@ -680,6 +889,7 @@ func (s *Server) handlePasswordResetToken(w http.ResponseWriter, r *http.Request
 			s.logger.ErrorContext(ctx, "failed to create password reset token", "err", err)
 			return
 		}
+		s.limits.wrongCodes.reset(limitKey(req.Email))
 
 		body := fmt.Sprintf("Hello,<br/>The email validation code for password reset to Openobserve is<br/><h2>%s</h2><br/>Please enter it in the password reset form before submitting.<br/>This code is valid for 5 minutes.<br/>Regards,<br/>Openobserve Team.", token)
 		err = sendEmail(s, req.Email, "Password reset Token for Openobserve", body)

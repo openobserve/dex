@@ -30,6 +30,10 @@ import (
 const (
 	codeChallengeMethodPlain = "plain"
 	codeChallengeMethodS256  = "S256"
+
+	// screenHintParam carries the sign-up intent from O2 through every dex auth page.
+	screenHintParam  = "screen_hint"
+	screenHintSignup = "signup"
 )
 
 func (s *Server) handlePublicKeys(w http.ResponseWriter, r *http.Request) {
@@ -214,7 +218,9 @@ func (s *Server) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := s.templates.login(r, w, connectorInfos); err != nil {
+	signupPath := fmt.Sprintf("%s?%s", s.absPath("/signup"), r.Form.Encode())
+	tabs := s.authTabs(s.absPath("/auth"), r.Form)
+	if err := s.templates.login(r, w, connectorInfos, tabs, signupPath, s.enableSignup); err != nil {
 		s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 	}
 }
@@ -274,9 +280,10 @@ func (s *Server) handleConnectorLogin(w http.ResponseWriter, r *http.Request) {
 	// Work out where the "Select another login method" link should go.
 	backLink := ""
 	if len(s.connectors) > 1 {
+		chooserQuery := withoutAccountCreated(r.Form)
 		backLinkURL := url.URL{
 			Path:     s.absPath("/auth"),
-			RawQuery: r.Form.Encode(),
+			RawQuery: chooserQuery.Encode(),
 		}
 		backLink = backLinkURL.String()
 	}
@@ -302,6 +309,13 @@ func (s *Server) handleConnectorLogin(w http.ResponseWriter, r *http.Request) {
 			q := loginURL.Query()
 			q.Set("state", authReq.ID)
 			q.Set("back", backLink)
+			if r.Form.Get(screenHintParam) == screenHintSignup {
+				q.Set(screenHintParam, screenHintSignup)
+			}
+			if r.Form.Get(accountCreatedParam) == "1" {
+				q.Set(accountCreatedParam, "1")
+				q.Set(loginHintParam, r.Form.Get(loginHintParam))
+			}
 			loginURL.RawQuery = q.Encode()
 
 			http.Redirect(w, r, loginURL.String(), http.StatusFound)
@@ -346,7 +360,7 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backLink := r.URL.Query().Get("back")
+	backLink := s.backLinkOr(r, "")
 
 	authReq, err := s.storage.GetAuthRequest(ctx, authID)
 	if err != nil {
@@ -385,19 +399,38 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	signupPath := fmt.Sprintf("%s?%s", s.absPath("/signup"), r.URL.Query().Encode())
-	checkPath := fmt.Sprintf("%s?%s", s.absPath("/check-handler"), r.URL.Query().Encode())
-	resetPasswordPath := fmt.Sprintf("%s?%s", s.absPath("/password_reset"), r.URL.Query().Encode())
+	query := withoutAccountCreated(r.URL.Query())
+	signupPath := fmt.Sprintf("%s?%s", s.absPath("/signup"), query.Encode())
+	checkPath := fmt.Sprintf("%s?%s", s.absPath("/check-handler"), query.Encode())
+	resetPasswordPath := fmt.Sprintf("%s?%s", s.absPath("/password_reset"), query.Encode())
+	loginPath := fmt.Sprintf("%s?%s", r.URL.Path, query.Encode())
+	tabs := s.authTabs(r.URL.Path, query)
 
 	switch r.Method {
 	case http.MethodGet:
-		if err := s.templates.password(r, w, checkPath, "", usernamePrompt(pwConn), false, backLink, signupPath, resetPasswordPath, s.enableSignup, true); err != nil {
+		if email, ok := accountCreatedEmail(r.URL.Query()); ok {
+			if err := s.templates.password(r, w, loginPath, email, usernamePrompt(pwConn), false, backLink, signupPath, resetPasswordPath, s.enableSignup, false, tabs, authNotice{Success: accountCreatedNotice}); err != nil {
+				s.logger.ErrorContext(r.Context(), "server template error", "err", err)
+			}
+			return
+		}
+		if err := s.templates.password(r, w, checkPath, "", usernamePrompt(pwConn), false, backLink, signupPath, resetPasswordPath, s.enableSignup, true, tabs, authNotice{}); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 	case http.MethodPost:
 		username := r.FormValue("login")
 		password := r.FormValue("password")
 		scopes := parseScopes(authReq.Scopes)
+
+		// A locked account gets the same answer whatever the password, so lockout never confirms a guess.
+		if wait, blocked := s.limits.loginBlocked(r, username); blocked {
+			s.logger.WarnContext(r.Context(), "password login rate limited", "user", username, "client_ip", clientIP(r))
+			w.WriteHeader(http.StatusTooManyRequests)
+			if err := s.templates.password(r, w, loginPath, username, usernamePrompt(pwConn), false, backLink, signupPath, resetPasswordPath, s.enableSignup, false, tabs, authNotice{Error: tooManyAttemptsMessage(wait)}); err != nil {
+				s.logger.ErrorContext(r.Context(), "server template error", "err", err)
+			}
+			return
+		}
 
 		identity, ok, err := pwConn.Login(r.Context(), scopes, username, password)
 		if err != nil {
@@ -406,34 +439,42 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !ok {
-			if err := s.templates.password(r, w, r.URL.String(), username, usernamePrompt(pwConn), true, backLink, signupPath, resetPasswordPath, s.enableSignup, false); err != nil {
+			s.limits.loginFailed(r, username)
+			if err := s.templates.password(r, w, loginPath, username, usernamePrompt(pwConn), true, backLink, signupPath, resetPasswordPath, s.enableSignup, false, tabs, authNotice{}); err != nil {
 				s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 			}
 			s.logger.ErrorContext(r.Context(), "failed login attempt: Invalid credentials.", "user", username)
 			return
 		}
-		redirectURL, canSkipApproval, err := s.finalizeLogin(r.Context(), identity, authReq, conn.Connector)
-		if err != nil {
-			s.logger.ErrorContext(r.Context(), "failed to finalize login", "err", err)
-			s.renderError(r, w, http.StatusInternalServerError, "Login error.")
-			return
-		}
-
-		if canSkipApproval {
-			authReq, err = s.storage.GetAuthRequest(ctx, authReq.ID)
-			if err != nil {
-				s.logger.ErrorContext(r.Context(), "failed to get finalized auth request", "err", err)
-				s.renderError(r, w, http.StatusInternalServerError, "Login error.")
-				return
-			}
-			s.sendCodeResponse(w, r, authReq)
-			return
-		}
-
-		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+		s.limits.loginSucceeded(username)
+		s.completeLogin(w, r, identity, authReq, conn.Connector)
 	default:
 		s.renderError(r, w, http.StatusBadRequest, "Unsupported request method.")
 	}
+}
+
+// completeLogin attaches a verified identity to authReq, then continues to approval or straight to the client.
+func (s *Server) completeLogin(w http.ResponseWriter, r *http.Request, identity connector.Identity, authReq storage.AuthRequest, conn connector.Connector) {
+	ctx := r.Context()
+	redirectURL, canSkipApproval, err := s.finalizeLogin(ctx, identity, authReq, conn)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "failed to finalize login", "err", err)
+		s.renderError(r, w, http.StatusInternalServerError, "Login error.")
+		return
+	}
+
+	if canSkipApproval {
+		authReq, err = s.storage.GetAuthRequest(ctx, authReq.ID)
+		if err != nil {
+			s.logger.ErrorContext(ctx, "failed to get finalized auth request", "err", err)
+			s.renderError(r, w, http.StatusInternalServerError, "Login error.")
+			return
+		}
+		s.sendCodeResponse(w, r, authReq)
+		return
+	}
+
+	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 
 func (s *Server) checkHandler(w http.ResponseWriter, r *http.Request) {
@@ -444,7 +485,7 @@ func (s *Server) checkHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backLink := r.URL.Query().Get("back")
+	backLink := s.backLinkOr(r, "")
 
 	authReq, err := s.storage.GetAuthRequest(ctx, authID)
 	if err != nil {
@@ -462,11 +503,22 @@ func (s *Server) checkHandler(w http.ResponseWriter, r *http.Request) {
 	signupPath := fmt.Sprintf("%s?%s", s.absPath("/signup"), r.URL.Query().Encode())
 	resetPasswordPath := fmt.Sprintf("%s?%s", s.absPath("/password_reset"), r.URL.Query().Encode())
 	loginPath := fmt.Sprintf("%s?%s", s.absPath("/auth/local/login"), r.URL.Query().Encode())
+	checkPath := fmt.Sprintf("%s?%s", s.absPath("/check-handler"), r.URL.Query().Encode())
+	tabs := s.authTabs(s.absPath("/auth/local/login"), r.URL.Query())
+
+	if wait, ok := s.limits.checkIP.allow(clientIP(r)); !ok {
+		s.logger.WarnContext(ctx, "check-handler rate limited", "client_ip", clientIP(r))
+		w.WriteHeader(http.StatusTooManyRequests)
+		if err := s.templates.password(r, w, checkPath, username, "email", false, backLink, signupPath, resetPasswordPath, s.enableSignup, true, tabs, authNotice{Error: tooManyAttemptsMessage(wait)}); err != nil {
+			s.logger.ErrorContext(ctx, "server template error", "err", err)
+		}
+		return
+	}
 
 	splits := strings.Split(username, "@")
 
 	if len(splits) != 2 {
-		if err := s.templates.password(r, w, loginPath, username, "email", true, backLink, signupPath, resetPasswordPath, s.enableSignup, true); err != nil {
+		if err := s.templates.password(r, w, loginPath, username, "email", true, backLink, signupPath, resetPasswordPath, s.enableSignup, true, tabs, authNotice{}); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 		return
@@ -534,15 +586,125 @@ func (s *Server) checkHandler(w http.ResponseWriter, r *http.Request) {
 				default:
 					s.renderError(r, w, http.StatusBadRequest, "Requested resource does not exist.")
 				}
+				return
 			}
 		}
-		if err := s.templates.password(r, w, loginPath, username, "email", false, backLink, signupPath, resetPasswordPath, s.enableSignup, false); err != nil {
+		_, err := s.storage.GetPassword(ctx, username)
+		if err == storage.ErrNotFound {
+			signupURL := signupURLWithEmail(signupPath, username)
+			personal := s.enableSignup && !s.isEmailAllowed(ctx, username)
+			if tabs.SignupMode && !personal {
+				http.Redirect(w, r, signupURL, http.StatusSeeOther)
+				return
+			}
+			// No password account: stay on the email step instead of offering a sign-in that can only fail.
+			notice := authNotice{SignupURL: signupURL}
+			if personal {
+				notice = authNotice{PersonalEmail: true}
+			}
+			if err := s.templates.password(r, w, checkPath, username, "email", false, backLink, signupPath, resetPasswordPath, s.enableSignup, true, tabs, notice); err != nil {
+				s.logger.ErrorContext(r.Context(), "server template error", "err", err)
+			}
+			return
+		}
+		notice := authNotice{}
+		if err != nil {
+			s.logger.ErrorContext(r.Context(), "failed to look up password account", "err", err)
+		} else if tabs.SignupMode {
+			notice = authNotice{ExistingAccount: true}
+		}
+		if tabs.SignupMode {
+			// A returning user who chose Create account continues as a plain sign-in.
+			signInQuery := r.URL.Query()
+			signInQuery.Del(screenHintParam)
+			if back := signInQuery.Get("back"); back != "" {
+				signInQuery.Set("back", withoutScreenHint(back))
+			}
+			backLink = withoutScreenHint(backLink)
+			signupPath = fmt.Sprintf("%s?%s", s.absPath("/signup"), signInQuery.Encode())
+			resetPasswordPath = fmt.Sprintf("%s?%s", s.absPath("/password_reset"), signInQuery.Encode())
+			loginPath = fmt.Sprintf("%s?%s", s.absPath("/auth/local/login"), signInQuery.Encode())
+			tabs = s.authTabs(s.absPath("/auth/local/login"), signInQuery)
+		}
+		if err := s.templates.password(r, w, loginPath, username, "email", false, backLink, signupPath, resetPasswordPath, s.enableSignup, false, tabs, notice); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 		return
 	default:
 		s.renderError(r, w, http.StatusBadRequest, "Unsupported request method.")
 	}
+}
+
+// authTabs builds the Sign in / Create account tab links for path, keeping every other query param.
+func (s *Server) authTabs(path string, query url.Values) authTabs {
+	signIn := url.Values{}
+	signup := url.Values{}
+	for k, v := range query {
+		signIn[k] = v
+		signup[k] = v
+	}
+	signIn.Del(screenHintParam)
+	signup.Set(screenHintParam, screenHintSignup)
+	return authTabs{
+		SignupMode: s.enableSignup && query.Get(screenHintParam) == screenHintSignup,
+		SignInURL:  template.URL(path + "?" + signIn.Encode()),
+		SignupURL:  template.URL(path + "?" + signup.Encode()),
+	}
+}
+
+// signupURLWithEmail is the sign-up page for email, keeping signupPath's query.
+func signupURLWithEmail(signupPath, email string) string {
+	return fmt.Sprintf("%s&email=%s", signupPath, url.QueryEscape(email))
+}
+
+// withoutScreenHint drops the sign-up intent so links meant for signing in open on the Sign in tab.
+func withoutScreenHint(link string) string {
+	u, err := url.Parse(link)
+	if err != nil {
+		return link
+	}
+	q := u.Query()
+	if !q.Has(screenHintParam) {
+		return link
+	}
+	q.Del(screenHintParam)
+	u.RawQuery = q.Encode()
+	return u.String()
+}
+
+// isSafeBackLink accepts only a relative path under the issuer, so a crafted back param can never send users off dex.
+func (s *Server) isSafeBackLink(link string) bool {
+	if !strings.HasPrefix(link, "/") || strings.HasPrefix(link, "//") || strings.Contains(link, `\`) {
+		return false
+	}
+	for _, c := range link {
+		// Browsers drop tabs and newlines inside URLs, which would turn "/\t/evil" into "//evil".
+		if c < 0x20 || c == 0x7f {
+			return false
+		}
+	}
+	u, err := url.Parse(link)
+	if err != nil || u.Scheme != "" || u.Host != "" || u.User != nil || u.Opaque != "" {
+		return false
+	}
+	base := strings.TrimSuffix(s.issuerURL.Path, "/")
+	cleaned := path.Clean(u.Path)
+	return base == "" || cleaned == base || strings.HasPrefix(cleaned, base+"/")
+}
+
+// backLinkOr returns the request's back param when it is safe to follow, otherwise fallback.
+func (s *Server) backLinkOr(r *http.Request, fallback string) string {
+	if back := r.URL.Query().Get("back"); back != "" && s.isSafeBackLink(back) {
+		return back
+	}
+	return fallback
+}
+
+// defaultBackLink is the connector chooser for the request's own OAuth parameters.
+func (s *Server) defaultBackLink(r *http.Request) string {
+	q := r.URL.Query()
+	q.Del("back")
+	return s.absPath("/auth") + "?" + q.Encode()
 }
 
 func (s *Server) handleConnectorCallback(w http.ResponseWriter, r *http.Request) {

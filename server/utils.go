@@ -1,20 +1,29 @@
 package server
 
 import (
-	"time"
+	"crypto/rand"
+	"io"
+	"math/big"
 
 	"github.com/wneessen/go-mail"
-	"golang.org/x/exp/rand"
 )
 
 var stdNums = []byte("0123456789")
 
-// copied from https://github.com/openobserve/casdoor/blob/master/object/verification.go#L357-L367
+// codeRandReader is swappable only so tests can prove codes come from it.
+var codeRandReader io.Reader = rand.Reader
+
+// getRandomCode returns length uniformly random digits; it backs sign-up OTPs, csrf values and reset codes.
 func getRandomCode(length int) string {
-	var result []byte
-	r := rand.New(rand.NewSource(uint64(time.Now().UnixNano())))
-	for i := 0; i < length; i++ {
-		result = append(result, stdNums[r.Intn(len(stdNums))])
+	result := make([]byte, length)
+	n := big.NewInt(int64(len(stdNums)))
+	for i := range result {
+		// rand.Int rejects out-of-range samples, so digits carry no modulo bias.
+		d, err := rand.Int(codeRandReader, n)
+		if err != nil {
+			panic("crypto/rand failed: " + err.Error())
+		}
+		result[i] = stdNums[d.Int64()]
 	}
 	return string(result)
 }
