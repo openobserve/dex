@@ -21,7 +21,9 @@
   <div>
     <div class="theme-form-row">
       <form method="post">
+        <!-- {% csrf_token %} -->
         <input type="hidden" name="req" value="{{ .AuthReqID }}"/>
+        <input type="hidden" name="csrf_token" value="{{ .Hmac }}"/>
         <input type="hidden" name="approval" value="approve">
         <button type="submit" class="dex-btn theme-btn--success">
             <span class="dex-btn-text">Grant Access</span>
@@ -30,7 +32,9 @@
     </div>
     <div class="theme-form-row">
       <form method="post">
+        <!-- {% csrf_token %} -->
         <input type="hidden" name="req" value="{{ .AuthReqID }}"/>
+        <input type="hidden" name="csrf_token" value="{{ .Hmac }}"/>
         <input type="hidden" name="approval" value="rejected">
         <button type="submit" class="dex-btn theme-btn-provider">
             <span class="dex-btn-text">Cancel</span>
