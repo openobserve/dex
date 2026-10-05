@@ -400,9 +400,10 @@ func (t *templates) approval(r *http.Request, w http.ResponseWriter, authReqID, 
 		User      string
 		Client    string
 		AuthReqID string
+		Hmac      string
 		Scopes    []string
 		ReqPath   string
-	}{username, clientName, authReqID, accesses, r.URL.Path}
+	}{username, clientName, authReqID, r.URL.Query().Get("hmac"), accesses, r.URL.Path}
 	return renderTemplate(w, t.approvalTmpl, data)
 }
 
