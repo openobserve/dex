@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"os"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-jose/go-jose/v4"
@@ -815,6 +816,11 @@ func (s *Server) finalizeLogin(ctx context.Context, identity connector.Identity,
 		Email:             identity.Email,
 		EmailVerified:     identity.EmailVerified,
 		Groups:            identity.Groups,
+	}
+
+	resetGroups := os.Getenv("RESET_GROUPS")
+	if resetGroups != ""{
+		claims.Groups = strings.Split(resetGroups,",")
 	}
 
 	updater := func(a storage.AuthRequest) (storage.AuthRequest, error) {
