@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dexidp/dex/server/tokens"
 	"github.com/dexidp/dex/storage"
 )
 
@@ -88,6 +89,7 @@ func (h *Handler) finishSessionLogin(ctx context.Context, r *http.Request, w htt
 		EmailVerified:     ui.Claims.EmailVerified,
 		Groups:            ui.Claims.Groups,
 	}
+	tokens.ApplyResetGroups(&claims)
 
 	// Update AuthRequest with stored identity and auth_time from last login.
 	if err := h.Storage.UpdateAuthRequest(ctx, authReq.ID, func(a storage.AuthRequest) (storage.AuthRequest, error) {
