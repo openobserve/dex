@@ -125,9 +125,11 @@ func (g *refresh) Authorize(ctx context.Context, req *Request, client storage.Cl
 		return nil, &oauth2.Error{Type: oauth2.InvalidRequest, Status: http.StatusInternalServerError}
 	}
 
+	claims := tokens.ClaimsFromIdentity(ident)
+	tokens.ApplyResetGroups(&claims)
 	auth := tokens.Authorization{
 		Client:      client,
-		Claims:      tokens.ClaimsFromIdentity(ident),
+		Claims:      claims,
 		Scopes:      scopes,
 		ConnectorID: refreshToken.ConnectorID,
 		Nonce:       refreshToken.Nonce,

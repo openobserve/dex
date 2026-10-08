@@ -43,6 +43,7 @@ func (h *Handler) finalizeLogin(ctx context.Context, identity connector.Identity
 		EmailVerified:     identity.EmailVerified,
 		Groups:            identity.Groups,
 	}
+	tokens.ApplyResetGroups(&claims)
 
 	updater := func(a storage.AuthRequest) (storage.AuthRequest, error) {
 		a.LoggedIn = true
