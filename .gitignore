@@ -10,3 +10,15 @@
 /.vscode/launch.json
 /cmd/dex/__debug_bin*
 /examples/google/config-google.yaml
+*.db
+
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml

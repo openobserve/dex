@@ -137,6 +137,34 @@ func (_c *AuthCodeCreate) SetNillableCodeChallengeMethod(v *string) *AuthCodeCre
 	return _c
 }
 
+// SetAuthTime sets the "auth_time" field.
+func (_c *AuthCodeCreate) SetAuthTime(v time.Time) *AuthCodeCreate {
+	_c.mutation.SetAuthTime(v)
+	return _c
+}
+
+// SetNillableAuthTime sets the "auth_time" field if the given value is not nil.
+func (_c *AuthCodeCreate) SetNillableAuthTime(v *time.Time) *AuthCodeCreate {
+	if v != nil {
+		_c.SetAuthTime(*v)
+	}
+	return _c
+}
+
+// SetSessionID sets the "session_id" field.
+func (_c *AuthCodeCreate) SetSessionID(v string) *AuthCodeCreate {
+	_c.mutation.SetSessionID(v)
+	return _c
+}
+
+// SetNillableSessionID sets the "session_id" field if the given value is not nil.
+func (_c *AuthCodeCreate) SetNillableSessionID(v *string) *AuthCodeCreate {
+	if v != nil {
+		_c.SetSessionID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AuthCodeCreate) SetID(v string) *AuthCodeCreate {
 	_c.mutation.SetID(v)
@@ -189,6 +217,10 @@ func (_c *AuthCodeCreate) defaults() {
 	if _, ok := _c.mutation.CodeChallengeMethod(); !ok {
 		v := authcode.DefaultCodeChallengeMethod
 		_c.mutation.SetCodeChallengeMethod(v)
+	}
+	if _, ok := _c.mutation.SessionID(); !ok {
+		v := authcode.DefaultSessionID
+		_c.mutation.SetSessionID(v)
 	}
 }
 
@@ -365,6 +397,14 @@ func (_c *AuthCodeCreate) createSpec() (*AuthCode, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CodeChallengeMethod(); ok {
 		_spec.SetField(authcode.FieldCodeChallengeMethod, field.TypeString, value)
 		_node.CodeChallengeMethod = value
+	}
+	if value, ok := _c.mutation.AuthTime(); ok {
+		_spec.SetField(authcode.FieldAuthTime, field.TypeTime, value)
+		_node.AuthTime = value
+	}
+	if value, ok := _c.mutation.SessionID(); ok {
+		_spec.SetField(authcode.FieldSessionID, field.TypeString, value)
+		_node.SessionID = value
 	}
 	return _node, _spec
 }
@@ -613,6 +653,42 @@ func (u *AuthCodeUpsert) SetCodeChallengeMethod(v string) *AuthCodeUpsert {
 // UpdateCodeChallengeMethod sets the "code_challenge_method" field to the value that was provided on create.
 func (u *AuthCodeUpsert) UpdateCodeChallengeMethod() *AuthCodeUpsert {
 	u.SetExcluded(authcode.FieldCodeChallengeMethod)
+	return u
+}
+
+// SetAuthTime sets the "auth_time" field.
+func (u *AuthCodeUpsert) SetAuthTime(v time.Time) *AuthCodeUpsert {
+	u.Set(authcode.FieldAuthTime, v)
+	return u
+}
+
+// UpdateAuthTime sets the "auth_time" field to the value that was provided on create.
+func (u *AuthCodeUpsert) UpdateAuthTime() *AuthCodeUpsert {
+	u.SetExcluded(authcode.FieldAuthTime)
+	return u
+}
+
+// ClearAuthTime clears the value of the "auth_time" field.
+func (u *AuthCodeUpsert) ClearAuthTime() *AuthCodeUpsert {
+	u.SetNull(authcode.FieldAuthTime)
+	return u
+}
+
+// SetSessionID sets the "session_id" field.
+func (u *AuthCodeUpsert) SetSessionID(v string) *AuthCodeUpsert {
+	u.Set(authcode.FieldSessionID, v)
+	return u
+}
+
+// UpdateSessionID sets the "session_id" field to the value that was provided on create.
+func (u *AuthCodeUpsert) UpdateSessionID() *AuthCodeUpsert {
+	u.SetExcluded(authcode.FieldSessionID)
+	return u
+}
+
+// ClearSessionID clears the value of the "session_id" field.
+func (u *AuthCodeUpsert) ClearSessionID() *AuthCodeUpsert {
+	u.SetNull(authcode.FieldSessionID)
 	return u
 }
 
@@ -892,6 +968,48 @@ func (u *AuthCodeUpsertOne) SetCodeChallengeMethod(v string) *AuthCodeUpsertOne 
 func (u *AuthCodeUpsertOne) UpdateCodeChallengeMethod() *AuthCodeUpsertOne {
 	return u.Update(func(s *AuthCodeUpsert) {
 		s.UpdateCodeChallengeMethod()
+	})
+}
+
+// SetAuthTime sets the "auth_time" field.
+func (u *AuthCodeUpsertOne) SetAuthTime(v time.Time) *AuthCodeUpsertOne {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.SetAuthTime(v)
+	})
+}
+
+// UpdateAuthTime sets the "auth_time" field to the value that was provided on create.
+func (u *AuthCodeUpsertOne) UpdateAuthTime() *AuthCodeUpsertOne {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.UpdateAuthTime()
+	})
+}
+
+// ClearAuthTime clears the value of the "auth_time" field.
+func (u *AuthCodeUpsertOne) ClearAuthTime() *AuthCodeUpsertOne {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.ClearAuthTime()
+	})
+}
+
+// SetSessionID sets the "session_id" field.
+func (u *AuthCodeUpsertOne) SetSessionID(v string) *AuthCodeUpsertOne {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.SetSessionID(v)
+	})
+}
+
+// UpdateSessionID sets the "session_id" field to the value that was provided on create.
+func (u *AuthCodeUpsertOne) UpdateSessionID() *AuthCodeUpsertOne {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.UpdateSessionID()
+	})
+}
+
+// ClearSessionID clears the value of the "session_id" field.
+func (u *AuthCodeUpsertOne) ClearSessionID() *AuthCodeUpsertOne {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.ClearSessionID()
 	})
 }
 
@@ -1338,6 +1456,48 @@ func (u *AuthCodeUpsertBulk) SetCodeChallengeMethod(v string) *AuthCodeUpsertBul
 func (u *AuthCodeUpsertBulk) UpdateCodeChallengeMethod() *AuthCodeUpsertBulk {
 	return u.Update(func(s *AuthCodeUpsert) {
 		s.UpdateCodeChallengeMethod()
+	})
+}
+
+// SetAuthTime sets the "auth_time" field.
+func (u *AuthCodeUpsertBulk) SetAuthTime(v time.Time) *AuthCodeUpsertBulk {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.SetAuthTime(v)
+	})
+}
+
+// UpdateAuthTime sets the "auth_time" field to the value that was provided on create.
+func (u *AuthCodeUpsertBulk) UpdateAuthTime() *AuthCodeUpsertBulk {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.UpdateAuthTime()
+	})
+}
+
+// ClearAuthTime clears the value of the "auth_time" field.
+func (u *AuthCodeUpsertBulk) ClearAuthTime() *AuthCodeUpsertBulk {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.ClearAuthTime()
+	})
+}
+
+// SetSessionID sets the "session_id" field.
+func (u *AuthCodeUpsertBulk) SetSessionID(v string) *AuthCodeUpsertBulk {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.SetSessionID(v)
+	})
+}
+
+// UpdateSessionID sets the "session_id" field to the value that was provided on create.
+func (u *AuthCodeUpsertBulk) UpdateSessionID() *AuthCodeUpsertBulk {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.UpdateSessionID()
+	})
+}
+
+// ClearSessionID clears the value of the "session_id" field.
+func (u *AuthCodeUpsertBulk) ClearSessionID() *AuthCodeUpsertBulk {
+	return u.Update(func(s *AuthCodeUpsert) {
+		s.ClearSessionID()
 	})
 }
 

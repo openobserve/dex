@@ -12,6 +12,9 @@ type AuthCode func(*sql.Selector)
 // AuthRequest is the predicate function for authrequest builders.
 type AuthRequest func(*sql.Selector)
 
+// AuthSession is the predicate function for authsession builders.
+type AuthSession func(*sql.Selector)
+
 // Connector is the predicate function for connector builders.
 type Connector func(*sql.Selector)
 
@@ -38,3 +41,6 @@ type RefreshToken func(*sql.Selector)
 
 // SignupToken is the predicate function for signuptoken builders.
 type SignupToken func(*sql.Selector)
+
+// UserIdentity is the predicate function for useridentity builders.
+type UserIdentity func(*sql.Selector)

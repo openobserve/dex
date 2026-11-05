@@ -11,11 +11,11 @@ import (
 // CreateSignupToken saves provided token into the database.
 func (d *Database) CreateSignupToken(ctx context.Context, token storage.SignupToken) error {
 	err := d.client.SignupToken.Create().
-		SetEmail(token.Email).
+		SetEmail(strings.ToLower(token.Email)).
 		SetCsrfToken(token.CsrfToken).
 		SetValidationToken(token.ValidationToken).
 		SetExpiry(token.Expiry).
-		OnConflictColumns(token.Email).
+		OnConflictColumns(signuptoken.FieldEmail).
 		UpdateNewValues().
 		Exec(ctx)
 	if err != nil {

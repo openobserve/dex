@@ -34,10 +34,12 @@ import (
 //       bindDN: uid=serviceaccount,cn=users,dc=example,dc=com
 //       bindPW: password
 //       userSearch:
-//         # Would translate to the query "(&(objectClass=person)(uid=<username>))"
+//         # Would translate to the query "(&(objectClass=person)(|(uid=<username>)(mail=<username>)))"
 //         baseDN: cn=users,dc=example,dc=com
 //         filter: "(objectClass=person)"
-//         username: uid
+//         username:
+//         - uid
+//         - mail
 //         idAttr: uid
 //         emailAttr: mail
 //         nameAttr: name
@@ -57,6 +59,27 @@ import (
 //           groupAttr: member
 //         nameAttr: name
 //
+
+// UsernameAttributes represents one or more LDAP attributes to match against
+// the username input. It supports unmarshaling from both a single string
+// (e.g. "uid") and a list of strings (e.g. ["uid", "mail"]).
+type UsernameAttributes []string
+
+func (u *UsernameAttributes) UnmarshalJSON(data []byte) error {
+	var arr []string
+	if err := json.Unmarshal(data, &arr); err == nil {
+		*u = arr
+		return nil
+	}
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("username must be a string or list of strings")
+	}
+	if s != "" {
+		*u = UsernameAttributes{s}
+	}
+	return nil
+}
 
 // UserMatcher holds information about user and group matching.
 type UserMatcher struct {
@@ -102,6 +125,9 @@ type Config struct {
 	// "Username".
 	UsernamePrompt string `json:"usernamePrompt"`
 
+	// Optional Kerberos (SPNEGO) SSO configuration.
+	Kerberos *kerberosConfig `json:"kerberos"`
+
 	// User entry search configuration.
 	UserSearch struct {
 		// BaseDN to start the search from. For example "cn=users,dc=example,dc=com"
@@ -110,9 +136,10 @@ type Config struct {
 		// Optional filter to apply when searching the directory. For example "(objectClass=person)"
 		Filter string `json:"filter"`
 
-		// Attribute to match against the inputted username. This will be translated and combined
-		// with the other filter as "(<attr>=<username>)".
-		Username string `json:"username"`
+		// Attribute(s) to match against the inputted username. Accepts a single string
+		// or a list of strings. When multiple attributes are specified, an OR filter is
+		// constructed: "(|(<attr1>=<username>)(<attr2>=<username>))".
+		Username UsernameAttributes `json:"username"`
 
 		// Can either be:
 		// * "sub" - search the whole sub tree
@@ -164,6 +191,33 @@ type Config struct {
 	} `json:"groupSearch"`
 }
 
+// kerberosConfig defines optional Kerberos (SPNEGO) SSO settings for LDAP.
+//
+// Required:
+//   - Enabled, KeytabPath.
+//
+// Optional tuning:
+//   - SPN: overrides the service principal name extracted from the keytab
+//     (useful when Dex sits behind a reverse proxy that rewrites Host).
+//   - KeytabPrincipal: selects a specific principal out of a multi-entry
+//     keytab (e.g. "HTTP/dex.example.com").
+//   - MaxClockSkew: seconds of acceptable clock skew between the KDC, the
+//     client and Dex; defaults to gokrb5's 300s when unset.
+//   - ExpectedRealm: rejects tickets from realms other than this one.
+//   - UsernameFromPrincipal: "localpart" (default) or "userPrincipalName".
+//   - FallbackToPassword: render the password form when SPNEGO is absent or
+//     fails, instead of returning 401.
+type kerberosConfig struct {
+	Enabled               bool   `json:"enabled"`
+	KeytabPath            string `json:"keytabPath"`
+	SPN                   string `json:"spn"`
+	KeytabPrincipal       string `json:"keytabPrincipal"`
+	MaxClockSkew          int    `json:"maxClockSkew"`
+	ExpectedRealm         string `json:"expectedRealm"`
+	UsernameFromPrincipal string `json:"usernameFromPrincipal"`
+	FallbackToPassword    bool   `json:"fallbackToPassword"`
+}
+
 func scopeString(i int) string {
 	switch i {
 	case ldap.ScopeBaseObject:
@@ -198,7 +252,9 @@ func userMatchers(c *Config, logger *slog.Logger) []UserMatcher {
 		return c.GroupSearch.UserMatchers
 	}
 
-	logger.Warn(`use "groupSearch.userMatchers" option instead of "userAttr/groupAttr" fields`, "deprecated", true)
+	if c.GroupSearch.UserAttr != "" || c.GroupSearch.GroupAttr != "" {
+		logger.Warn(`use "groupSearch.userMatchers" option instead of "userAttr/groupAttr" fields`, "deprecated", true)
+	}
 	return []UserMatcher{
 		{
 			UserAttr:           c.GroupSearch.UserAttr,
@@ -214,6 +270,24 @@ func (c *Config) Open(id string, logger *slog.Logger) (connector.Connector, erro
 	conn, err := c.OpenConnector(logger)
 	if err != nil {
 		return nil, err
+	}
+	// If Kerberos is enabled, load the keytab and bind SPNEGO middleware.
+	// The presence of a non-nil krb on ldapConnector is the single source of
+	// truth for "SPNEGO is live"; TrySPNEGO short-circuits when it's nil.
+	if lc, ok := conn.(*ldapConnector); ok && lc.krbConf.Enabled && lc.krb == nil {
+		st, kerr := loadKerberosState(lc.krbConf)
+		if kerr != nil {
+			logger.Warn("failed to initialize kerberos; disabling kerberos", "err", kerr)
+		} else {
+			lc.krb = st
+			logger.Info("kerberos SPNEGO enabled for LDAP connector",
+				"keytab", lc.krbConf.KeytabPath,
+				"spn", lc.krbConf.SPN,
+				"keytab_principal", lc.krbConf.KeytabPrincipal,
+				"expected_realm", lc.krbConf.ExpectedRealm,
+				"fallback_to_password", lc.krbConf.FallbackToPassword,
+			)
+		}
 	}
 	return connector.Connector(conn), nil
 }
@@ -240,13 +314,16 @@ func (c *Config) openConnector(logger *slog.Logger) (*ldapConnector, error) {
 	}{
 		{"host", c.Host},
 		{"userSearch.baseDN", c.UserSearch.BaseDN},
-		{"userSearch.username", c.UserSearch.Username},
 	}
 
 	for _, field := range requiredFields {
 		if field.val == "" {
 			return nil, fmt.Errorf("ldap: missing required field %q", field.name)
 		}
+	}
+
+	if len(c.UserSearch.Username) == 0 {
+		return nil, fmt.Errorf("ldap: missing required field %q", "userSearch.username")
 	}
 
 	var (
@@ -296,8 +373,40 @@ func (c *Config) openConnector(logger *slog.Logger) (*ldapConnector, error) {
 
 	// TODO(nabokihms): remove it after deleting deprecated groupSearch options
 	c.GroupSearch.UserMatchers = userMatchers(c, logger)
-	return &ldapConnector{*c, userSearchScope, groupSearchScope, tlsConfig, logger}, nil
+
+	// Normalize Kerberos defaults. We persist krbConf only when it is
+	// usable (Enabled + KeytabPath set); otherwise it stays at the zero
+	// value and Open() will skip loadKerberosState — which keeps krb nil
+	// and effectively disables SPNEGO without any extra flag.
+	var krbConf kerberosConfig
+	if c.Kerberos != nil && c.Kerberos.Enabled {
+		krbConf = *c.Kerberos
+		if krbConf.UsernameFromPrincipal == "" {
+			krbConf.UsernameFromPrincipal = "localpart"
+		}
+		if krbConf.KeytabPath == "" {
+			logger.Warn("kerberos enabled but keytabPath is empty; disabling kerberos")
+			krbConf = kerberosConfig{}
+		}
+	}
+
+	lc := &ldapConnector{
+		Config:           *c,
+		userSearchScope:  userSearchScope,
+		groupSearchScope: groupSearchScope,
+		tlsConfig:        tlsConfig,
+		usernameAttrs:    c.UserSearch.Username,
+		logger:           logger,
+		krbConf:          krbConf,
+	}
+	return lc, nil
 }
+
+var (
+	_ connector.PasswordConnector = (*ldapConnector)(nil)
+	_ connector.RefreshConnector  = (*ldapConnector)(nil)
+	_ connector.SPNEGOAware       = (*ldapConnector)(nil)
+)
 
 type ldapConnector struct {
 	Config
@@ -307,13 +416,21 @@ type ldapConnector struct {
 
 	tlsConfig *tls.Config
 
-	logger *slog.Logger
-}
+	usernameAttrs []string
 
-var (
-	_ connector.PasswordConnector = (*ldapConnector)(nil)
-	_ connector.RefreshConnector  = (*ldapConnector)(nil)
-)
+	logger *slog.Logger
+
+	// Kerberos/SPNEGO support. krb is nil until the keytab has been loaded
+	// successfully in Open(); TrySPNEGO uses (krb == nil) as the single
+	// "is SPNEGO available" check, so no separate enable flag is needed.
+	krbConf kerberosConfig
+	krb     *krbState
+	// krbLookupUserHook allows tests to replace the LDAP user lookup entirely.
+	// When set it is authoritative: lookupKerberosUser does not fall through
+	// to a real LDAP search. Tests signal "user not found" by returning an
+	// error, not by returning a zero entry with a nil error.
+	krbLookupUserHook func(ctx context.Context, c *ldapConnector, username string) (ldap.Entry, error)
+}
 
 // do initializes a connection to the LDAP directory and passes it to the
 // provided function. It then performs appropriate teardown or reuse before
@@ -419,7 +536,19 @@ func (c *ldapConnector) identityFromEntry(user ldap.Entry) (ident connector.Iden
 }
 
 func (c *ldapConnector) userEntry(conn *ldap.Conn, username string) (user ldap.Entry, found bool, err error) {
-	filter := fmt.Sprintf("(%s=%s)", c.UserSearch.Username, ldap.EscapeFilter(username))
+	var filter string
+	escapedUsername := ldap.EscapeFilter(username)
+
+	attrFilters := make([]string, 0, len(c.usernameAttrs))
+	for _, attr := range c.usernameAttrs {
+		attrFilters = append(attrFilters, fmt.Sprintf("(%s=%s)", attr, escapedUsername))
+	}
+	if len(attrFilters) == 1 {
+		filter = attrFilters[0] // Skip OR wrapper for single attribute
+	} else {
+		filter = fmt.Sprintf("(|%s)", strings.Join(attrFilters, ""))
+	}
+
 	if c.UserSearch.Filter != "" {
 		filter = fmt.Sprintf("(&%s%s)", c.UserSearch.Filter, filter)
 	}
@@ -436,6 +565,8 @@ func (c *ldapConnector) userEntry(conn *ldap.Conn, username string) (user ldap.E
 			// TODO(ericchiang): what if this contains duplicate values?
 		},
 	}
+
+	req.Attributes = append(req.Attributes, c.usernameAttrs...)
 
 	for _, matcher := range c.GroupSearch.UserMatchers {
 		req.Attributes = append(req.Attributes, matcher.UserAttr)

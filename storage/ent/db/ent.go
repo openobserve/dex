@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/dexidp/dex/storage/ent/db/authcode"
 	"github.com/dexidp/dex/storage/ent/db/authrequest"
+	"github.com/dexidp/dex/storage/ent/db/authsession"
 	"github.com/dexidp/dex/storage/ent/db/connector"
 	"github.com/dexidp/dex/storage/ent/db/devicerequest"
 	"github.com/dexidp/dex/storage/ent/db/devicetoken"
@@ -23,6 +24,7 @@ import (
 	"github.com/dexidp/dex/storage/ent/db/password"
 	"github.com/dexidp/dex/storage/ent/db/refreshtoken"
 	"github.com/dexidp/dex/storage/ent/db/signuptoken"
+	"github.com/dexidp/dex/storage/ent/db/useridentity"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -85,6 +87,7 @@ func checkColumn(t, c string) error {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			authcode.Table:       authcode.ValidColumn,
 			authrequest.Table:    authrequest.ValidColumn,
+			authsession.Table:    authsession.ValidColumn,
 			connector.Table:      connector.ValidColumn,
 			devicerequest.Table:  devicerequest.ValidColumn,
 			devicetoken.Table:    devicetoken.ValidColumn,
@@ -94,6 +97,7 @@ func checkColumn(t, c string) error {
 			password.Table:       password.ValidColumn,
 			refreshtoken.Table:   refreshtoken.ValidColumn,
 			signuptoken.Table:    signuptoken.ValidColumn,
+			useridentity.Table:   useridentity.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

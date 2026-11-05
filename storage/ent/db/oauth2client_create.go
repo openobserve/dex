@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/dexidp/dex/storage"
 	"github.com/dexidp/dex/storage/ent/db/oauth2client"
 )
 
@@ -58,6 +59,64 @@ func (_c *OAuth2ClientCreate) SetLogoURL(v string) *OAuth2ClientCreate {
 	return _c
 }
 
+// SetAllowedConnectors sets the "allowed_connectors" field.
+func (_c *OAuth2ClientCreate) SetAllowedConnectors(v []string) *OAuth2ClientCreate {
+	_c.mutation.SetAllowedConnectors(v)
+	return _c
+}
+
+// SetMfaChain sets the "mfa_chain" field.
+func (_c *OAuth2ClientCreate) SetMfaChain(v []string) *OAuth2ClientCreate {
+	_c.mutation.SetMfaChain(v)
+	return _c
+}
+
+// SetPostLogoutRedirectUris sets the "post_logout_redirect_uris" field.
+func (_c *OAuth2ClientCreate) SetPostLogoutRedirectUris(v []string) *OAuth2ClientCreate {
+	_c.mutation.SetPostLogoutRedirectUris(v)
+	return _c
+}
+
+// SetSSOSharedWith sets the "sso_shared_with" field.
+func (_c *OAuth2ClientCreate) SetSSOSharedWith(v []string) *OAuth2ClientCreate {
+	_c.mutation.SetSSOSharedWith(v)
+	return _c
+}
+
+// SetBackchannelLogoutURI sets the "backchannel_logout_uri" field.
+func (_c *OAuth2ClientCreate) SetBackchannelLogoutURI(v string) *OAuth2ClientCreate {
+	_c.mutation.SetBackchannelLogoutURI(v)
+	return _c
+}
+
+// SetNillableBackchannelLogoutURI sets the "backchannel_logout_uri" field if the given value is not nil.
+func (_c *OAuth2ClientCreate) SetNillableBackchannelLogoutURI(v *string) *OAuth2ClientCreate {
+	if v != nil {
+		_c.SetBackchannelLogoutURI(*v)
+	}
+	return _c
+}
+
+// SetRefreshTokenLifetime sets the "refresh_token_lifetime" field.
+func (_c *OAuth2ClientCreate) SetRefreshTokenLifetime(v string) *OAuth2ClientCreate {
+	_c.mutation.SetRefreshTokenLifetime(v)
+	return _c
+}
+
+// SetNillableRefreshTokenLifetime sets the "refresh_token_lifetime" field if the given value is not nil.
+func (_c *OAuth2ClientCreate) SetNillableRefreshTokenLifetime(v *string) *OAuth2ClientCreate {
+	if v != nil {
+		_c.SetRefreshTokenLifetime(*v)
+	}
+	return _c
+}
+
+// SetClientCredentialsClaims sets the "client_credentials_claims" field.
+func (_c *OAuth2ClientCreate) SetClientCredentialsClaims(v *storage.ClientCredentialsClaims) *OAuth2ClientCreate {
+	_c.mutation.SetClientCredentialsClaims(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *OAuth2ClientCreate) SetID(v string) *OAuth2ClientCreate {
 	_c.mutation.SetID(v)
@@ -71,6 +130,7 @@ func (_c *OAuth2ClientCreate) Mutation() *OAuth2ClientMutation {
 
 // Save creates the OAuth2Client in the database.
 func (_c *OAuth2ClientCreate) Save(ctx context.Context) (*OAuth2Client, error) {
+	_c.defaults()
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
@@ -93,6 +153,18 @@ func (_c *OAuth2ClientCreate) Exec(ctx context.Context) error {
 func (_c *OAuth2ClientCreate) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (_c *OAuth2ClientCreate) defaults() {
+	if _, ok := _c.mutation.BackchannelLogoutURI(); !ok {
+		v := oauth2client.DefaultBackchannelLogoutURI
+		_c.mutation.SetBackchannelLogoutURI(v)
+	}
+	if _, ok := _c.mutation.RefreshTokenLifetime(); !ok {
+		v := oauth2client.DefaultRefreshTokenLifetime
+		_c.mutation.SetRefreshTokenLifetime(v)
 	}
 }
 
@@ -189,6 +261,34 @@ func (_c *OAuth2ClientCreate) createSpec() (*OAuth2Client, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.LogoURL(); ok {
 		_spec.SetField(oauth2client.FieldLogoURL, field.TypeString, value)
 		_node.LogoURL = value
+	}
+	if value, ok := _c.mutation.AllowedConnectors(); ok {
+		_spec.SetField(oauth2client.FieldAllowedConnectors, field.TypeJSON, value)
+		_node.AllowedConnectors = value
+	}
+	if value, ok := _c.mutation.MfaChain(); ok {
+		_spec.SetField(oauth2client.FieldMfaChain, field.TypeJSON, value)
+		_node.MfaChain = value
+	}
+	if value, ok := _c.mutation.PostLogoutRedirectUris(); ok {
+		_spec.SetField(oauth2client.FieldPostLogoutRedirectUris, field.TypeJSON, value)
+		_node.PostLogoutRedirectUris = value
+	}
+	if value, ok := _c.mutation.SSOSharedWith(); ok {
+		_spec.SetField(oauth2client.FieldSSOSharedWith, field.TypeJSON, value)
+		_node.SSOSharedWith = value
+	}
+	if value, ok := _c.mutation.BackchannelLogoutURI(); ok {
+		_spec.SetField(oauth2client.FieldBackchannelLogoutURI, field.TypeString, value)
+		_node.BackchannelLogoutURI = value
+	}
+	if value, ok := _c.mutation.RefreshTokenLifetime(); ok {
+		_spec.SetField(oauth2client.FieldRefreshTokenLifetime, field.TypeString, value)
+		_node.RefreshTokenLifetime = value
+	}
+	if value, ok := _c.mutation.ClientCredentialsClaims(); ok {
+		_spec.SetField(oauth2client.FieldClientCredentialsClaims, field.TypeJSON, value)
+		_node.ClientCredentialsClaims = value
 	}
 	return _node, _spec
 }
@@ -323,6 +423,132 @@ func (u *OAuth2ClientUpsert) SetLogoURL(v string) *OAuth2ClientUpsert {
 // UpdateLogoURL sets the "logo_url" field to the value that was provided on create.
 func (u *OAuth2ClientUpsert) UpdateLogoURL() *OAuth2ClientUpsert {
 	u.SetExcluded(oauth2client.FieldLogoURL)
+	return u
+}
+
+// SetAllowedConnectors sets the "allowed_connectors" field.
+func (u *OAuth2ClientUpsert) SetAllowedConnectors(v []string) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldAllowedConnectors, v)
+	return u
+}
+
+// UpdateAllowedConnectors sets the "allowed_connectors" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdateAllowedConnectors() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldAllowedConnectors)
+	return u
+}
+
+// ClearAllowedConnectors clears the value of the "allowed_connectors" field.
+func (u *OAuth2ClientUpsert) ClearAllowedConnectors() *OAuth2ClientUpsert {
+	u.SetNull(oauth2client.FieldAllowedConnectors)
+	return u
+}
+
+// SetMfaChain sets the "mfa_chain" field.
+func (u *OAuth2ClientUpsert) SetMfaChain(v []string) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldMfaChain, v)
+	return u
+}
+
+// UpdateMfaChain sets the "mfa_chain" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdateMfaChain() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldMfaChain)
+	return u
+}
+
+// ClearMfaChain clears the value of the "mfa_chain" field.
+func (u *OAuth2ClientUpsert) ClearMfaChain() *OAuth2ClientUpsert {
+	u.SetNull(oauth2client.FieldMfaChain)
+	return u
+}
+
+// SetPostLogoutRedirectUris sets the "post_logout_redirect_uris" field.
+func (u *OAuth2ClientUpsert) SetPostLogoutRedirectUris(v []string) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldPostLogoutRedirectUris, v)
+	return u
+}
+
+// UpdatePostLogoutRedirectUris sets the "post_logout_redirect_uris" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdatePostLogoutRedirectUris() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldPostLogoutRedirectUris)
+	return u
+}
+
+// ClearPostLogoutRedirectUris clears the value of the "post_logout_redirect_uris" field.
+func (u *OAuth2ClientUpsert) ClearPostLogoutRedirectUris() *OAuth2ClientUpsert {
+	u.SetNull(oauth2client.FieldPostLogoutRedirectUris)
+	return u
+}
+
+// SetSSOSharedWith sets the "sso_shared_with" field.
+func (u *OAuth2ClientUpsert) SetSSOSharedWith(v []string) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldSSOSharedWith, v)
+	return u
+}
+
+// UpdateSSOSharedWith sets the "sso_shared_with" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdateSSOSharedWith() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldSSOSharedWith)
+	return u
+}
+
+// ClearSSOSharedWith clears the value of the "sso_shared_with" field.
+func (u *OAuth2ClientUpsert) ClearSSOSharedWith() *OAuth2ClientUpsert {
+	u.SetNull(oauth2client.FieldSSOSharedWith)
+	return u
+}
+
+// SetBackchannelLogoutURI sets the "backchannel_logout_uri" field.
+func (u *OAuth2ClientUpsert) SetBackchannelLogoutURI(v string) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldBackchannelLogoutURI, v)
+	return u
+}
+
+// UpdateBackchannelLogoutURI sets the "backchannel_logout_uri" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdateBackchannelLogoutURI() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldBackchannelLogoutURI)
+	return u
+}
+
+// ClearBackchannelLogoutURI clears the value of the "backchannel_logout_uri" field.
+func (u *OAuth2ClientUpsert) ClearBackchannelLogoutURI() *OAuth2ClientUpsert {
+	u.SetNull(oauth2client.FieldBackchannelLogoutURI)
+	return u
+}
+
+// SetRefreshTokenLifetime sets the "refresh_token_lifetime" field.
+func (u *OAuth2ClientUpsert) SetRefreshTokenLifetime(v string) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldRefreshTokenLifetime, v)
+	return u
+}
+
+// UpdateRefreshTokenLifetime sets the "refresh_token_lifetime" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdateRefreshTokenLifetime() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldRefreshTokenLifetime)
+	return u
+}
+
+// ClearRefreshTokenLifetime clears the value of the "refresh_token_lifetime" field.
+func (u *OAuth2ClientUpsert) ClearRefreshTokenLifetime() *OAuth2ClientUpsert {
+	u.SetNull(oauth2client.FieldRefreshTokenLifetime)
+	return u
+}
+
+// SetClientCredentialsClaims sets the "client_credentials_claims" field.
+func (u *OAuth2ClientUpsert) SetClientCredentialsClaims(v *storage.ClientCredentialsClaims) *OAuth2ClientUpsert {
+	u.Set(oauth2client.FieldClientCredentialsClaims, v)
+	return u
+}
+
+// UpdateClientCredentialsClaims sets the "client_credentials_claims" field to the value that was provided on create.
+func (u *OAuth2ClientUpsert) UpdateClientCredentialsClaims() *OAuth2ClientUpsert {
+	u.SetExcluded(oauth2client.FieldClientCredentialsClaims)
+	return u
+}
+
+// ClearClientCredentialsClaims clears the value of the "client_credentials_claims" field.
+func (u *OAuth2ClientUpsert) ClearClientCredentialsClaims() *OAuth2ClientUpsert {
+	u.SetNull(oauth2client.FieldClientCredentialsClaims)
 	return u
 }
 
@@ -472,6 +698,153 @@ func (u *OAuth2ClientUpsertOne) UpdateLogoURL() *OAuth2ClientUpsertOne {
 	})
 }
 
+// SetAllowedConnectors sets the "allowed_connectors" field.
+func (u *OAuth2ClientUpsertOne) SetAllowedConnectors(v []string) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetAllowedConnectors(v)
+	})
+}
+
+// UpdateAllowedConnectors sets the "allowed_connectors" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdateAllowedConnectors() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateAllowedConnectors()
+	})
+}
+
+// ClearAllowedConnectors clears the value of the "allowed_connectors" field.
+func (u *OAuth2ClientUpsertOne) ClearAllowedConnectors() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearAllowedConnectors()
+	})
+}
+
+// SetMfaChain sets the "mfa_chain" field.
+func (u *OAuth2ClientUpsertOne) SetMfaChain(v []string) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetMfaChain(v)
+	})
+}
+
+// UpdateMfaChain sets the "mfa_chain" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdateMfaChain() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateMfaChain()
+	})
+}
+
+// ClearMfaChain clears the value of the "mfa_chain" field.
+func (u *OAuth2ClientUpsertOne) ClearMfaChain() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearMfaChain()
+	})
+}
+
+// SetPostLogoutRedirectUris sets the "post_logout_redirect_uris" field.
+func (u *OAuth2ClientUpsertOne) SetPostLogoutRedirectUris(v []string) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetPostLogoutRedirectUris(v)
+	})
+}
+
+// UpdatePostLogoutRedirectUris sets the "post_logout_redirect_uris" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdatePostLogoutRedirectUris() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdatePostLogoutRedirectUris()
+	})
+}
+
+// ClearPostLogoutRedirectUris clears the value of the "post_logout_redirect_uris" field.
+func (u *OAuth2ClientUpsertOne) ClearPostLogoutRedirectUris() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearPostLogoutRedirectUris()
+	})
+}
+
+// SetSSOSharedWith sets the "sso_shared_with" field.
+func (u *OAuth2ClientUpsertOne) SetSSOSharedWith(v []string) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetSSOSharedWith(v)
+	})
+}
+
+// UpdateSSOSharedWith sets the "sso_shared_with" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdateSSOSharedWith() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateSSOSharedWith()
+	})
+}
+
+// ClearSSOSharedWith clears the value of the "sso_shared_with" field.
+func (u *OAuth2ClientUpsertOne) ClearSSOSharedWith() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearSSOSharedWith()
+	})
+}
+
+// SetBackchannelLogoutURI sets the "backchannel_logout_uri" field.
+func (u *OAuth2ClientUpsertOne) SetBackchannelLogoutURI(v string) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetBackchannelLogoutURI(v)
+	})
+}
+
+// UpdateBackchannelLogoutURI sets the "backchannel_logout_uri" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdateBackchannelLogoutURI() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateBackchannelLogoutURI()
+	})
+}
+
+// ClearBackchannelLogoutURI clears the value of the "backchannel_logout_uri" field.
+func (u *OAuth2ClientUpsertOne) ClearBackchannelLogoutURI() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearBackchannelLogoutURI()
+	})
+}
+
+// SetRefreshTokenLifetime sets the "refresh_token_lifetime" field.
+func (u *OAuth2ClientUpsertOne) SetRefreshTokenLifetime(v string) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetRefreshTokenLifetime(v)
+	})
+}
+
+// UpdateRefreshTokenLifetime sets the "refresh_token_lifetime" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdateRefreshTokenLifetime() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateRefreshTokenLifetime()
+	})
+}
+
+// ClearRefreshTokenLifetime clears the value of the "refresh_token_lifetime" field.
+func (u *OAuth2ClientUpsertOne) ClearRefreshTokenLifetime() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearRefreshTokenLifetime()
+	})
+}
+
+// SetClientCredentialsClaims sets the "client_credentials_claims" field.
+func (u *OAuth2ClientUpsertOne) SetClientCredentialsClaims(v *storage.ClientCredentialsClaims) *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetClientCredentialsClaims(v)
+	})
+}
+
+// UpdateClientCredentialsClaims sets the "client_credentials_claims" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertOne) UpdateClientCredentialsClaims() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateClientCredentialsClaims()
+	})
+}
+
+// ClearClientCredentialsClaims clears the value of the "client_credentials_claims" field.
+func (u *OAuth2ClientUpsertOne) ClearClientCredentialsClaims() *OAuth2ClientUpsertOne {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearClientCredentialsClaims()
+	})
+}
+
 // Exec executes the query.
 func (u *OAuth2ClientUpsertOne) Exec(ctx context.Context) error {
 	if len(u.create.conflict) == 0 {
@@ -529,6 +902,7 @@ func (_c *OAuth2ClientCreateBulk) Save(ctx context.Context) ([]*OAuth2Client, er
 	for i := range _c.builders {
 		func(i int, root context.Context) {
 			builder := _c.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*OAuth2ClientMutation)
 				if !ok {
@@ -781,6 +1155,153 @@ func (u *OAuth2ClientUpsertBulk) SetLogoURL(v string) *OAuth2ClientUpsertBulk {
 func (u *OAuth2ClientUpsertBulk) UpdateLogoURL() *OAuth2ClientUpsertBulk {
 	return u.Update(func(s *OAuth2ClientUpsert) {
 		s.UpdateLogoURL()
+	})
+}
+
+// SetAllowedConnectors sets the "allowed_connectors" field.
+func (u *OAuth2ClientUpsertBulk) SetAllowedConnectors(v []string) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetAllowedConnectors(v)
+	})
+}
+
+// UpdateAllowedConnectors sets the "allowed_connectors" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdateAllowedConnectors() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateAllowedConnectors()
+	})
+}
+
+// ClearAllowedConnectors clears the value of the "allowed_connectors" field.
+func (u *OAuth2ClientUpsertBulk) ClearAllowedConnectors() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearAllowedConnectors()
+	})
+}
+
+// SetMfaChain sets the "mfa_chain" field.
+func (u *OAuth2ClientUpsertBulk) SetMfaChain(v []string) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetMfaChain(v)
+	})
+}
+
+// UpdateMfaChain sets the "mfa_chain" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdateMfaChain() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateMfaChain()
+	})
+}
+
+// ClearMfaChain clears the value of the "mfa_chain" field.
+func (u *OAuth2ClientUpsertBulk) ClearMfaChain() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearMfaChain()
+	})
+}
+
+// SetPostLogoutRedirectUris sets the "post_logout_redirect_uris" field.
+func (u *OAuth2ClientUpsertBulk) SetPostLogoutRedirectUris(v []string) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetPostLogoutRedirectUris(v)
+	})
+}
+
+// UpdatePostLogoutRedirectUris sets the "post_logout_redirect_uris" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdatePostLogoutRedirectUris() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdatePostLogoutRedirectUris()
+	})
+}
+
+// ClearPostLogoutRedirectUris clears the value of the "post_logout_redirect_uris" field.
+func (u *OAuth2ClientUpsertBulk) ClearPostLogoutRedirectUris() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearPostLogoutRedirectUris()
+	})
+}
+
+// SetSSOSharedWith sets the "sso_shared_with" field.
+func (u *OAuth2ClientUpsertBulk) SetSSOSharedWith(v []string) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetSSOSharedWith(v)
+	})
+}
+
+// UpdateSSOSharedWith sets the "sso_shared_with" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdateSSOSharedWith() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateSSOSharedWith()
+	})
+}
+
+// ClearSSOSharedWith clears the value of the "sso_shared_with" field.
+func (u *OAuth2ClientUpsertBulk) ClearSSOSharedWith() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearSSOSharedWith()
+	})
+}
+
+// SetBackchannelLogoutURI sets the "backchannel_logout_uri" field.
+func (u *OAuth2ClientUpsertBulk) SetBackchannelLogoutURI(v string) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetBackchannelLogoutURI(v)
+	})
+}
+
+// UpdateBackchannelLogoutURI sets the "backchannel_logout_uri" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdateBackchannelLogoutURI() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateBackchannelLogoutURI()
+	})
+}
+
+// ClearBackchannelLogoutURI clears the value of the "backchannel_logout_uri" field.
+func (u *OAuth2ClientUpsertBulk) ClearBackchannelLogoutURI() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearBackchannelLogoutURI()
+	})
+}
+
+// SetRefreshTokenLifetime sets the "refresh_token_lifetime" field.
+func (u *OAuth2ClientUpsertBulk) SetRefreshTokenLifetime(v string) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetRefreshTokenLifetime(v)
+	})
+}
+
+// UpdateRefreshTokenLifetime sets the "refresh_token_lifetime" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdateRefreshTokenLifetime() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateRefreshTokenLifetime()
+	})
+}
+
+// ClearRefreshTokenLifetime clears the value of the "refresh_token_lifetime" field.
+func (u *OAuth2ClientUpsertBulk) ClearRefreshTokenLifetime() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearRefreshTokenLifetime()
+	})
+}
+
+// SetClientCredentialsClaims sets the "client_credentials_claims" field.
+func (u *OAuth2ClientUpsertBulk) SetClientCredentialsClaims(v *storage.ClientCredentialsClaims) *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.SetClientCredentialsClaims(v)
+	})
+}
+
+// UpdateClientCredentialsClaims sets the "client_credentials_claims" field to the value that was provided on create.
+func (u *OAuth2ClientUpsertBulk) UpdateClientCredentialsClaims() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.UpdateClientCredentialsClaims()
+	})
+}
+
+// ClearClientCredentialsClaims clears the value of the "client_credentials_claims" field.
+func (u *OAuth2ClientUpsertBulk) ClearClientCredentialsClaims() *OAuth2ClientUpsertBulk {
+	return u.Update(func(s *OAuth2ClientUpsert) {
+		s.ClearClientCredentialsClaims()
 	})
 }
 
