@@ -215,7 +215,6 @@ The modular structure isolates ~350 lines of custom code with only ~45 lines of 
 
 ---
 
-## Development
 ## Contributing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, guidelines, and how to submit pull requests.
