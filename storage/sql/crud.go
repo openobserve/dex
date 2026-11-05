@@ -765,19 +765,23 @@ func scanPassword(s scanner) (p storage.Password, err error) {
 
 func (c *conn) CreateSignupToken(ctx context.Context, t storage.SignupToken) error {
 	t.Email = strings.ToLower(t.Email)
-	_, err := c.Exec(`
-		insert into signup_tokens (
-			email, csrf_token, validation_token, expiry
+	// Delete-then-insert instead of "on conflict" so the overwrite works on MySQL too.
+	err := c.ExecTx(func(tx *trans) error {
+		if _, err := tx.Exec(`delete from signup_tokens where email = $1`, t.Email); err != nil {
+			return err
+		}
+		_, err := tx.Exec(`
+			insert into signup_tokens (
+				email, csrf_token, validation_token, expiry
+			)
+			values (
+				$1, $2, $3, $4
+			);
+		`,
+			t.Email, t.CsrfToken, t.ValidationToken, t.Expiry,
 		)
-		values (
-			$1, $2, $3, $4
-		)
-		on conflict (email) do update
-		set csrf_token = EXCLUDED.csrf_token, validation_token= EXCLUDED.validation_token, expiry = EXCLUDED.expiry
-		;
-	`,
-		t.Email, t.CsrfToken, t.ValidationToken, t.Expiry,
-	)
+		return err
+	})
 	if err != nil {
 		if c.alreadyExistsCheck(err) {
 			return storage.ErrAlreadyExists
