@@ -81,6 +81,7 @@ func (h *Handler) handleConnectorCallback(w http.ResponseWriter, r *http.Request
 		}
 		identity, err = conn.HandlePOST(tokens.ParseScopes(authReq.Scopes), r.PostFormValue("SAMLResponse"), authReq.ID)
 	default:
+		h.Logger.ErrorContext(r.Context(), "no connector type matched", "connector_id", authReq.ConnectorID, "err", "no connector type matched")
 		h.renderError(r, w, http.StatusInternalServerError, "Requested resource does not exist.")
 		return
 	}
