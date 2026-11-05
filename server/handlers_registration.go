@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
+	"github.com/dexidp/dex/server/oauth2"
 	"github.com/dexidp/dex/storage"
 )
 
@@ -40,7 +42,7 @@ func (s *Server) handleClientRegistration(w http.ResponseWriter, r *http.Request
 
 	// Only POST method is allowed
 	if r.Method != http.MethodPost {
-		s.registrationErrHelper(w, errInvalidRequest, "Method not allowed", http.StatusMethodNotAllowed)
+		s.registrationErrHelper(w, oauth2.InvalidRequest, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -51,14 +53,14 @@ func (s *Server) handleClientRegistration(w http.ResponseWriter, r *http.Request
 
 		if authHeader == "" || !strings.HasPrefix(authHeader, bearerPrefix) {
 			w.Header().Set("WWW-Authenticate", "Bearer")
-			s.registrationErrHelper(w, errInvalidRequest, "Initial access token required", http.StatusUnauthorized)
+			s.registrationErrHelper(w, oauth2.InvalidRequest, "Initial access token required", http.StatusUnauthorized)
 			return
 		}
 
 		providedToken := strings.TrimPrefix(authHeader, bearerPrefix)
 		if providedToken != s.registrationToken {
 			w.Header().Set("WWW-Authenticate", "Bearer error=\"invalid_token\"")
-			s.registrationErrHelper(w, errInvalidRequest, "Invalid initial access token", http.StatusUnauthorized)
+			s.registrationErrHelper(w, oauth2.InvalidRequest, "Invalid initial access token", http.StatusUnauthorized)
 			return
 		}
 
@@ -71,13 +73,13 @@ func (s *Server) handleClientRegistration(w http.ResponseWriter, r *http.Request
 	var req clientRegistrationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.logger.ErrorContext(ctx, "failed to parse registration request", "err", err)
-		s.registrationErrHelper(w, errInvalidRequest, "Invalid JSON request body", http.StatusBadRequest)
+		s.registrationErrHelper(w, oauth2.InvalidRequest, "Invalid JSON request body", http.StatusBadRequest)
 		return
 	}
 
 	// Validate required fields
 	if len(req.RedirectURIs) == 0 {
-		s.registrationErrHelper(w, errInvalidRequest, "redirect_uris is required", http.StatusBadRequest)
+		s.registrationErrHelper(w, oauth2.InvalidRequest, "redirect_uris is required", http.StatusBadRequest)
 		return
 	}
 
@@ -86,22 +88,22 @@ func (s *Server) handleClientRegistration(w http.ResponseWriter, r *http.Request
 		req.TokenEndpointAuthMethod = "client_secret_basic"
 	}
 	if len(req.GrantTypes) == 0 {
-		req.GrantTypes = []string{grantTypeAuthorizationCode, grantTypeRefreshToken}
+		req.GrantTypes = []string{oauth2.GrantTypeAuthorizationCode, oauth2.GrantTypeRefreshToken}
 	}
 	if len(req.ResponseTypes) == 0 {
-		req.ResponseTypes = []string{responseTypeCode}
+		req.ResponseTypes = []string{oauth2.ResponseTypeCode}
 	}
 
 	// Validate token_endpoint_auth_method
 	if req.TokenEndpointAuthMethod != "client_secret_basic" && req.TokenEndpointAuthMethod != "client_secret_post" && req.TokenEndpointAuthMethod != "none" {
-		s.registrationErrHelper(w, errInvalidRequest, "Unsupported token_endpoint_auth_method", http.StatusBadRequest)
+		s.registrationErrHelper(w, oauth2.InvalidRequest, "Unsupported token_endpoint_auth_method", http.StatusBadRequest)
 		return
 	}
 
 	// Validate grant_types
 	for _, gt := range req.GrantTypes {
-		if !contains(s.supportedGrantTypes, gt) {
-			s.registrationErrHelper(w, errInvalidRequest, fmt.Sprintf("Unsupported grant_type: %s", gt), http.StatusBadRequest)
+		if !slices.Contains(s.supportedGrantTypes, gt) {
+			s.registrationErrHelper(w, oauth2.InvalidRequest, fmt.Sprintf("Unsupported grant_type: %s", gt), http.StatusBadRequest)
 			return
 		}
 	}
@@ -109,7 +111,7 @@ func (s *Server) handleClientRegistration(w http.ResponseWriter, r *http.Request
 	// Validate response_types
 	for _, rt := range req.ResponseTypes {
 		if !s.supportedResponseTypes[rt] {
-			s.registrationErrHelper(w, errInvalidRequest, fmt.Sprintf("Unsupported response_type: %s", rt), http.StatusBadRequest)
+			s.registrationErrHelper(w, oauth2.InvalidRequest, fmt.Sprintf("Unsupported response_type: %s", rt), http.StatusBadRequest)
 			return
 		}
 	}
@@ -140,9 +142,9 @@ func (s *Server) handleClientRegistration(w http.ResponseWriter, r *http.Request
 	if err := s.storage.CreateClient(ctx, client); err != nil {
 		s.logger.ErrorContext(ctx, "failed to create client", "err", err)
 		if err == storage.ErrAlreadyExists {
-			s.registrationErrHelper(w, errInvalidRequest, "Client ID already exists", http.StatusBadRequest)
+			s.registrationErrHelper(w, oauth2.InvalidRequest, "Client ID already exists", http.StatusBadRequest)
 		} else {
-			s.registrationErrHelper(w, errServerError, "Failed to register client", http.StatusInternalServerError)
+			s.registrationErrHelper(w, oauth2.ServerError, "Failed to register client", http.StatusInternalServerError)
 		}
 		return
 	}
@@ -175,7 +177,7 @@ func (s *Server) handleClientRegistration(w http.ResponseWriter, r *http.Request
 }
 
 func (s *Server) registrationErrHelper(w http.ResponseWriter, typ, description string, statusCode int) {
-	if err := tokenErr(w, typ, description, statusCode); err != nil {
+	if err := oauth2.WriteError(w, typ, description, statusCode); err != nil {
 		s.logger.Error("registration error response", "err", err)
 	}
 }

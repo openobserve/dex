@@ -18,6 +18,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/dexidp/dex/server/connectors"
+	"github.com/dexidp/dex/server/oauth2"
+	"github.com/dexidp/dex/server/reqctx"
 	"github.com/dexidp/dex/storage"
 )
 
@@ -59,7 +62,7 @@ func newSignupFlowServer(t *testing.T) (*Server, *testClock) {
 	})
 	t.Cleanup(httpServer.Close)
 	ctx := t.Context()
-	require.NoError(t, s.storage.CreateConnector(ctx, storage.Connector{ID: "local", Type: LocalConnector, Name: "Email"}))
+	require.NoError(t, s.storage.CreateConnector(ctx, storage.Connector{ID: "local", Type: connectors.LocalConnector, Name: "Email"}))
 	require.NoError(t, s.storage.CreateClient(ctx, storage.Client{
 		ID:           flowClientID,
 		Secret:       flowClientSecret,
@@ -74,7 +77,7 @@ func createFlowAuthRequest(t *testing.T, s *Server, mutate func(*storage.AuthReq
 		ID:            storage.NewID(),
 		ClientID:      flowClientID,
 		RedirectURI:   flowRedirectURI,
-		ResponseTypes: []string{responseTypeCode},
+		ResponseTypes: []string{oauth2.ResponseTypeCode},
 		Scopes:        []string{"openid", "email", "profile"},
 		State:         flowClientState,
 		ConnectorID:   "local",
@@ -144,8 +147,10 @@ func followDexRedirects(t *testing.T, s *Server, rr *httptest.ResponseRecorder) 
 	return nil
 }
 
-func requireCodeRedirect(t *testing.T, rr *httptest.ResponseRecorder, wantState string) string {
+func requireCodeRedirect(t *testing.T, s *Server, rr *httptest.ResponseRecorder, wantState string) string {
 	t.Helper()
+	// A finished login continues at the /auth dispatcher before the client redirect.
+	rr = followDexRedirects(t, s, rr)
 	require.Equal(t, http.StatusSeeOther, rr.Code, rr.Body.String())
 	loc, err := url.Parse(rr.Header().Get("Location"))
 	require.NoError(t, err)
@@ -158,7 +163,7 @@ func requireCodeRedirect(t *testing.T, rr *httptest.ResponseRecorder, wantState 
 
 func signupIDTokenClaims(t *testing.T, s *Server, code string) map[string]any {
 	t.Helper()
-	form := url.Values{"grant_type": {grantTypeAuthorizationCode}, "code": {code}, "redirect_uri": {flowRedirectURI}}
+	form := url.Values{"grant_type": {oauth2.GrantTypeAuthorizationCode}, "code": {code}, "redirect_uri": {flowRedirectURI}}
 	req := httptest.NewRequest(http.MethodPost, "/token", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth(flowClientID, flowClientSecret)
@@ -187,7 +192,7 @@ func TestSignupSignsIntoPendingAuthRequest(t *testing.T) {
 	target := "/signup?" + url.Values{"state": {authReq.ID}, "back": {"https://evil.example/after-signup"}}.Encode()
 	rr := postForm(s, target, signupForm("Jane@Acme.com", flowCode), "")
 
-	code := requireCodeRedirect(t, rr, flowClientState)
+	code := requireCodeRedirect(t, s, rr, flowClientState)
 	require.NotContains(t, rr.Header().Get("Location"), "evil.example", "a sign-up must never follow back")
 
 	_, err := s.storage.GetAuthRequest(ctx, authReq.ID)
@@ -214,7 +219,7 @@ func TestSignupReplayDoesNotSignInTwice(t *testing.T) {
 	target := "/signup?state=" + authReq.ID
 
 	first := postForm(s, target, signupForm("jane@acme.com", flowCode), "")
-	requireCodeRedirect(t, first, flowClientState)
+	requireCodeRedirect(t, s, first, flowClientState)
 
 	replay := postForm(s, target, signupForm("jane@acme.com", flowCode), "")
 	require.Equal(t, http.StatusBadRequest, replay.Code)
@@ -226,7 +231,7 @@ func TestSignupFallsBackToPasswordStep(t *testing.T) {
 	oauthQuery := url.Values{
 		"client_id":     {flowClientID},
 		"redirect_uri":  {flowRedirectURI},
-		"response_type": {responseTypeCode},
+		"response_type": {oauth2.ResponseTypeCode},
 		"scope":         {"openid email"},
 	}
 	tests := []struct {
@@ -299,7 +304,7 @@ func TestSignupFallsBackToPasswordStep(t *testing.T) {
 			m := formActionRE.FindStringSubmatch(body)
 			require.Len(t, m, 2)
 			login := postForm(s, html.UnescapeString(m[1]), url.Values{"login": {"jane@acme.com"}, "password": {"password123"}}, "")
-			requireCodeRedirect(t, login, tc.wantState)
+			requireCodeRedirect(t, s, login, tc.wantState)
 		})
 	}
 }
@@ -522,7 +527,7 @@ func TestClientIPUsesTrustedRealIP(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.RemoteAddr = "10.0.0.1:4000"
 	require.Equal(t, "10.0.0.1", clientIP(req))
-	req = req.WithContext(WithRemoteIP(req.Context(), "198.51.100.20"))
+	req = req.WithContext(reqctx.WithRemoteIP(req.Context(), "198.51.100.20"))
 	require.Equal(t, "198.51.100.20", clientIP(req))
 }
 
@@ -554,7 +559,7 @@ func TestPasswordLoginLockout(t *testing.T) {
 	clock.Advance(loginLockout)
 	fresh := createFlowAuthRequest(t, s, nil)
 	after := postForm(s, "/auth/local/login?state="+fresh.ID, url.Values{"login": {"jane@acme.com"}, "password": {"right-password"}}, "")
-	requireCodeRedirect(t, after, flowClientState)
+	requireCodeRedirect(t, s, after, flowClientState)
 }
 
 func TestPasswordLoginSuccessResetsFailures(t *testing.T) {
@@ -570,7 +575,7 @@ func TestPasswordLoginSuccessResetsFailures(t *testing.T) {
 		for i := 0; i < loginFailuresPerAccount-1; i++ {
 			require.Equal(t, http.StatusUnauthorized, postForm(s, target, url.Values{"login": {"jane@acme.com"}, "password": {"nope"}}, "203.0.113.60:1").Code)
 		}
-		requireCodeRedirect(t, postForm(s, target, url.Values{"login": {"jane@acme.com"}, "password": {"right-password"}}, "203.0.113.60:1"), flowClientState)
+		requireCodeRedirect(t, s, postForm(s, target, url.Values{"login": {"jane@acme.com"}, "password": {"right-password"}}, "203.0.113.60:1"), flowClientState)
 	}
 }
 
@@ -588,8 +593,8 @@ func TestPasswordLoginPerIPLimit(t *testing.T) {
 }
 
 func TestIsSafeBackLink(t *testing.T) {
-	root := &Server{issuerURL: url.URL{Scheme: "https", Host: "auth.example", Path: ""}}
-	sub := &Server{issuerURL: url.URL{Scheme: "https", Host: "auth.example", Path: "/dex"}}
+	root := &Server{issuerURL: oauth2.IssuerURL{URL: url.URL{Scheme: "https", Host: "auth.example", Path: ""}}}
+	sub := &Server{issuerURL: oauth2.IssuerURL{URL: url.URL{Scheme: "https", Host: "auth.example", Path: "/dex"}}}
 	tests := []struct {
 		link     string
 		wantRoot bool

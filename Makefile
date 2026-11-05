@@ -17,8 +17,8 @@ export GOBIN=$(PWD)/bin
 LD_FLAGS="-w -X main.version=$(VERSION)"
 
 # Dependency versions
-GOLANGCI_VERSION   = 2.4.0
-GOTESTSUM_VERSION ?= 1.12.0
+GOLANGCI_VERSION   = 2.13.1
+GOTESTSUM_VERSION ?= 1.13.0
 
 PROTOC_VERSION             = 29.3
 PROTOC_GEN_GO_VERSION      = 1.36.5
@@ -123,12 +123,28 @@ verify-go-mod: go-mod-tidy ## Check that go.mod and go.sum formatted according t
 
 deps: bin/gotestsum bin/golangci-lint bin/protoc bin/protoc-gen-go bin/protoc-gen-go-grpc bin/kind ## Install dev dependencies.
 
-.PHONY: test testrace testall
-test: ## Test go code.
-	@go test -v ./...
+# Detect if we're running in GitHub Actions
+ifdef GITHUB_ACTIONS
+GOTESTSUM_FORMAT = github-actions
+else
+GOTESTSUM_FORMAT = testname
+GOTESTSUM_FORMAT_ICONS = hivis
+endif
 
-testrace: ## Test go code and check for possible race conditions.
-	@go test -v --race ./...
+.PHONY: test testrace testall
+test: bin/gotestsum ## Test go code.
+ifdef GOTESTSUM_FORMAT_ICONS
+	@gotestsum --format $(GOTESTSUM_FORMAT) --format-icons $(GOTESTSUM_FORMAT_ICONS) -- -v ./...
+else
+	@gotestsum --format $(GOTESTSUM_FORMAT) -- -v ./...
+endif
+
+testrace: bin/gotestsum ## Test go code and check for possible race conditions.
+ifdef GOTESTSUM_FORMAT_ICONS
+	@gotestsum --format $(GOTESTSUM_FORMAT) --format-icons $(GOTESTSUM_FORMAT_ICONS) -- -v --race ./...
+else
+	@gotestsum --format $(GOTESTSUM_FORMAT) -- -v --race ./...
+endif
 
 testall: testrace ## Run all tests for go code.
 
@@ -168,7 +184,7 @@ kind-down: ## Delete the kind cluster.
 
 bin/golangci-lint:
 	@mkdir -p bin
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | BINARY=golangci-lint bash -s -- v${GOLANGCI_VERSION}
+	curl -sSfL https://golangci-lint.run/install.sh | sh -s v${GOLANGCI_VERSION}
 
 bin/gotestsum:
 	@mkdir -p bin

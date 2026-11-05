@@ -39,9 +39,57 @@ func (_c *PasswordCreate) SetUsername(v string) *PasswordCreate {
 	return _c
 }
 
+// SetName sets the "name" field.
+func (_c *PasswordCreate) SetName(v string) *PasswordCreate {
+	_c.mutation.SetName(v)
+	return _c
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (_c *PasswordCreate) SetNillableName(v *string) *PasswordCreate {
+	if v != nil {
+		_c.SetName(*v)
+	}
+	return _c
+}
+
+// SetPreferredUsername sets the "preferred_username" field.
+func (_c *PasswordCreate) SetPreferredUsername(v string) *PasswordCreate {
+	_c.mutation.SetPreferredUsername(v)
+	return _c
+}
+
+// SetNillablePreferredUsername sets the "preferred_username" field if the given value is not nil.
+func (_c *PasswordCreate) SetNillablePreferredUsername(v *string) *PasswordCreate {
+	if v != nil {
+		_c.SetPreferredUsername(*v)
+	}
+	return _c
+}
+
+// SetEmailVerified sets the "email_verified" field.
+func (_c *PasswordCreate) SetEmailVerified(v bool) *PasswordCreate {
+	_c.mutation.SetEmailVerified(v)
+	return _c
+}
+
+// SetNillableEmailVerified sets the "email_verified" field if the given value is not nil.
+func (_c *PasswordCreate) SetNillableEmailVerified(v *bool) *PasswordCreate {
+	if v != nil {
+		_c.SetEmailVerified(*v)
+	}
+	return _c
+}
+
 // SetUserID sets the "user_id" field.
 func (_c *PasswordCreate) SetUserID(v string) *PasswordCreate {
 	_c.mutation.SetUserID(v)
+	return _c
+}
+
+// SetGroups sets the "groups" field.
+func (_c *PasswordCreate) SetGroups(v []string) *PasswordCreate {
+	_c.mutation.SetGroups(v)
 	return _c
 }
 
@@ -52,6 +100,7 @@ func (_c *PasswordCreate) Mutation() *PasswordMutation {
 
 // Save creates the Password in the database.
 func (_c *PasswordCreate) Save(ctx context.Context) (*Password, error) {
+	_c.defaults()
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
@@ -77,6 +126,18 @@ func (_c *PasswordCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (_c *PasswordCreate) defaults() {
+	if _, ok := _c.mutation.Name(); !ok {
+		v := password.DefaultName
+		_c.mutation.SetName(v)
+	}
+	if _, ok := _c.mutation.PreferredUsername(); !ok {
+		v := password.DefaultPreferredUsername
+		_c.mutation.SetPreferredUsername(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (_c *PasswordCreate) check() error {
 	if _, ok := _c.mutation.Email(); !ok {
@@ -97,6 +158,12 @@ func (_c *PasswordCreate) check() error {
 		if err := password.UsernameValidator(v); err != nil {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`db: validator failed for field "Password.username": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`db: missing required field "Password.name"`)}
+	}
+	if _, ok := _c.mutation.PreferredUsername(); !ok {
+		return &ValidationError{Name: "preferred_username", err: errors.New(`db: missing required field "Password.preferred_username"`)}
 	}
 	if _, ok := _c.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`db: missing required field "Password.user_id"`)}
@@ -145,9 +212,25 @@ func (_c *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 		_spec.SetField(password.FieldUsername, field.TypeString, value)
 		_node.Username = value
 	}
+	if value, ok := _c.mutation.Name(); ok {
+		_spec.SetField(password.FieldName, field.TypeString, value)
+		_node.Name = value
+	}
+	if value, ok := _c.mutation.PreferredUsername(); ok {
+		_spec.SetField(password.FieldPreferredUsername, field.TypeString, value)
+		_node.PreferredUsername = value
+	}
+	if value, ok := _c.mutation.EmailVerified(); ok {
+		_spec.SetField(password.FieldEmailVerified, field.TypeBool, value)
+		_node.EmailVerified = &value
+	}
 	if value, ok := _c.mutation.UserID(); ok {
 		_spec.SetField(password.FieldUserID, field.TypeString, value)
 		_node.UserID = value
+	}
+	if value, ok := _c.mutation.Groups(); ok {
+		_spec.SetField(password.FieldGroups, field.TypeJSON, value)
+		_node.Groups = value
 	}
 	return _node, _spec
 }
@@ -237,6 +320,48 @@ func (u *PasswordUpsert) UpdateUsername() *PasswordUpsert {
 	return u
 }
 
+// SetName sets the "name" field.
+func (u *PasswordUpsert) SetName(v string) *PasswordUpsert {
+	u.Set(password.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *PasswordUpsert) UpdateName() *PasswordUpsert {
+	u.SetExcluded(password.FieldName)
+	return u
+}
+
+// SetPreferredUsername sets the "preferred_username" field.
+func (u *PasswordUpsert) SetPreferredUsername(v string) *PasswordUpsert {
+	u.Set(password.FieldPreferredUsername, v)
+	return u
+}
+
+// UpdatePreferredUsername sets the "preferred_username" field to the value that was provided on create.
+func (u *PasswordUpsert) UpdatePreferredUsername() *PasswordUpsert {
+	u.SetExcluded(password.FieldPreferredUsername)
+	return u
+}
+
+// SetEmailVerified sets the "email_verified" field.
+func (u *PasswordUpsert) SetEmailVerified(v bool) *PasswordUpsert {
+	u.Set(password.FieldEmailVerified, v)
+	return u
+}
+
+// UpdateEmailVerified sets the "email_verified" field to the value that was provided on create.
+func (u *PasswordUpsert) UpdateEmailVerified() *PasswordUpsert {
+	u.SetExcluded(password.FieldEmailVerified)
+	return u
+}
+
+// ClearEmailVerified clears the value of the "email_verified" field.
+func (u *PasswordUpsert) ClearEmailVerified() *PasswordUpsert {
+	u.SetNull(password.FieldEmailVerified)
+	return u
+}
+
 // SetUserID sets the "user_id" field.
 func (u *PasswordUpsert) SetUserID(v string) *PasswordUpsert {
 	u.Set(password.FieldUserID, v)
@@ -246,6 +371,24 @@ func (u *PasswordUpsert) SetUserID(v string) *PasswordUpsert {
 // UpdateUserID sets the "user_id" field to the value that was provided on create.
 func (u *PasswordUpsert) UpdateUserID() *PasswordUpsert {
 	u.SetExcluded(password.FieldUserID)
+	return u
+}
+
+// SetGroups sets the "groups" field.
+func (u *PasswordUpsert) SetGroups(v []string) *PasswordUpsert {
+	u.Set(password.FieldGroups, v)
+	return u
+}
+
+// UpdateGroups sets the "groups" field to the value that was provided on create.
+func (u *PasswordUpsert) UpdateGroups() *PasswordUpsert {
+	u.SetExcluded(password.FieldGroups)
+	return u
+}
+
+// ClearGroups clears the value of the "groups" field.
+func (u *PasswordUpsert) ClearGroups() *PasswordUpsert {
+	u.SetNull(password.FieldGroups)
 	return u
 }
 
@@ -331,6 +474,55 @@ func (u *PasswordUpsertOne) UpdateUsername() *PasswordUpsertOne {
 	})
 }
 
+// SetName sets the "name" field.
+func (u *PasswordUpsertOne) SetName(v string) *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *PasswordUpsertOne) UpdateName() *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetPreferredUsername sets the "preferred_username" field.
+func (u *PasswordUpsertOne) SetPreferredUsername(v string) *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetPreferredUsername(v)
+	})
+}
+
+// UpdatePreferredUsername sets the "preferred_username" field to the value that was provided on create.
+func (u *PasswordUpsertOne) UpdatePreferredUsername() *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdatePreferredUsername()
+	})
+}
+
+// SetEmailVerified sets the "email_verified" field.
+func (u *PasswordUpsertOne) SetEmailVerified(v bool) *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetEmailVerified(v)
+	})
+}
+
+// UpdateEmailVerified sets the "email_verified" field to the value that was provided on create.
+func (u *PasswordUpsertOne) UpdateEmailVerified() *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateEmailVerified()
+	})
+}
+
+// ClearEmailVerified clears the value of the "email_verified" field.
+func (u *PasswordUpsertOne) ClearEmailVerified() *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.ClearEmailVerified()
+	})
+}
+
 // SetUserID sets the "user_id" field.
 func (u *PasswordUpsertOne) SetUserID(v string) *PasswordUpsertOne {
 	return u.Update(func(s *PasswordUpsert) {
@@ -342,6 +534,27 @@ func (u *PasswordUpsertOne) SetUserID(v string) *PasswordUpsertOne {
 func (u *PasswordUpsertOne) UpdateUserID() *PasswordUpsertOne {
 	return u.Update(func(s *PasswordUpsert) {
 		s.UpdateUserID()
+	})
+}
+
+// SetGroups sets the "groups" field.
+func (u *PasswordUpsertOne) SetGroups(v []string) *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetGroups(v)
+	})
+}
+
+// UpdateGroups sets the "groups" field to the value that was provided on create.
+func (u *PasswordUpsertOne) UpdateGroups() *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateGroups()
+	})
+}
+
+// ClearGroups clears the value of the "groups" field.
+func (u *PasswordUpsertOne) ClearGroups() *PasswordUpsertOne {
+	return u.Update(func(s *PasswordUpsert) {
+		s.ClearGroups()
 	})
 }
 
@@ -397,6 +610,7 @@ func (_c *PasswordCreateBulk) Save(ctx context.Context) ([]*Password, error) {
 	for i := range _c.builders {
 		func(i int, root context.Context) {
 			builder := _c.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*PasswordMutation)
 				if !ok {
@@ -590,6 +804,55 @@ func (u *PasswordUpsertBulk) UpdateUsername() *PasswordUpsertBulk {
 	})
 }
 
+// SetName sets the "name" field.
+func (u *PasswordUpsertBulk) SetName(v string) *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *PasswordUpsertBulk) UpdateName() *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetPreferredUsername sets the "preferred_username" field.
+func (u *PasswordUpsertBulk) SetPreferredUsername(v string) *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetPreferredUsername(v)
+	})
+}
+
+// UpdatePreferredUsername sets the "preferred_username" field to the value that was provided on create.
+func (u *PasswordUpsertBulk) UpdatePreferredUsername() *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdatePreferredUsername()
+	})
+}
+
+// SetEmailVerified sets the "email_verified" field.
+func (u *PasswordUpsertBulk) SetEmailVerified(v bool) *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetEmailVerified(v)
+	})
+}
+
+// UpdateEmailVerified sets the "email_verified" field to the value that was provided on create.
+func (u *PasswordUpsertBulk) UpdateEmailVerified() *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateEmailVerified()
+	})
+}
+
+// ClearEmailVerified clears the value of the "email_verified" field.
+func (u *PasswordUpsertBulk) ClearEmailVerified() *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.ClearEmailVerified()
+	})
+}
+
 // SetUserID sets the "user_id" field.
 func (u *PasswordUpsertBulk) SetUserID(v string) *PasswordUpsertBulk {
 	return u.Update(func(s *PasswordUpsert) {
@@ -601,6 +864,27 @@ func (u *PasswordUpsertBulk) SetUserID(v string) *PasswordUpsertBulk {
 func (u *PasswordUpsertBulk) UpdateUserID() *PasswordUpsertBulk {
 	return u.Update(func(s *PasswordUpsert) {
 		s.UpdateUserID()
+	})
+}
+
+// SetGroups sets the "groups" field.
+func (u *PasswordUpsertBulk) SetGroups(v []string) *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.SetGroups(v)
+	})
+}
+
+// UpdateGroups sets the "groups" field to the value that was provided on create.
+func (u *PasswordUpsertBulk) UpdateGroups() *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.UpdateGroups()
+	})
+}
+
+// ClearGroups clears the value of the "groups" field.
+func (u *PasswordUpsertBulk) ClearGroups() *PasswordUpsertBulk {
+	return u.Update(func(s *PasswordUpsert) {
+		s.ClearGroups()
 	})
 }
 

@@ -46,6 +46,12 @@ func (_c *ConnectorCreate) SetConfig(v []byte) *ConnectorCreate {
 	return _c
 }
 
+// SetGrantTypes sets the "grant_types" field.
+func (_c *ConnectorCreate) SetGrantTypes(v []string) *ConnectorCreate {
+	_c.mutation.SetGrantTypes(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ConnectorCreate) SetID(v string) *ConnectorCreate {
 	_c.mutation.SetID(v)
@@ -165,6 +171,10 @@ func (_c *ConnectorCreate) createSpec() (*Connector, *sqlgraph.CreateSpec) {
 		_spec.SetField(connector.FieldConfig, field.TypeBytes, value)
 		_node.Config = value
 	}
+	if value, ok := _c.mutation.GrantTypes(); ok {
+		_spec.SetField(connector.FieldGrantTypes, field.TypeJSON, value)
+		_node.GrantTypes = value
+	}
 	return _node, _spec
 }
 
@@ -262,6 +272,24 @@ func (u *ConnectorUpsert) SetConfig(v []byte) *ConnectorUpsert {
 // UpdateConfig sets the "config" field to the value that was provided on create.
 func (u *ConnectorUpsert) UpdateConfig() *ConnectorUpsert {
 	u.SetExcluded(connector.FieldConfig)
+	return u
+}
+
+// SetGrantTypes sets the "grant_types" field.
+func (u *ConnectorUpsert) SetGrantTypes(v []string) *ConnectorUpsert {
+	u.Set(connector.FieldGrantTypes, v)
+	return u
+}
+
+// UpdateGrantTypes sets the "grant_types" field to the value that was provided on create.
+func (u *ConnectorUpsert) UpdateGrantTypes() *ConnectorUpsert {
+	u.SetExcluded(connector.FieldGrantTypes)
+	return u
+}
+
+// ClearGrantTypes clears the value of the "grant_types" field.
+func (u *ConnectorUpsert) ClearGrantTypes() *ConnectorUpsert {
+	u.SetNull(connector.FieldGrantTypes)
 	return u
 }
 
@@ -366,6 +394,27 @@ func (u *ConnectorUpsertOne) SetConfig(v []byte) *ConnectorUpsertOne {
 func (u *ConnectorUpsertOne) UpdateConfig() *ConnectorUpsertOne {
 	return u.Update(func(s *ConnectorUpsert) {
 		s.UpdateConfig()
+	})
+}
+
+// SetGrantTypes sets the "grant_types" field.
+func (u *ConnectorUpsertOne) SetGrantTypes(v []string) *ConnectorUpsertOne {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.SetGrantTypes(v)
+	})
+}
+
+// UpdateGrantTypes sets the "grant_types" field to the value that was provided on create.
+func (u *ConnectorUpsertOne) UpdateGrantTypes() *ConnectorUpsertOne {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.UpdateGrantTypes()
+	})
+}
+
+// ClearGrantTypes clears the value of the "grant_types" field.
+func (u *ConnectorUpsertOne) ClearGrantTypes() *ConnectorUpsertOne {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.ClearGrantTypes()
 	})
 }
 
@@ -636,6 +685,27 @@ func (u *ConnectorUpsertBulk) SetConfig(v []byte) *ConnectorUpsertBulk {
 func (u *ConnectorUpsertBulk) UpdateConfig() *ConnectorUpsertBulk {
 	return u.Update(func(s *ConnectorUpsert) {
 		s.UpdateConfig()
+	})
+}
+
+// SetGrantTypes sets the "grant_types" field.
+func (u *ConnectorUpsertBulk) SetGrantTypes(v []string) *ConnectorUpsertBulk {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.SetGrantTypes(v)
+	})
+}
+
+// UpdateGrantTypes sets the "grant_types" field to the value that was provided on create.
+func (u *ConnectorUpsertBulk) UpdateGrantTypes() *ConnectorUpsertBulk {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.UpdateGrantTypes()
+	})
+}
+
+// ClearGrantTypes clears the value of the "grant_types" field.
+func (u *ConnectorUpsertBulk) ClearGrantTypes() *ConnectorUpsertBulk {
+	return u.Update(func(s *ConnectorUpsert) {
+		s.ClearGrantTypes()
 	})
 }
 

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/dexidp/dex/server/reqctx"
 )
 
 // Defaults for the sign-up, password-reset and password-login abuse limits.
@@ -254,7 +256,7 @@ func (c *counterStore) put(key string, expires, now time.Time) *counterEntry {
 
 // clientIP is the address the request middleware trusted (see Config.RealIPHeader), else the TCP peer.
 func clientIP(r *http.Request) string {
-	if ip, ok := r.Context().Value(RequestKeyRemoteIP).(string); ok && ip != "" {
+	if ip, ok := r.Context().Value(reqctx.RequestKeyRemoteIP).(string); ok && ip != "" {
 		return ip
 	}
 	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {

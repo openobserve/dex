@@ -21,16 +21,22 @@ import (
 	"time"
 
 	gosundheit "github.com/AppsFlyer/go-sundheit"
+	"github.com/AppsFlyer/go-sundheit/checks"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/oauth2"
+	xoauth2 "golang.org/x/oauth2"
 
 	"github.com/dexidp/dex/connector"
 	"github.com/dexidp/dex/connector/mock"
+	"github.com/dexidp/dex/server/connectors"
+	"github.com/dexidp/dex/server/device"
+	"github.com/dexidp/dex/server/oauth2"
+	"github.com/dexidp/dex/server/signer"
+	"github.com/dexidp/dex/server/tokens"
 	"github.com/dexidp/dex/storage"
 	"github.com/dexidp/dex/storage/memory"
 )
@@ -74,116 +80,6 @@ E2qpAoGAZo5Wwwk7q8b1n9n/ACh4LpE+QgbFdlJxlfFLJCKstl37atzS8UewOSZj
 FDWV28nTP9sqbtsmU8Tem2jzMvZ7C/Q0AuDoKELFUpux8shm8wfIhyaPnXUGZoAZ
 Np4vUwMSYV5mopESLWOg3loBxKyLGFtgGKVCjGiQvy6zISQ4fQo=
 -----END RSA PRIVATE KEY-----`)
-
-func newTestServer(t *testing.T, updateConfig func(c *Config)) (*httptest.Server, *Server) {
-	var server *Server
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		server.ServeHTTP(w, r)
-	}))
-
-	logger := newLogger(t)
-	ctx := t.Context()
-
-	config := Config{
-		Issuer:  s.URL,
-		Storage: memory.New(logger),
-		Web: WebConfig{
-			Dir: "../web",
-		},
-		Logger:             logger,
-		PrometheusRegistry: prometheus.NewRegistry(),
-		HealthChecker:      gosundheit.New(),
-		SkipApprovalScreen: true, // Don't prompt for approval, just immediately redirect with code.
-		AllowedGrantTypes: []string{ // all implemented types
-			grantTypeDeviceCode,
-			grantTypeAuthorizationCode,
-			grantTypeRefreshToken,
-			grantTypeTokenExchange,
-			grantTypeImplicit,
-			grantTypePassword,
-		},
-	}
-	if updateConfig != nil {
-		updateConfig(&config)
-	}
-	s.URL = config.Issuer
-
-	connector := storage.Connector{
-		ID:              "mock",
-		Type:            "mockCallback",
-		Name:            "Mock",
-		ResourceVersion: "1",
-	}
-	if err := config.Storage.CreateConnector(ctx, connector); err != nil {
-		t.Fatalf("create connector: %v", err)
-	}
-
-	var err error
-	if server, err = newServer(ctx, config, staticRotationStrategy(testKey)); err != nil {
-		t.Fatal(err)
-	}
-
-	// Default rotation policy
-	if server.refreshTokenPolicy == nil {
-		server.refreshTokenPolicy, err = NewRefreshTokenPolicy(logger, false, "", "", "")
-		if err != nil {
-			t.Fatalf("failed to prepare rotation policy: %v", err)
-		}
-		server.refreshTokenPolicy.now = config.Now
-	}
-
-	return s, server
-}
-
-func newTestServerMultipleConnectors(t *testing.T, updateConfig func(c *Config)) (*httptest.Server, *Server) {
-	var server *Server
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		server.ServeHTTP(w, r)
-	}))
-
-	logger := newLogger(t)
-	ctx := t.Context()
-
-	config := Config{
-		Issuer:  s.URL,
-		Storage: memory.New(logger),
-		Web: WebConfig{
-			Dir: "../web",
-		},
-		Logger:             logger,
-		PrometheusRegistry: prometheus.NewRegistry(),
-	}
-	if updateConfig != nil {
-		updateConfig(&config)
-	}
-	s.URL = config.Issuer
-
-	connector := storage.Connector{
-		ID:              "mock",
-		Type:            "mockCallback",
-		Name:            "Mock",
-		ResourceVersion: "1",
-	}
-	connector2 := storage.Connector{
-		ID:              "mock2",
-		Type:            "mockCallback",
-		Name:            "Mock",
-		ResourceVersion: "1",
-	}
-	if err := config.Storage.CreateConnector(ctx, connector); err != nil {
-		t.Fatalf("create connector: %v", err)
-	}
-	if err := config.Storage.CreateConnector(ctx, connector2); err != nil {
-		t.Fatalf("create connector: %v", err)
-	}
-
-	var err error
-	if server, err = newServer(ctx, config, staticRotationStrategy(testKey)); err != nil {
-		t.Fatal(err)
-	}
-	server.skipApproval = true // Don't prompt for approval, just immediately redirect with code.
-	return s, server
-}
 
 func TestNewTestServer(t *testing.T) {
 	newTestServer(t, nil)
@@ -229,13 +125,13 @@ type test struct {
 	// If specified these set of scopes will be used during the test case.
 	scopes []string
 	// handleToken provides the OAuth2 token response for the integration test.
-	handleToken func(context.Context, *oidc.Provider, *oauth2.Config, *oauth2.Token, *mock.Callback) error
+	handleToken func(context.Context, *oidc.Provider, *xoauth2.Config, *xoauth2.Token, *mock.Callback) error
 
 	// extra parameters to pass when requesting auth_code
-	authCodeOptions []oauth2.AuthCodeOption
+	authCodeOptions []xoauth2.AuthCodeOption
 
 	// extra parameters to pass when retrieving id token
-	retrieveTokenOptions []oauth2.AuthCodeOption
+	retrieveTokenOptions []xoauth2.AuthCodeOption
 
 	// define an error response, when the test expects an error on the auth endpoint
 	authError *OAuth2ErrorResponse
@@ -269,7 +165,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 
 	oidcConfig := &oidc.Config{SkipClientIDCheck: true}
 
-	basicIDTokenVerify := func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+	basicIDTokenVerify := func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 		idToken, ok := token.Extra("id_token").(string)
 		if !ok {
 			return fmt.Errorf("no id token found")
@@ -285,7 +181,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 		tests: []test{
 			{
 				name: "verify ID Token",
-				handleToken: func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+				handleToken: func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 					idToken, ok := token.Extra("id_token").(string)
 					if !ok {
 						return fmt.Errorf("no id token found")
@@ -298,7 +194,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 			},
 			{
 				name: "fetch userinfo",
-				handleToken: func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+				handleToken: func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 					ui, err := p.UserInfo(ctx, config.TokenSource(ctx, token))
 					if err != nil {
 						return fmt.Errorf("failed to fetch userinfo: %v", err)
@@ -311,7 +207,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 			},
 			{
 				name: "verify id token and oauth2 token expiry",
-				handleToken: func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+				handleToken: func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 					expectedExpiry := now().Add(idTokensValidFor)
 
 					timeEq := func(t1, t2 time.Time, within time.Duration) bool {
@@ -339,7 +235,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 			},
 			{
 				name: "verify at_hash",
-				handleToken: func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+				handleToken: func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 					rawIDToken, ok := token.Extra("id_token").(string)
 					if !ok {
 						return fmt.Errorf("no id token found")
@@ -358,7 +254,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 					if claims.AtHash == "" {
 						return errors.New("no at_hash value in id_token")
 					}
-					wantAtHash, err := accessTokenHash(jose.RS256, token.AccessToken)
+					wantAtHash, err := tokens.AccessTokenHash(jose.RS256, token.AccessToken)
 					if err != nil {
 						return fmt.Errorf("computed expected at hash: %v", err)
 					}
@@ -371,7 +267,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 			},
 			{
 				name: "refresh token",
-				handleToken: func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+				handleToken: func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 					// have to use time.Now because the OAuth2 package uses it.
 					token.Expiry = time.Now().Add(time.Second * -10)
 					if token.Valid() {
@@ -394,7 +290,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 			},
 			{
 				name: "refresh with explicit scopes",
-				handleToken: func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+				handleToken: func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 					v := url.Values{}
 					v.Add("client_id", clientID)
 					v.Add("client_secret", clientSecret)
@@ -424,7 +320,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 			},
 			{
 				name: "refresh with extra spaces",
-				handleToken: func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+				handleToken: func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 					v := url.Values{}
 					v.Add("client_id", clientID)
 					v.Add("client_secret", clientSecret)
@@ -459,7 +355,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 			{
 				name:   "refresh with unauthorized scopes",
 				scopes: []string{"openid", "email"},
-				handleToken: func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+				handleToken: func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 					v := url.Values{}
 					v.Add("client_id", clientID)
 					v.Add("client_secret", clientSecret)
@@ -485,7 +381,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 			{
 				name:   "refresh with different client id",
 				scopes: []string{"openid", "email"},
-				handleToken: func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+				handleToken: func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 					v := url.Values{}
 					v.Add("client_id", clientID)
 					v.Add("client_secret", clientSecret)
@@ -511,8 +407,8 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 						return fmt.Errorf("cannot decode token response: %v", err)
 					}
 
-					if respErr.Error != errInvalidGrant {
-						return fmt.Errorf("expected error %q, got %q", errInvalidGrant, respErr.Error)
+					if respErr.Error != oauth2.InvalidGrant {
+						return fmt.Errorf("expected error %q, got %q", oauth2.InvalidGrant, respErr.Error)
 					}
 
 					expectedMsg := "Refresh token is invalid or has already been claimed by another client."
@@ -527,7 +423,7 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 				// This test ensures that the connector.RefreshConnector interface is being
 				// used when clients request a refresh token.
 				name: "refresh with identity changes",
-				handleToken: func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+				handleToken: func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 					// have to use time.Now because the OAuth2 package uses it.
 					token.Expiry = time.Now().Add(time.Second * -10)
 					if token.Valid() {
@@ -576,66 +472,66 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 			},
 			{
 				name: "unsupported grant type",
-				retrieveTokenOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("grant_type", "unsupported"),
+				retrieveTokenOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("grant_type", "unsupported"),
 				},
 				handleToken: basicIDTokenVerify,
 				tokenError: ErrorResponse{
-					Error:      errUnsupportedGrantType,
+					Error:      oauth2.UnsupportedGrantType,
 					StatusCode: http.StatusBadRequest,
 				},
 			},
 			{
 				// This test ensures that PKCE work in "plain" mode (no code_challenge_method specified)
 				name: "PKCE with plain",
-				authCodeOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_challenge", "challenge123"),
+				authCodeOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_challenge", "challenge123"),
 				},
-				retrieveTokenOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_verifier", "challenge123"),
+				retrieveTokenOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_verifier", "challenge123"),
 				},
 				handleToken: basicIDTokenVerify,
 			},
 			{
 				// This test ensures that PKCE works in "S256" mode
 				name: "PKCE with S256",
-				authCodeOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_challenge", "lyyl-X4a69qrqgEfUL8wodWic3Be9ZZ5eovBgIKKi-w"),
-					oauth2.SetAuthURLParam("code_challenge_method", "S256"),
+				authCodeOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_challenge", "lyyl-X4a69qrqgEfUL8wodWic3Be9ZZ5eovBgIKKi-w"),
+					xoauth2.SetAuthURLParam("code_challenge_method", "S256"),
 				},
-				retrieveTokenOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_verifier", "challenge123"),
+				retrieveTokenOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_verifier", "challenge123"),
 				},
 				handleToken: basicIDTokenVerify,
 			},
 			{
 				// This test ensures that PKCE does fail with wrong code_verifier in "plain" mode
 				name: "PKCE with plain and wrong code_verifier",
-				authCodeOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_challenge", "challenge123"),
+				authCodeOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_challenge", "challenge123"),
 				},
-				retrieveTokenOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_verifier", "challenge124"),
+				retrieveTokenOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_verifier", "challenge124"),
 				},
 				handleToken: basicIDTokenVerify,
 				tokenError: ErrorResponse{
-					Error:      errInvalidGrant,
+					Error:      oauth2.InvalidGrant,
 					StatusCode: http.StatusBadRequest,
 				},
 			},
 			{
 				// This test ensures that PKCE fail with wrong code_verifier in "S256" mode
 				name: "PKCE with S256 and wrong code_verifier",
-				authCodeOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_challenge", "lyyl-X4a69qrqgEfUL8wodWic3Be9ZZ5eovBgIKKi-w"),
-					oauth2.SetAuthURLParam("code_challenge_method", "S256"),
+				authCodeOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_challenge", "lyyl-X4a69qrqgEfUL8wodWic3Be9ZZ5eovBgIKKi-w"),
+					xoauth2.SetAuthURLParam("code_challenge_method", "S256"),
 				},
-				retrieveTokenOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_verifier", "challenge124"),
+				retrieveTokenOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_verifier", "challenge124"),
 				},
 				handleToken: basicIDTokenVerify,
 				tokenError: ErrorResponse{
-					Error:      errInvalidGrant,
+					Error:      oauth2.InvalidGrant,
 					StatusCode: http.StatusBadRequest,
 				},
 			},
@@ -643,16 +539,16 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 				// Ensure that, when PKCE flow started on /auth
 				// we stay in PKCE flow on /token
 				name: "PKCE flow expected on /token",
-				authCodeOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_challenge", "lyyl-X4a69qrqgEfUL8wodWic3Be9ZZ5eovBgIKKi-w"),
-					oauth2.SetAuthURLParam("code_challenge_method", "S256"),
+				authCodeOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_challenge", "lyyl-X4a69qrqgEfUL8wodWic3Be9ZZ5eovBgIKKi-w"),
+					xoauth2.SetAuthURLParam("code_challenge_method", "S256"),
 				},
-				retrieveTokenOptions: []oauth2.AuthCodeOption{
+				retrieveTokenOptions: []xoauth2.AuthCodeOption{
 					// No PKCE call on /token
 				},
 				handleToken: basicIDTokenVerify,
 				tokenError: ErrorResponse{
-					Error:      errInvalidGrant,
+					Error:      oauth2.InvalidGrant,
 					StatusCode: http.StatusBadRequest,
 				},
 			},
@@ -660,45 +556,45 @@ func makeOAuth2Tests(clientID string, clientSecret string, now func() time.Time)
 				// Ensure that when no PKCE flow was started on /auth
 				// we cannot switch to PKCE on /token
 				name:            "No PKCE flow started on /auth",
-				authCodeOptions: []oauth2.AuthCodeOption{
+				authCodeOptions: []xoauth2.AuthCodeOption{
 					// No PKCE call on /auth
 				},
-				retrieveTokenOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_verifier", "challenge123"),
+				retrieveTokenOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_verifier", "challenge123"),
 				},
 				handleToken: basicIDTokenVerify,
 				tokenError: ErrorResponse{
-					Error:      errInvalidRequest,
+					Error:      oauth2.InvalidRequest,
 					StatusCode: http.StatusBadRequest,
 				},
 			},
 			{
 				// Make sure that, when we start with "S256" on /auth, we cannot downgrade to "plain" on /token
 				name: "PKCE with S256 and try to downgrade to plain",
-				authCodeOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_challenge", "lyyl-X4a69qrqgEfUL8wodWic3Be9ZZ5eovBgIKKi-w"),
-					oauth2.SetAuthURLParam("code_challenge_method", "S256"),
+				authCodeOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_challenge", "lyyl-X4a69qrqgEfUL8wodWic3Be9ZZ5eovBgIKKi-w"),
+					xoauth2.SetAuthURLParam("code_challenge_method", "S256"),
 				},
-				retrieveTokenOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("code_verifier", "lyyl-X4a69qrqgEfUL8wodWic3Be9ZZ5eovBgIKKi-w"),
-					oauth2.SetAuthURLParam("code_challenge_method", "plain"),
+				retrieveTokenOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("code_verifier", "lyyl-X4a69qrqgEfUL8wodWic3Be9ZZ5eovBgIKKi-w"),
+					xoauth2.SetAuthURLParam("code_challenge_method", "plain"),
 				},
 				handleToken: basicIDTokenVerify,
 				tokenError: ErrorResponse{
-					Error:      errInvalidGrant,
+					Error:      oauth2.InvalidGrant,
 					StatusCode: http.StatusBadRequest,
 				},
 			},
 			{
 				name: "Request parameter in authorization query",
-				authCodeOptions: []oauth2.AuthCodeOption{
-					oauth2.SetAuthURLParam("request", "anything"),
+				authCodeOptions: []xoauth2.AuthCodeOption{
+					xoauth2.SetAuthURLParam("request", "anything"),
 				},
 				authError: &OAuth2ErrorResponse{
-					Error:            errRequestNotSupported,
+					Error:            oauth2.RequestNotSupported,
 					ErrorDescription: "Server does not support request parameter.",
 				},
-				handleToken: func(ctx context.Context, p *oidc.Provider, config *oauth2.Config, token *oauth2.Token, conn *mock.Callback) error {
+				handleToken: func(ctx context.Context, p *oidc.Provider, config *xoauth2.Config, token *xoauth2.Token, conn *mock.Callback) error {
 					return nil
 				},
 			},
@@ -742,7 +638,7 @@ func TestOAuth2CodeFlow(t *testing.T) {
 			})
 			defer httpServer.Close()
 
-			mockConn := s.connectors["mock"]
+			mockConn, _ := s.connectors.Cached("mock")
 			conn = mockConn.Connector.(*mock.Callback)
 
 			// Query server's provider metadata.
@@ -765,7 +661,7 @@ func TestOAuth2CodeFlow(t *testing.T) {
 			}()
 
 			// Setup OAuth2 client.
-			var oauth2Config *oauth2.Config
+			var oauth2Config *xoauth2.Config
 			oauth2Client := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path != "/callback" {
 					// User is visiting app first time. Redirect to dex.
@@ -841,7 +737,7 @@ func TestOAuth2CodeFlow(t *testing.T) {
 			}
 
 			// Create the OAuth2 config.
-			oauth2Config = &oauth2.Config{
+			oauth2Config = &xoauth2.Config{
 				ClientID:     client.ID,
 				ClientSecret: client.Secret,
 				Endpoint:     p.Endpoint(),
@@ -912,7 +808,7 @@ func TestOAuth2ImplicitFlow(t *testing.T) {
 		}
 	}()
 
-	var oauth2Config *oauth2.Config
+	var oauth2Config *xoauth2.Config
 	oauth2Server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/callback" {
 			q := r.URL.Query()
@@ -934,7 +830,7 @@ func TestOAuth2ImplicitFlow(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		u := oauth2Config.AuthCodeURL(state, oauth2.SetAuthURLParam("response_type", "id_token token"), oidc.Nonce(nonce))
+		u := oauth2Config.AuthCodeURL(state, xoauth2.SetAuthURLParam("response_type", "id_token token"), oidc.Nonce(nonce))
 		http.Redirect(w, r, u, http.StatusSeeOther)
 	}))
 
@@ -954,7 +850,7 @@ func TestOAuth2ImplicitFlow(t *testing.T) {
 		ClientID: client.ID,
 	})
 
-	oauth2Config = &oauth2.Config{
+	oauth2Config = &xoauth2.Config{
 		ClientID:     client.ID,
 		ClientSecret: client.Secret,
 		Endpoint:     p.Endpoint(),
@@ -1048,7 +944,7 @@ func TestCrossClientScopes(t *testing.T) {
 	testClientID := "testclient"
 	peerID := "peer"
 
-	var oauth2Config *oauth2.Config
+	var oauth2Config *xoauth2.Config
 	oauth2Server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/callback" {
 			q := r.URL.Query()
@@ -1117,7 +1013,7 @@ func TestCrossClientScopes(t *testing.T) {
 		t.Fatalf("failed to create client: %v", err)
 	}
 
-	oauth2Config = &oauth2.Config{
+	oauth2Config = &xoauth2.Config{
 		ClientID:     client.ID,
 		ClientSecret: client.Secret,
 		Endpoint:     p.Endpoint(),
@@ -1170,7 +1066,7 @@ func TestCrossClientScopesWithAzpInAudienceByDefault(t *testing.T) {
 	testClientID := "testclient"
 	peerID := "peer"
 
-	var oauth2Config *oauth2.Config
+	var oauth2Config *xoauth2.Config
 	oauth2Server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/callback" {
 			q := r.URL.Query()
@@ -1239,7 +1135,7 @@ func TestCrossClientScopesWithAzpInAudienceByDefault(t *testing.T) {
 		t.Fatalf("failed to create client: %v", err)
 	}
 
-	oauth2Config = &oauth2.Config{
+	oauth2Config = &xoauth2.Config{
 		ClientID:     client.ID,
 		ClientSecret: client.Secret,
 		Endpoint:     p.Endpoint(),
@@ -1269,7 +1165,7 @@ func TestPasswordDB(t *testing.T) {
 
 	logger := newLogger(t)
 	s := memory.New(logger)
-	conn := newPasswordDB(s)
+	conn := connectors.NewPasswordDB(s)
 
 	pw := "hi"
 
@@ -1279,10 +1175,14 @@ func TestPasswordDB(t *testing.T) {
 	}
 
 	s.CreatePassword(ctx, storage.Password{
-		Email:    "jane@example.com",
-		Username: "jane",
-		UserID:   "foobar",
-		Hash:     h,
+		Email:             "jane@example.com",
+		Username:          "jane",
+		Name:              "Jane Doe",
+		PreferredUsername: "jane-public",
+		EmailVerified:     boolPtr(false),
+		UserID:            "foobar",
+		Groups:            []string{"team-a", "team-a/admins"},
+		Hash:              h,
 	})
 
 	tests := []struct {
@@ -1298,10 +1198,12 @@ func TestPasswordDB(t *testing.T) {
 			username: "jane@example.com",
 			password: pw,
 			wantIdentity: connector.Identity{
-				Email:         "jane@example.com",
-				Username:      "jane",
-				UserID:        "foobar",
-				EmailVerified: true,
+				Email:             "jane@example.com",
+				Username:          "Jane Doe",
+				PreferredUsername: "jane-public",
+				UserID:            "foobar",
+				EmailVerified:     false,
+				Groups:            []string{"team-a", "team-a/admins"},
 			},
 		},
 		{
@@ -1353,7 +1255,7 @@ func TestPasswordDB(t *testing.T) {
 func TestPasswordDBUsernamePrompt(t *testing.T) {
 	logger := newLogger(t)
 	s := memory.New(logger)
-	conn := newPasswordDB(s)
+	conn := connectors.NewPasswordDB(s)
 
 	expected := "Email Address"
 	if actual := conn.Prompt(); actual != expected {
@@ -1438,7 +1340,7 @@ func checkErrorResponse(err error, t *testing.T, tc test) {
 		t.Errorf("%s: DANGEROUS! got a token when we should not get one!", tc.name)
 		return
 	}
-	if rErr, ok := err.(*oauth2.RetrieveError); ok {
+	if rErr, ok := err.(*xoauth2.RetrieveError); ok {
 		if rErr.Response.StatusCode != tc.tokenError.StatusCode {
 			t.Errorf("%s: got wrong StatusCode from server %d. expected %d",
 				tc.name, rErr.Response.StatusCode, tc.tokenError.StatusCode)
@@ -1453,17 +1355,17 @@ func checkErrorResponse(err error, t *testing.T, tc test) {
 				tc.name, details.Error, details.ErrorDescription, tc.tokenError.Error)
 		}
 	} else {
-		t.Errorf("%s: unexpected error type: %s. expected *oauth2.RetrieveError", tc.name, reflect.TypeOf(err))
+		t.Errorf("%s: unexpected error type: %s. expected *xoauth2.RetrieveError", tc.name, reflect.TypeOf(err))
 	}
 }
 
 type oauth2Client struct {
-	config *oauth2.Config
-	token  *oauth2.Token
+	config *xoauth2.Config
+	token  *xoauth2.Token
 	server *httptest.Server
 }
 
-// TestRefreshTokenFlow tests the refresh token code flow for oauth2. The test verifies
+// TestRefreshTokenFlow tests the refresh token code flow for xoauth2. The test verifies
 // that only valid refresh tokens can be used to refresh an expired token.
 func TestRefreshTokenFlow(t *testing.T) {
 	state := "state"
@@ -1532,7 +1434,7 @@ func TestRefreshTokenFlow(t *testing.T) {
 		t.Fatalf("failed to create client: %v", err)
 	}
 
-	oauth2Client.config = &oauth2.Config{
+	oauth2Client.config = &xoauth2.Config{
 		ClientID:     client.ID,
 		ClientSecret: client.Secret,
 		Endpoint:     p.Endpoint(),
@@ -1546,7 +1448,7 @@ func TestRefreshTokenFlow(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	tok := &oauth2.Token{
+	tok := &xoauth2.Token{
 		RefreshToken: oauth2Client.token.RefreshToken,
 		Expiry:       time.Now().Add(-time.Hour),
 	}
@@ -1591,12 +1493,6 @@ func TestOAuth2DeviceFlow(t *testing.T) {
 			tokenEndpoint: "/token",
 			oauth2Tests:   tests,
 		},
-		// TODO(nabokihms): delete temporary tests after removing the deprecated token endpoint support
-		{
-			name:          "Deprecated token endpoint for devices",
-			tokenEndpoint: "/device/token",
-			oauth2Tests:   tests,
-		},
 	}
 
 	for _, testCase := range testCases {
@@ -1612,7 +1508,7 @@ func TestOAuth2DeviceFlow(t *testing.T) {
 				})
 				defer httpServer.Close()
 
-				mockConn := s.connectors["mock"]
+				mockConn, _ := s.connectors.Cached("mock")
 				conn = mockConn.Connector.(*mock.Callback)
 
 				p, err := oidc.NewProvider(ctx, httpServer.URL)
@@ -1623,7 +1519,7 @@ func TestOAuth2DeviceFlow(t *testing.T) {
 				// Add the Clients to the test server
 				client := storage.Client{
 					ID:           clientID,
-					RedirectURIs: []string{deviceCallbackURI},
+					RedirectURIs: []string{s.issuerURL.AbsPath(oauth2.DeviceCallbackURI)},
 					Public:       true,
 				}
 				if err := s.storage.CreateClient(ctx, client); err != nil {
@@ -1667,7 +1563,7 @@ func TestOAuth2DeviceFlow(t *testing.T) {
 				}
 
 				// Parse the code response
-				var deviceCode deviceCodeResponse
+				var deviceCode device.DeviceCodeResponse
 				if err := json.Unmarshal(responseBody, &deviceCode); err != nil {
 					t.Errorf("Unexpected Device Code Response Format %v", string(responseBody))
 				}
@@ -1694,7 +1590,7 @@ func TestOAuth2DeviceFlow(t *testing.T) {
 				tokenURL, _ := url.Parse(issuer.String())
 				tokenURL.Path = path.Join(tokenURL.Path, testCase.tokenEndpoint)
 				v := url.Values{}
-				v.Add("grant_type", grantTypeDeviceCode)
+				v.Add("grant_type", oauth2.GrantTypeDeviceCode)
 				v.Add("device_code", deviceCode.DeviceCode)
 				resp, err = http.PostForm(tokenURL.String(), v)
 				if err != nil {
@@ -1710,12 +1606,12 @@ func TestOAuth2DeviceFlow(t *testing.T) {
 				}
 
 				// Parse the response
-				var tokenRes accessTokenResponse
+				var tokenRes tokens.Response
 				if err := json.Unmarshal(responseBody, &tokenRes); err != nil {
 					t.Errorf("Unexpected Device Access Token Response Format %v", string(responseBody))
 				}
 
-				token := &oauth2.Token{
+				token := &xoauth2.Token{
 					AccessToken:  tokenRes.AccessToken,
 					TokenType:    tokenRes.TokenType,
 					RefreshToken: tokenRes.RefreshToken,
@@ -1729,12 +1625,12 @@ func TestOAuth2DeviceFlow(t *testing.T) {
 
 				// Run token tests to validate info is correct
 				// Create the OAuth2 config.
-				oauth2Config := &oauth2.Config{
+				oauth2Config := &xoauth2.Config{
 					ClientID:     client.ID,
 					ClientSecret: client.Secret,
 					Endpoint:     p.Endpoint(),
 					Scopes:       requestedScopes,
-					RedirectURL:  deviceCallbackURI,
+					RedirectURL:  s.issuerURL.AbsURL(oauth2.DeviceCallbackURI),
 				}
 				if len(tc.scopes) != 0 {
 					oauth2Config.Scopes = tc.scopes
@@ -1757,37 +1653,53 @@ func TestServerSupportedGrants(t *testing.T) {
 		{
 			name:      "Simple",
 			config:    func(c *Config) {},
-			resGrants: []string{grantTypeAuthorizationCode, grantTypeRefreshToken, grantTypeDeviceCode, grantTypeTokenExchange},
+			resGrants: []string{oauth2.GrantTypeAuthorizationCode, oauth2.GrantTypeClientCredentials, oauth2.GrantTypeRefreshToken, oauth2.GrantTypeDeviceCode, oauth2.GrantTypeTokenExchange},
 		},
 		{
 			name:      "Minimal",
-			config:    func(c *Config) { c.AllowedGrantTypes = []string{grantTypeTokenExchange} },
-			resGrants: []string{grantTypeTokenExchange},
+			config:    func(c *Config) { c.AllowedGrantTypes = []string{oauth2.GrantTypeTokenExchange} },
+			resGrants: []string{oauth2.GrantTypeTokenExchange},
 		},
 		{
-			name:      "With password connector",
-			config:    func(c *Config) { c.PasswordConnector = "local" },
-			resGrants: []string{grantTypeAuthorizationCode, grantTypePassword, grantTypeRefreshToken, grantTypeDeviceCode, grantTypeTokenExchange},
+			name: "With password connector",
+			config: func(c *Config) {
+				c.PasswordConnector = "local"
+			},
+			resGrants: []string{oauth2.GrantTypeAuthorizationCode, oauth2.GrantTypeClientCredentials, oauth2.GrantTypePassword, oauth2.GrantTypeRefreshToken, oauth2.GrantTypeDeviceCode, oauth2.GrantTypeTokenExchange},
 		},
 		{
-			name:      "With token response",
-			config:    func(c *Config) { c.SupportedResponseTypes = append(c.SupportedResponseTypes, responseTypeToken) },
-			resGrants: []string{grantTypeAuthorizationCode, grantTypeImplicit, grantTypeRefreshToken, grantTypeDeviceCode, grantTypeTokenExchange},
+			name: "Without client credentials",
+			config: func(c *Config) {
+				c.AllowedGrantTypes = []string{
+					oauth2.GrantTypeAuthorizationCode,
+					oauth2.GrantTypeRefreshToken,
+					oauth2.GrantTypeDeviceCode,
+					oauth2.GrantTypeTokenExchange,
+				}
+			},
+			resGrants: []string{oauth2.GrantTypeAuthorizationCode, oauth2.GrantTypeRefreshToken, oauth2.GrantTypeDeviceCode, oauth2.GrantTypeTokenExchange},
+		},
+		{
+			name: "With token response",
+			config: func(c *Config) {
+				c.SupportedResponseTypes = append(c.SupportedResponseTypes, oauth2.ResponseTypeToken)
+			},
+			resGrants: []string{oauth2.GrantTypeAuthorizationCode, oauth2.GrantTypeClientCredentials, oauth2.GrantTypeImplicit, oauth2.GrantTypeRefreshToken, oauth2.GrantTypeDeviceCode, oauth2.GrantTypeTokenExchange},
 		},
 		{
 			name: "All",
 			config: func(c *Config) {
 				c.PasswordConnector = "local"
-				c.SupportedResponseTypes = append(c.SupportedResponseTypes, responseTypeToken)
+				c.SupportedResponseTypes = append(c.SupportedResponseTypes, oauth2.ResponseTypeToken)
 			},
-			resGrants: []string{grantTypeAuthorizationCode, grantTypeImplicit, grantTypePassword, grantTypeRefreshToken, grantTypeDeviceCode, grantTypeTokenExchange},
+			resGrants: []string{oauth2.GrantTypeAuthorizationCode, oauth2.GrantTypeClientCredentials, oauth2.GrantTypeImplicit, oauth2.GrantTypePassword, oauth2.GrantTypeRefreshToken, oauth2.GrantTypeDeviceCode, oauth2.GrantTypeTokenExchange},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			_, srv := newTestServer(t, tc.config)
-			require.Equal(t, tc.resGrants, srv.supportedGrantTypes)
+			require.Equal(t, tc.resGrants, srv.discovery.GrantTypes)
 		})
 	}
 }
@@ -1956,6 +1868,11 @@ func TestConnectorFailureHandling(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := newLogger(t)
 
+			sig, err := signer.NewMockSigner(testKey)
+			if err != nil {
+				t.Fatalf("failed to create mock signer: %v", err)
+			}
+
 			config := Config{
 				Issuer:  "http://localhost",
 				Storage: memory.New(logger),
@@ -1966,6 +1883,7 @@ func TestConnectorFailureHandling(t *testing.T) {
 				PrometheusRegistry:         prometheus.NewRegistry(),
 				HealthChecker:              gosundheit.New(),
 				ContinueOnConnectorFailure: tc.continueOnConnectorFailure,
+				Signer:                     sig,
 			}
 
 			// Create connectors in storage
@@ -1975,7 +1893,7 @@ func TestConnectorFailureHandling(t *testing.T) {
 				}
 			}
 
-			server, err := newServer(ctx, config, staticRotationStrategy(testKey))
+			server, err := newServer(ctx, config)
 
 			if tc.wantErr {
 				if err == nil {
@@ -1989,7 +1907,7 @@ func TestConnectorFailureHandling(t *testing.T) {
 				} else {
 					// Verify expected connectors are loaded
 					for _, id := range tc.expectConnectors {
-						if _, exists := server.connectors[id]; !exists {
+						if _, exists := server.connectors.Cached(id); !exists {
 							t.Errorf("expected connector %q to be loaded", id)
 						}
 					}
@@ -2003,7 +1921,7 @@ func TestConnectorFailureHandling(t *testing.T) {
 								break
 							}
 						}
-						_, exists := server.connectors[conn.ID]
+						_, exists := server.connectors.Cached(conn.ID)
 						if shouldExist && !exists {
 							t.Errorf("connector %q should have been loaded but wasn't", conn.ID)
 						} else if !shouldExist && exists {
@@ -2013,5 +1931,40 @@ func TestConnectorFailureHandling(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestHandleHealth(t *testing.T) {
+	httpServer, server := newTestServer(t, nil)
+	defer httpServer.Close()
+
+	rr := httptest.NewRecorder()
+	server.ServeHTTP(rr, httptest.NewRequest("GET", "/healthz", nil))
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 got %d", rr.Code)
+	}
+}
+
+func TestHandleHealthFailure(t *testing.T) {
+	httpServer, server := newTestServer(t, func(c *Config) {
+		c.HealthChecker = gosundheit.New()
+
+		c.HealthChecker.RegisterCheck(
+			&checks.CustomCheck{
+				CheckName: "fail",
+				CheckFunc: func(_ context.Context) (details interface{}, err error) {
+					return nil, errors.New("error")
+				},
+			},
+			gosundheit.InitiallyPassing(false),
+			gosundheit.ExecutionPeriod(1*time.Second),
+		)
+	})
+	defer httpServer.Close()
+
+	rr := httptest.NewRecorder()
+	server.ServeHTTP(rr, httptest.NewRequest("GET", "/healthz", nil))
+	if rr.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500 got %d", rr.Code)
 	}
 }

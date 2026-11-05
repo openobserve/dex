@@ -14,15 +14,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/dexidp/dex/connector"
+	"github.com/dexidp/dex/server/connectors"
 	"github.com/dexidp/dex/storage"
 )
 
 const (
 	ssoRequiredDescription = "Your company signs in with single sign-on. Use “Sign in” with your work email."
 
-	// accountCreatedParam and loginHintParam carry a finished sign-up to the password step when auto sign-in is not possible.
-	accountCreatedParam  = "account_created"
-	loginHintParam       = "login_hint"
 	accountCreatedNotice = "Account created. Sign in to continue."
 )
 
@@ -143,7 +141,7 @@ func (s *Server) handleSignup(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		backLink := s.backLinkOr(r, s.defaultBackLink(r))
 		email := strings.TrimSpace(r.URL.Query().Get("email"))
-		if err := s.templates.signup(r, w, r.URL.String(), email, "", "", "", 0, backLink); err != nil {
+		if err := s.templates.Signup(r, w, r.URL.String(), email, "", "", "", 0, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 		return
@@ -398,7 +396,7 @@ func (s *Server) signupAuthRequest(ctx context.Context, authID string) (storage.
 	}
 	_, isPassword := conn.Connector.(connector.PasswordConnector)
 	// Only the local password DB holds the account just created; another password connector (LDAP) must not vouch for it.
-	_, isLocal := conn.Connector.(passwordDB)
+	isLocal := conn.Type == connectors.LocalConnector
 	if !isPassword || !isLocal {
 		return authReq, nil, "non_local_connector"
 	}
@@ -414,7 +412,7 @@ func (s *Server) signupFallback(w http.ResponseWriter, r *http.Request, authReq 
 	if params != nil {
 		params.Set(loginHintParam, email)
 		params.Set(accountCreatedParam, "1")
-		http.Redirect(w, r, s.absPath("/auth", LocalConnector)+"?"+params.Encode(), http.StatusSeeOther)
+		http.Redirect(w, r, s.absPath("/auth", connectors.LocalConnector)+"?"+params.Encode(), http.StatusSeeOther)
 		return
 	}
 
@@ -422,10 +420,10 @@ func (s *Server) signupFallback(w http.ResponseWriter, r *http.Request, authReq 
 	query := r.URL.Query()
 	query.Del("back")
 	query.Del("email")
-	loginPath := s.absPath("/auth", LocalConnector, "login") + "?" + query.Encode()
+	loginPath := s.absPath("/auth", connectors.LocalConnector, "login") + "?" + query.Encode()
 	signupPath := s.absPath("/signup") + "?" + query.Encode()
 	resetPasswordPath := s.absPath("/password_reset") + "?" + query.Encode()
-	if err := s.templates.password(r, w, loginPath, email, "email", false, "", signupPath, resetPasswordPath, s.enableSignup, false, authTabs{}, authNotice{Success: accountCreatedNotice}); err != nil {
+	if err := s.templates.PasswordO2(r, w, loginPath, email, "email", false, "", signupPath, resetPasswordPath, s.enableSignup, false, authTabs{}, authNotice{Success: accountCreatedNotice}); err != nil {
 		s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 	}
 }
@@ -482,24 +480,13 @@ func accountCreatedEmail(q url.Values) (string, bool) {
 	return hint, true
 }
 
-// withoutAccountCreated drops the one-shot sign-up hand-off so it does not leak into other links.
-func withoutAccountCreated(q url.Values) url.Values {
-	out := url.Values{}
-	for k, v := range q {
-		out[k] = v
-	}
-	out.Del(accountCreatedParam)
-	out.Del(loginHintParam)
-	return out
-}
-
 // handleSignupError handles error responses for signup
 func (s *Server) handleSignupError(w http.ResponseWriter, r *http.Request, req signupRequest, errorMsg string, statusCode int, isJSONRequest bool) {
 	if isJSONRequest {
 		s.signupErrHelper(w, "invalid_request", errorMsg, statusCode)
 	} else {
 		backLink := s.backLinkOr(r, s.defaultBackLink(r))
-		if err := s.templates.signup(r, w, r.URL.String(), req.Email, req.Username, req.Csrf, errorMsg, statusCode, backLink); err != nil {
+		if err := s.templates.Signup(r, w, r.URL.String(), req.Email, req.Username, req.Csrf, errorMsg, statusCode, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 	}
@@ -510,7 +497,7 @@ func (s *Server) handlePasswordResetError(w http.ResponseWriter, r *http.Request
 		s.passwordResetErrHelper(w, "invalid_request", errorMsg, statusCode)
 	} else {
 		backLink := s.backLinkOr(r, s.defaultBackLink(r))
-		if err := s.templates.passwordReset(r, w, r.URL.String(), req.Email, errorMsg, statusCode, backLink); err != nil {
+		if err := s.templates.PasswordReset(r, w, r.URL.String(), req.Email, errorMsg, statusCode, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 	}
@@ -690,7 +677,7 @@ func (s *Server) handlePasswordReset(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		backLink := s.backLinkOr(r, s.defaultBackLink(r))
-		if err := s.templates.passwordReset(r, w, r.URL.String(), "", "", 0, backLink); err != nil {
+		if err := s.templates.PasswordReset(r, w, r.URL.String(), "", "", 0, backLink); err != nil {
 			s.logger.ErrorContext(r.Context(), "server template error", "err", err)
 		}
 		return
