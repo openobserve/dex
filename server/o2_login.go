@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/dexidp/dex/connector"
+	"github.com/dexidp/dex/server/authflow"
 	"github.com/dexidp/dex/server/templates"
 	"github.com/dexidp/dex/server/tokens"
 	"github.com/dexidp/dex/storage"
@@ -60,7 +61,7 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if connID != "" && connID != authReq.ConnectorID {
 		s.logger.ErrorContext(r.Context(), "connector mismatch: password login triggered for different connector from authentication start", "start_connector_id", authReq.ConnectorID, "password_connector_id", connID)
-		s.renderError(r, w, http.StatusInternalServerError, "Requested resource does not exist.")
+		s.renderError(r, w, http.StatusBadRequest, "Requested resource does not exist.")
 		return
 	}
 
@@ -118,7 +119,7 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 		identity, ok, err := pwConn.Login(r.Context(), scopes, username, password)
 		if err != nil {
 			s.logger.ErrorContext(r.Context(), "failed to login user", "err", err)
-			s.renderError(r, w, http.StatusInternalServerError, fmt.Sprintf("Login error: %v", err))
+			s.renderError(r, w, http.StatusInternalServerError, authflow.ErrMsgLoginError)
 			return
 		}
 		if !ok {
