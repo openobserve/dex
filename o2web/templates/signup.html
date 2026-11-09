@@ -307,12 +307,30 @@
     cursor: not-allowed;
   }
 
-  .consent-text {
+  .consent-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
     color: #475569;
-    font-size: 12px;
-    text-align: center;
-    margin: 0.75rem 0 0;
+    font-size: 13px;
     line-height: 1.5;
+    cursor: pointer;
+  }
+
+  .consent-label input {
+    margin-top: 3px;
+    flex: none;
+    cursor: pointer;
+  }
+
+  .consent-label a {
+    color: #2563eb;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .consent-label a:hover {
+    text-decoration: underline;
   }
 
   @media (max-width: 420px) {
@@ -593,14 +611,21 @@
 
           <input tabindex="6" readonly hidden id="csrf" name="csrf" type="text" style="display: none;"{{ if .Csrf }} value="{{ .Csrf }}"{{ end }} />
 
+          <div class="signup-form-group consent-group">
+            <label class="consent-label">
+              <input tabindex="6" id="terms" type="checkbox" />
+              <span>
+                I agree to the
+                <a href="{{ "terms_of_use" | extra }}" target="_blank" rel="noopener">Terms of Use</a> and
+                <a href="{{ "privacy_policy" | extra }}" target="_blank" rel="noopener">Privacy Policy</a>
+              </span>
+            </label>
+            <span class="error-text" id="terms-error" style="display: none;"></span>
+          </div>
+
           <button tabindex="7" id="submit-signup" type="submit" class="signup-btn-primary">
             Create account
           </button>
-          <p class="consent-text">
-            By creating an account you agree to the
-            <a href="{{ "terms_of_use" | extra }}" target="_blank" rel="noopener">Terms of Use</a> and
-            <a href="{{ "privacy_policy" | extra }}" target="_blank" rel="noopener">Privacy Policy</a>.
-          </p>
         </form>
 
         <div class="login-link-section">
@@ -809,6 +834,10 @@
     else showSuccess('token');
   });
 
+  document.getElementById('terms').addEventListener('change', function() {
+    if (this.checked) document.getElementById('terms-error').style.display = 'none';
+  });
+
   tokenInput.addEventListener('input', function() {
     if (this.value.trim()) clearError('token');
   });
@@ -833,6 +862,13 @@
 
     if (!token) { showError('token', 'Verification code is required'); isValid = false; }
     else if (!csrf) { showError('token', 'Send a code to your email first'); isValid = false; }
+
+    const termsError = document.getElementById('terms-error');
+    if (!document.getElementById('terms').checked) {
+      termsError.textContent = 'Please accept the Terms of Use and Privacy Policy to continue';
+      termsError.style.display = 'block';
+      isValid = false;
+    }
 
     if (!isValid) return false;
 
