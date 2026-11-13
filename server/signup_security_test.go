@@ -672,3 +672,48 @@ func TestPagesDoNotRenderOffsiteBack(t *testing.T) {
 		}
 	}
 }
+
+func TestPasswordResetRejectsWeakPasswordWithoutUsingCode(t *testing.T) {
+	s, _ := newSignupFlowServer(t)
+	ctx := t.Context()
+	createPasswordAccount(t, s, "jane@acme.com", "jane-id", "old-password")
+	seedSignupCode(t, s, "jane@acme.com")
+
+	reset := func(password string) *httptest.ResponseRecorder {
+		return postJSON(s, "/password_reset", map[string]string{"email": "jane@acme.com", "password": password, "token": flowCode, "csrf": flowCSRF}, "")
+	}
+	for name, password := range map[string]string{
+		"empty":    "",
+		"short":    "1234567",
+		"too long": strings.Repeat("a", 73),
+	} {
+		rr := reset(password)
+		require.Equal(t, http.StatusBadRequest, rr.Code, "%s password: %s", name, rr.Body.String())
+		require.Contains(t, rr.Body.String(), "Password", name)
+	}
+
+	pw, err := s.storage.GetPassword(ctx, "jane@acme.com")
+	require.NoError(t, err)
+	require.NoError(t, bcrypt.CompareHashAndPassword(pw.Hash, []byte("old-password")), "a rejected password must not be stored")
+
+	rr := reset("new-password")
+	require.Equal(t, http.StatusNoContent, rr.Code, "a rejected password must not use up the code: %s", rr.Body.String())
+	pw, err = s.storage.GetPassword(ctx, "jane@acme.com")
+	require.NoError(t, err)
+	require.NoError(t, bcrypt.CompareHashAndPassword(pw.Hash, []byte("new-password")))
+}
+
+// A code entered with a differently-cased email must still be used up.
+func TestPasswordResetCodeIsSingleUseWithMixedCaseEmail(t *testing.T) {
+	s, _ := newSignupFlowServer(t)
+	createPasswordAccount(t, s, "jane@acme.com", "jane-id", "old-password")
+	seedSignupCode(t, s, "jane@acme.com")
+
+	body := map[string]string{"email": "Jane@Acme.com", "password": "new-password", "token": flowCode, "csrf": flowCSRF}
+	rr := postJSON(s, "/password_reset", body, "")
+	require.Equal(t, http.StatusNoContent, rr.Code, rr.Body.String())
+
+	rr = postJSON(s, "/password_reset", body, "")
+	require.Equal(t, http.StatusBadRequest, rr.Code, "the code must not work twice")
+	require.Contains(t, rr.Body.String(), "OTP not found or expired")
+}

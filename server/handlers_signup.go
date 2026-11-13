@@ -261,11 +261,6 @@ func (s *Server) processSignup(w http.ResponseWriter, r *http.Request, ctx conte
 		return
 	}
 
-	if len([]byte(req.Password)) > 72 {
-		s.handleSignupError(w, r, req, "Password must not be longer than 72 characters/bytes.", http.StatusBadRequest, isJSONRequest)
-		return
-	}
-
 	// Hash the password using bcrypt (cost 10 is the default)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -520,17 +515,28 @@ func (s *Server) validateSignupRequest(req signupRequest) (string, int) {
 		return "Username is required", http.StatusBadRequest
 	}
 
-	// Validate password
-	if req.Password == "" {
-		return "Password is required", http.StatusBadRequest
-	}
-
-	// Validate password strength (minimum 8 characters)
-	if len(req.Password) < 8 {
-		return "Password must be at least 8 characters long", http.StatusBadRequest
+	if msg := validateNewPassword(req.Password); msg != "" {
+		return msg, http.StatusBadRequest
 	}
 
 	return "", 0
+}
+
+// validateNewPassword checks a password being set by sign-up or reset, and
+// returns why it is unacceptable, or "" when it is fine. It runs before the
+// emailed code is checked, so a rejected password does not use up the code.
+func validateNewPassword(password string) string {
+	if password == "" {
+		return "Password is required"
+	}
+	if len(password) < 8 {
+		return "Password must be at least 8 characters long"
+	}
+	// bcrypt ignores everything past 72 bytes.
+	if len(password) > 72 {
+		return "Password must not be longer than 72 characters/bytes."
+	}
+	return ""
 }
 
 // signupErrHelper sends a JSON error response
@@ -744,6 +750,11 @@ func (s *Server) processPasswordReset(w http.ResponseWriter, r *http.Request, ct
 		return
 	}
 
+	if msg := validateNewPassword(req.Password); msg != "" {
+		s.handlePasswordResetError(w, r, req, msg, http.StatusBadRequest, isJSONRequest)
+		return
+	}
+
 	token, err := s.storage.GetSignupToken(ctx, req.Email)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "password reset validation token not found", "err", err)
@@ -765,11 +776,6 @@ func (s *Server) processPasswordReset(w http.ResponseWriter, r *http.Request, ct
 		return
 	}
 
-	if len([]byte(req.Password)) > 72 {
-		s.handlePasswordResetError(w, r, req, "Password must not be longer than 72 characters/bytes.", http.StatusBadRequest, isJSONRequest)
-		return
-	}
-
 	// Hash the password using bcrypt (cost 10 is the default)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -782,8 +788,10 @@ func (s *Server) processPasswordReset(w http.ResponseWriter, r *http.Request, ct
 		return
 	}
 
+	var userID string
 	updater := func(old storage.Password) (storage.Password, error) {
 		old.Hash = hashedPassword
+		userID = old.UserID
 		return old, nil
 	}
 
@@ -798,8 +806,14 @@ func (s *Server) processPasswordReset(w http.ResponseWriter, r *http.Request, ct
 		return
 	}
 
-	// Log successful reset
-	s.logger.InfoContext(ctx, "user password reset successfully", "email", req.Email)
+	// Whoever signed in with the old password must not stay signed in: end every
+	// session and refresh token the account holds through the local password DB.
+	ended, err := s.signout.EndUser(ctx, userID, connectors.LocalConnector)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "password reset: failed to end sessions", "email", req.Email, "user_id", userID, "err", err)
+	}
+
+	s.logger.InfoContext(ctx, "user password reset successfully", "email", req.Email, "user_id", userID, "sessions_ended", ended)
 
 	// Return success response
 	if isJSONRequest {

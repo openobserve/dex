@@ -11,6 +11,7 @@ import (
 	"github.com/dexidp/dex/server/backchannel"
 	"github.com/dexidp/dex/server/connectors"
 	"github.com/dexidp/dex/server/discovery"
+	"github.com/dexidp/dex/server/signout"
 	"github.com/dexidp/dex/server/tokens"
 	"github.com/dexidp/dex/storage"
 )
@@ -26,6 +27,7 @@ const apiVersion = 4
 // rather than the whole Server.
 func NewAPI(s storage.Storage, logger *slog.Logger, version string, conns *connectors.Cache, disc *discovery.Handler, bc *backchannel.Notifier) api.DexServer {
 	apiLogger := logger.With("component", "api")
+	refresh := tokens.NewRefreshStore(s, time.Now, apiLogger)
 	return dexAPI{
 		s:           s,
 		logger:      apiLogger,
@@ -33,7 +35,13 @@ func NewAPI(s storage.Storage, logger *slog.Logger, version string, conns *conne
 		connectors:  conns,
 		discovery:   disc,
 		backchannel: bc,
-		refresh:     tokens.NewRefreshStore(s, time.Now, apiLogger),
+		refresh:     refresh,
+		signout: &signout.Terminator{
+			Storage:     s,
+			Backchannel: bc,
+			Refresh:     refresh,
+			Logger:      apiLogger,
+		},
 	}
 }
 
@@ -47,6 +55,7 @@ type dexAPI struct {
 	discovery   *discovery.Handler
 	backchannel *backchannel.Notifier
 	refresh     *tokens.RefreshStore
+	signout     *signout.Terminator
 }
 
 func (d dexAPI) GetVersion(ctx context.Context, req *api.VersionReq) (*api.VersionResp, error) {
