@@ -129,29 +129,10 @@ func (d dexAPI) DeleteAuthSession(ctx context.Context, req *api.DeleteAuthSessio
 }
 
 func (d dexAPI) terminateSessions(ctx context.Context, match func(storage.AuthSession) bool) (int64, error) {
-	sessionList, err := d.s.ListAuthSessions(ctx)
+	terminated, err := d.signout.EndSessions(ctx, match)
 	if err != nil {
-		d.logger.Error("api: failed to list auth sessions", "err", err)
-		return 0, fmt.Errorf("list auth sessions: %v", err)
-	}
-
-	var terminated int64
-	for _, s := range sessionList {
-		if !match(s) {
-			continue
-		}
-
-		if d.backchannel != nil {
-			d.backchannel.Notify(ctx, &s)
-		}
-		d.revokeUserRefreshTokens(ctx, s.UserID, s.ConnectorID)
-
-		if err := d.s.DeleteAuthSession(ctx, s.ID); err != nil {
-			d.logger.Error("api: failed to delete auth session during batch terminate",
-				"session_id", s.ID, "user_id", s.UserID, "err", err)
-			continue
-		}
-		terminated++
+		d.logger.Error("api: failed to terminate auth sessions", "err", err)
+		return 0, err
 	}
 	return terminated, nil
 }

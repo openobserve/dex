@@ -28,6 +28,7 @@ import (
 	"github.com/dexidp/dex/server/oauth2"
 	"github.com/dexidp/dex/server/router"
 	"github.com/dexidp/dex/server/session"
+	"github.com/dexidp/dex/server/signout"
 	"github.com/dexidp/dex/server/templates"
 	"github.com/dexidp/dex/server/tokens"
 	"github.com/dexidp/dex/server/userinfo"
@@ -63,6 +64,10 @@ type Server struct {
 	// backchannel notifies relying parties that a session ended. Shared with the
 	// gRPC API, which ends sessions too.
 	backchannel *backchannel.Notifier
+
+	// signout ends a user's sessions and refresh tokens; a password reset uses it
+	// so a changed password also cuts off whoever held the old one.
+	signout *signout.Terminator
 
 	o2Server
 }
@@ -113,6 +118,12 @@ func newServer(ctx context.Context, c Config) (*Server, error) {
 		IssuerURL: s.issuerURL,
 		Logger:    s.logger,
 		Now:       rc.now,
+	}
+	s.signout = &signout.Terminator{
+		Storage:     s.storage,
+		Backchannel: s.backchannel,
+		Refresh:     tokens.NewRefreshStore(s.storage, rc.now, s.logger),
+		Logger:      s.logger,
 	}
 	// Build the discovery handler once from config; both the mounted HTTP route
 	// and the gRPC API (via Discovery) serve this same handler.

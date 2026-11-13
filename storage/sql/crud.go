@@ -1343,7 +1343,7 @@ func (c *conn) DeleteConnector(ctx context.Context, id string) error {
 }
 
 func (c *conn) DeleteSignupToken(ctx context.Context, email string) error {
-	return c.delete("signup_tokens", "email", email)
+	return c.delete("signup_tokens", "email", strings.ToLower(email))
 }
 
 func (c *conn) DeleteOfflineSessions(ctx context.Context, userID string, connID string) error {

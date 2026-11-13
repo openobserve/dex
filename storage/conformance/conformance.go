@@ -1532,8 +1532,9 @@ func testSignupTokenCRUD(t *testing.T, s storage.Storage) {
 		t.Errorf("signup token expiry: got %v, want %v", got.Expiry, expiry)
 	}
 
-	if err := s.DeleteSignupToken(ctx, token.Email); err != nil {
-		t.Fatalf("delete signup token: %v", err)
+	// Delete must match the same way Create and Get do, or a used code survives.
+	if err := s.DeleteSignupToken(ctx, "Jane@Example.com"); err != nil {
+		t.Fatalf("delete signup token with mixed-case email: %v", err)
 	}
 	if _, err := s.GetSignupToken(ctx, token.Email); err != storage.ErrNotFound {
 		t.Errorf("get deleted signup token: want storage.ErrNotFound, got %v", err)
